@@ -1,0 +1,171 @@
+[gd_scene load_steps=3 format=3 uid="uid://0egvsyss63gm"]
+
+[ext_resource type="Script" uid="uid://b5voiv6ccqcmd" path="res://scenes/ui/MainMenu.gd" id="1"]
+[ext_resource type="Theme" path="res://resources/themes/main_theme.tres" id="2"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2")
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.08, 0.12, 1)
+
+[node name="PlayerInfo" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 120.0
+grow_horizontal = 2
+
+[node name="VBox" type="VBoxContainer" parent="PlayerInfo"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PlayerInfo/VBox"]
+layout_mode = 2
+
+[node name="Username" type="Label" parent="PlayerInfo/VBox/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Player"
+
+[node name="Spacer" type="Control" parent="PlayerInfo/VBox/HBox"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Level" type="Label" parent="PlayerInfo/VBox/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Lv. 1"
+
+[node name="EnergyBar" type="ProgressBar" parent="PlayerInfo/VBox"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+show_percentage = false
+
+[node name="Label" type="Label" parent="PlayerInfo/VBox/EnergyBar"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "100/100"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Resources" type="HBoxContainer" parent="PlayerInfo/VBox"]
+layout_mode = 2
+
+[node name="Gold" type="HBoxContainer" parent="PlayerInfo/VBox/Resources"]
+layout_mode = 2
+
+[node name="Icon" type="Label" parent="PlayerInfo/VBox/Resources/Gold"]
+layout_mode = 2
+text = "💰"
+
+[node name="Amount" type="Label" parent="PlayerInfo/VBox/Resources/Gold"]
+layout_mode = 2
+text = "0"
+
+[node name="Spacer" type="Control" parent="PlayerInfo/VBox/Resources"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+
+[node name="Gems" type="HBoxContainer" parent="PlayerInfo/VBox/Resources"]
+layout_mode = 2
+
+[node name="Icon" type="Label" parent="PlayerInfo/VBox/Resources/Gems"]
+layout_mode = 2
+text = "💎"
+
+[node name="Amount" type="Label" parent="PlayerInfo/VBox/Resources/Gems"]
+layout_mode = 2
+text = "0"
+
+[node name="MenuButtons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -200.0
+offset_right = 150.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="QuestButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "⚔️ Görevler"
+
+[node name="PvPButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "⚔️ PvP Savaş"
+
+[node name="MarketButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "🛒 Pazar"
+
+[node name="InventoryButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "🎒 Envanter"
+
+[node name="GuildButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "🏰 Lonca"
+
+[node name="ProductionButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "🏭 Üretim"
+
+[node name="EnhancementButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "⚡ Geliştirme"
+
+[node name="ShopButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "🛍️ Mağaza"
+
+[node name="ChatPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -300.0
+offset_right = 400.0
+grow_vertical = 0
+
+[node name="NotificationsPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_bottom = 200.0
+grow_horizontal = 0

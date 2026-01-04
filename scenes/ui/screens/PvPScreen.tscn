@@ -1,0 +1,178 @@
+[gd_scene load_steps=2 format=3 uid="uid://cya8wh5m2jn3p"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/PvPScreen.gd" id="1_pvp"]
+
+[node name="PvPScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_pvp")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PvP Arena"
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+
+[node name="StatsPanel" type="PanelContainer" parent="MarginContainer/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(600, 80)
+
+[node name="HBox" type="HBoxContainer" parent="MarginContainer/VBox/Header/StatsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="WinsLabel" type="Label" parent="MarginContainer/VBox/Header/StatsPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kazanılan: 0"
+theme_override_font_sizes/font_size = 22
+
+[node name="LossesLabel" type="Label" parent="MarginContainer/VBox/Header/StatsPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kaybedilen: 0"
+theme_override_font_sizes/font_size = 22
+
+[node name="RatingLabel" type="Label" parent="MarginContainer/VBox/Header/StatsPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Puan: 1000"
+theme_override_font_sizes/font_size = 14
+
+[node name="RankLabel" type="Label" parent="MarginContainer/VBox/Header/StatsPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sıra: #0"
+theme_override_font_sizes/font_size = 14
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="AttackPanel" type="PanelContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 100)
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/AttackPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/AttackPanel/VBox"]
+layout_mode = 2
+text = "Oyuncu Ara ve Saldır"
+theme_override_font_sizes/font_size = 18
+
+[node name="SearchHBox" type="HBoxContainer" parent="MarginContainer/VBox/AttackPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PlayerSearchInput" type="LineEdit" parent="MarginContainer/VBox/AttackPanel/VBox/SearchHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Oyuncu adı..."
+
+[node name="SearchButton" type="Button" parent="MarginContainer/VBox/AttackPanel/VBox/SearchHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ara"
+custom_minimum_size = Vector2(100, 0)
+
+[node name="AttackButton" type="Button" parent="MarginContainer/VBox/AttackPanel/VBox/SearchHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Saldır"
+disabled = true
+custom_minimum_size = Vector2(150, 0)
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="HistoryHBox" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="AttackHistoryPanel" type="PanelContainer" parent="MarginContainer/VBox/HistoryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/HistoryHBox/AttackHistoryPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/HistoryHBox/AttackHistoryPanel/VBox"]
+layout_mode = 2
+text = "Saldırı Geçmişi"
+theme_override_font_sizes/font_size = 20
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox/HistoryHBox/AttackHistoryPanel/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox/HistoryHBox/AttackHistoryPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AttackHistoryList" type="VBoxContainer" parent="MarginContainer/VBox/HistoryHBox/AttackHistoryPanel/VBox/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="DefenseHistoryPanel" type="PanelContainer" parent="MarginContainer/VBox/HistoryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/HistoryHBox/DefenseHistoryPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/HistoryHBox/DefenseHistoryPanel/VBox"]
+layout_mode = 2
+text = "Savunma Geçmişi"
+theme_override_font_sizes/font_size = 20
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox/HistoryHBox/DefenseHistoryPanel/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox/HistoryHBox/DefenseHistoryPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DefenseHistoryList" type="VBoxContainer" parent="MarginContainer/VBox/HistoryHBox/DefenseHistoryPanel/VBox/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8

@@ -1,0 +1,210 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5f3w8jpx7nhe"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/GuildScreen.gd" id="1_guild"]
+
+[node name="GuildScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_guild")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="NoGuildPanel" type="CenterContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="NoGuildPanel"]
+layout_mode = 2
+theme_override_constants/separation = 30
+custom_minimum_size = Vector2(800, 0)
+
+[node name="Label" type="Label" parent="NoGuildPanel/VBox"]
+layout_mode = 2
+text = "Bir loncaya üye değilsiniz"
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+horizontal_alignment = 1
+
+[node name="SearchHBox" type="HBoxContainer" parent="NoGuildPanel/VBox"]
+theme_override_constants/separation = 10
+
+[node name="SearchGuildInput" type="LineEdit" parent="NoGuildPanel/VBox/SearchHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Lonca adı ara..."
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Lonca adı ara..."
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+text = "Ara ve Katıl"
+theme_override_font_sizes/font_size = 20
+
+[node name="CreateButton" type="Button" parent="NoGuildPanel/VBox"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+text = "Yeni Lonca Oluştur"
+theme_override_font_sizes/font_size = 24
+[node name="CreateButton" type="Button" parent="NoGuildPanel/VBox"]
+layout_mode = 2
+text = "Yeni Lonca Oluştur"
+
+[node name="GuildInfoPanel" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="GuildInfoPanel"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="GuildInfoPanel/VBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="GuildInfoPanel/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GuildNameLabel" type="Label" parent="GuildInfoPanel/VBox/Header/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Lonca Adı"
+theme_override_font_sizes/font_size = 32
+
+[node name="GuildLevelLabel" type="Label" parent="GuildInfoPanel/VBox/Header/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Seviye 1"
+theme_override_font_sizes/font_size = 16
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="GuildInfoPanel/VBox/Header"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ManageButton" type="Button" parent="GuildInfoPanel/VBox/Header/ButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Yönet"
+
+[node name="InviteButton" type="Button" parent="GuildInfoPanel/VBox/Header/ButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Davet Et"
+
+[node name="LeaveButton" type="Button" parent="GuildInfoPanel/VBox/Header/ButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ayrıl"
+
+[node name="HSeparator" type="HSeparator" parent="GuildInfoPanel/VBox"]
+layout_mode = 2
+
+[node name="ContentHBox" type="HBoxContainer" parent="GuildInfoPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="LeftPanel" type="VBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(350, 0)
+theme_override_constants/separation = 15
+
+[node name="DescriptionPanel" type="PanelContainer" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/DescriptionPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/DescriptionPanel/VBox"]
+layout_mode = 2
+text = "Açıklama"
+theme_override_font_sizes/font_size = 16
+
+[node name="HSeparator" type="HSeparator" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/DescriptionPanel/VBox"]
+layout_mode = 2
+
+[node name="GuildDescriptionLabel" type="Label" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/DescriptionPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Lonca açıklaması buraya gelecek"
+autowrap_mode = 3
+
+[node name="StatsPanel" type="PanelContainer" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/StatsPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/StatsPanel/VBox"]
+layout_mode = 2
+text = "İstatistikler"
+theme_override_font_sizes/font_size = 16
+
+[node name="HSeparator" type="HSeparator" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/StatsPanel/VBox"]
+layout_mode = 2
+
+[node name="GuildStatsContainer" type="VBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox/LeftPanel/StatsPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MembersPanel" type="PanelContainer" parent="GuildInfoPanel/VBox/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Üyeler"
+theme_override_font_sizes/font_size = 20
+
+[node name="MemberCountLabel" type="Label" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0/50"
+theme_override_font_sizes/font_size = 16
+
+[node name="HSeparator" type="HSeparator" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MemberList" type="VBoxContainer" parent="GuildInfoPanel/VBox/ContentHBox/MembersPanel/VBox/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8

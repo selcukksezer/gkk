@@ -1,0 +1,286 @@
+[gd_scene load_steps=2 format=3 uid="uid://d2anvil123"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/AnvilScreen.gd" id="1_anvil"]
+
+[node name="AnvilScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_anvil")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "⚒️ Demirci Örsü"
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBox/Header"]
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+text = "Geri"
+theme_override_font_sizes/font_size = 24
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="ItemPanel" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox"]
+layout_mode = 2
+text = "Geliştirilen Ekipman"
+theme_override_font_sizes/font_size = 28
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox"]
+layout_mode = 2
+
+[node name="ItemSlot" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox/ItemSlot"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox/ItemSlot/CenterContainer"]
+layout_mode = 2
+
+[node name="ItemIcon" type="TextureRect" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox/ItemSlot/CenterContainer/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ItemName" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox/ItemSlot/CenterContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ekipman Seçiniz"
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="CurrentLevel" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox/ItemSlot/CenterContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+0"
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ItemPanel/VBox"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+text = "Envanter'den Seç"
+theme_override_font_sizes/font_size = 24
+
+[node name="RunePanel" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox"]
+layout_mode = 2
+text = "Rün Taşları (3 Slot)"
+theme_override_font_sizes/font_size = 28
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox"]
+layout_mode = 2
+
+[node name="RuneSlots" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="RuneSlot1" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots"]
+custom_minimum_size = Vector2(220, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot1"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot1/VBox"]
+layout_mode = 2
+text = "Slot 1"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="RuneName1" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot1/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Boş"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+horizontal_alignment = 1
+
+[node name="RuneSlot2" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots"]
+custom_minimum_size = Vector2(220, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot2"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot2/VBox"]
+layout_mode = 2
+text = "Slot 2"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="RuneName2" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot2/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Boş"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+horizontal_alignment = 1
+
+[node name="RuneSlot3" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots"]
+custom_minimum_size = Vector2(220, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot3"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot3/VBox"]
+layout_mode = 2
+text = "Slot 3"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="RuneName3" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/RunePanel/VBox/RuneSlots/RuneSlot3/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Boş"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+horizontal_alignment = 1
+
+[node name="ChancePanel" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel/VBox"]
+layout_mode = 2
+text = "Geliştirme Olasılığı"
+theme_override_font_sizes/font_size = 28
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel/VBox"]
+layout_mode = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+value = 50.0
+show_percentage = false
+
+[node name="ChanceLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Başarı: %50"
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(1, 1, 0.5, 1)
+horizontal_alignment = 1
+
+[node name="CostLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Maliyet: 5,000 Altın"
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="RiskLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/ChancePanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Risk: Seviye düşebilir"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+horizontal_alignment = 1
+
+[node name="UpgradeButton" type="Button" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+text = "🔨 GELİŞTİR"
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+
+[node name="AnimationPanel" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="AnimationPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="CenterContainer" type="CenterContainer" parent="AnimationPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ResultLabel" type="Label" parent="AnimationPanel/CenterContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BAŞARILI!"
+theme_override_font_sizes/font_size = 72
+theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)

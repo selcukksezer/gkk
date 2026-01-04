@@ -1,0 +1,202 @@
+[gd_scene load_steps=2 format=3 uid="uid://b5oam8kx4pwls"]
+
+[ext_resource type="Script" path="res://scripts/screens/HomeScreen.gd" id="1_home"]
+
+[node name="HomeScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_home")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="PlayerInfoSection" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ScrollContainer/VBoxContainer/PlayerInfoSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PlayerInfoSection/MarginContainer"]
+layout_mode = 2
+
+[node name="PlayerName" type="Label" parent="ScrollContainer/VBoxContainer/PlayerInfoSection/MarginContainer/VBox"]
+layout_mode = 2
+text = "Oyuncu Adı"
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+horizontal_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="ScrollContainer/VBoxContainer/PlayerInfoSection/MarginContainer/VBox"]
+layout_mode = 2
+text = "Seviye 1"
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="GoldLabel" type="Label" parent="ScrollContainer/VBoxContainer/PlayerInfoSection/MarginContainer/VBox"]
+layout_mode = 2
+text = "1000 Altın"
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+horizontal_alignment = 1
+
+[node name="EnergySection" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ScrollContainer/VBoxContainer/EnergySection"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="VBox" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/EnergySection/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/EnergySection/MarginContainer/VBox"]
+layout_mode = 2
+text = "⚡ Enerji"
+theme_override_font_sizes/font_size = 24
+
+[node name="EnergyBar" type="ProgressBar" parent="ScrollContainer/VBoxContainer/EnergySection/MarginContainer/VBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="EnergyLabel" type="Label" parent="ScrollContainer/VBoxContainer/EnergySection/MarginContainer/VBox"]
+layout_mode = 2
+text = "100 / 100"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="ToleranceSection" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ScrollContainer/VBoxContainer/ToleranceSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="VBox" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/ToleranceSection/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/ToleranceSection/MarginContainer/VBox"]
+layout_mode = 2
+text = "⚠️ Tolerans"
+theme_override_font_sizes/font_size = 24
+
+[node name="ToleranceBar" type="ProgressBar" parent="ScrollContainer/VBoxContainer/ToleranceSection/MarginContainer/VBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+max_value = 100.0
+show_percentage = false
+
+[node name="ToleranceLabel" type="Label" parent="ScrollContainer/VBoxContainer/ToleranceSection/MarginContainer/VBox"]
+layout_mode = 2
+text = "0 / 100"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="QuickActionsSection" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="QuestButton" type="Button" parent="ScrollContainer/VBoxContainer/QuickActionsSection"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "📋
+Görevler"
+theme_override_font_sizes/font_size = 20
+
+[node name="PvPButton" type="Button" parent="ScrollContainer/VBoxContainer/QuickActionsSection"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "⚔️
+PvP Arena"
+theme_override_font_sizes/font_size = 20
+
+[node name="MarketButton" type="Button" parent="ScrollContainer/VBoxContainer/QuickActionsSection"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "🏪
+Pazar"
+theme_override_font_sizes/font_size = 20
+
+[node name="UsePotionButton" type="Button" parent="ScrollContainer/VBoxContainer/QuickActionsSection"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "🧪
+İksir Kullan"
+theme_override_font_sizes/font_size = 20
+
+[node name="ActiveQuestsSection" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/ActiveQuestsSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/ActiveQuestsSection/VBox"]
+layout_mode = 2
+text = "Aktif Görevler"
+theme_override_font_sizes/font_size = 28
+
+[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/ActiveQuestsSection/VBox"]
+layout_mode = 2
+
+[node name="QuestList" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/ActiveQuestsSection/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NotificationsSection" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/NotificationsSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/NotificationsSection/VBox"]
+layout_mode = 2
+text = "Bildirimler"
+theme_override_font_sizes/font_size = 28
+
+[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/NotificationsSection/VBox"]
+layout_mode = 2
+
+[node name="NotificationList" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/NotificationsSection/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10

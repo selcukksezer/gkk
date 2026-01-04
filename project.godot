@@ -1,0 +1,73 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
+[application]
+
+config/name="Gölge Krallık: Kadim Mühür'ün Çöküşü"
+config/description="Ortaçağ temalı mobil MMORPG"
+config/version="0.1.0"
+run/main_scene="res://scenes/main/Main.tscn"
+config/features=PackedStringArray("4.5", "Mobile")
+boot_splash/bg_color=Color(0.1, 0.1, 0.12, 1)
+boot_splash/show_image=false
+config/icon="res://icon.svg"
+
+[autoload]
+
+Network="*res://autoload/NetworkManager.gd"
+Session="*res://autoload/SessionManager.gd"
+State="*res://autoload/StateStore.gd"
+Queue="*res://autoload/RequestQueue.gd"
+Telemetry="*res://autoload/TelemetryClient.gd"
+Audio="*res://autoload/AudioManager.gd"
+Scenes="*res://autoload/SceneManager.gd"
+Config="*res://autoload/ConfigManager.gd"
+ShopManager="*res://core/managers/ShopManager.gd"
+
+[display]
+
+window/size/viewport_width=1105
+window/size/viewport_height=1321
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[editor]
+
+version_control/plugin_name="GitPlugin"
+version_control/autoload_on_startup=true
+
+[game_settings]
+
+server/base_url="https://znvsyzstmxhqvdkkmgdt.supabase.co"
+server/ws_url="wss://znvsyzstmxhqvdkkmgdt.supabase.co/realtime/v1?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpudnN5enN0bXhocXZka2ttZ2R0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzQzMjI4NSwiZXhwIjoyMDgzMDA4Mjg1fQ.4rB3VD5OAdOo5VjU8tVczTrgEyoYnPQ2IKuGFrrL3jY"
+server/api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpudnN5enN0bXhocXZka2ttZ2R0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzQzMjI4NSwiZXhwIjoyMDgzMDA4Mjg1fQ.4rB3VD5OAdOo5VjU8tVczTrgEyoYnPQ2IKuGFrrL3jY"
+server/timeout=15
+analytics/enabled=false
+debug/verbose_logging=true
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[network]
+
+limits/debugger/max_errors_per_second=50
+limits/debugger/max_warnings_per_second=50
+
+[rendering]
+
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_2d=1

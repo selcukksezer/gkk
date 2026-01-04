@@ -1,0 +1,127 @@
+[gd_scene load_steps=2 format=3 uid="uid://cvh0xmg8bj7xg"]
+
+[ext_resource type="Script" uid="uid://csjjkp33yqg27" path="res://scenes/ui/screens/QuestScreen.gd" id="1_quest"]
+
+[node name="QuestScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_quest")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 40
+text = "Görevler"
+
+[node name="ActiveQuestsLabel" type="Label" parent="MarginContainer/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Aktif: 0/5"
+
+[node name="QuestFilter" type="OptionButton" parent="MarginContainer/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="QuestList" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="QuestDetails" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="QuestDetails"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="QuestDetails/MarginContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="QuestDetails/MarginContainer/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Görev Adı"
+
+[node name="HSeparator" type="HSeparator" parent="QuestDetails/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="Description" type="Label" parent="QuestDetails/MarginContainer/VBox"]
+layout_mode = 2
+text = "Görev açıklaması"
+autowrap_mode = 3
+
+[node name="Objectives" type="Label" parent="QuestDetails/MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Hedefler:"
+autowrap_mode = 3
+
+[node name="CloseButton" type="Button" parent="QuestDetails/MarginContainer/VBox"]
+layout_mode = 2
+text = "Kapat"
+
+[connection signal="pressed" from="QuestDetails/MarginContainer/VBox/CloseButton" to="." method="_on_close_details_pressed"]

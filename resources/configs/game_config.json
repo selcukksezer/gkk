@@ -1,0 +1,205 @@
+{
+	"game": {
+		"version": "0.1.0",
+		"api_version": "v1",
+		"min_client_version": "0.1.0",
+		"server_url": "https://znvsyzstmxhqvdkkmgdt.supabase.co",
+		"ws_url": "wss://znvsyzstmxhqvdkkmgdt.supabase.co/realtime/v1?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpudnN5enN0bXhocXZka2ttZ2R0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzQzMjI4NSwiZXhwIjoyMDgzMDA4Mjg1fQ.4rB3VD5OAdOo5VjU8tVczTrgEyoYnPQ2IKuGFrrL3jY",
+		"environment": "development"
+	},
+	
+	"energy": {
+		"max_energy": 100,
+		"regen_rate": 1,
+		"regen_interval": 180,
+		"refill_cost_gems": 50,
+		"daily_refills_limit": 5
+	},
+	
+	"potion": {
+		"max_tolerance": 100,
+		"tolerance_decay_rate": 1,
+		"tolerance_decay_interval": 21600,
+		"overdose_threshold": 0.8,
+		"overdose_base_risk": 0.05,
+		"hospital_duration_hours": {
+			"min": 2,
+			"max": 12
+		}
+	},
+	
+	"pvp": {
+		"energy_cost": 15,
+		"revenge_time_window": 86400,
+		"revenge_energy_cost": 0,
+		"critical_chance": 0.1,
+		"hospital_duration_critical": 28800,
+		"gold_steal_percentage": 0.05,
+		"reputation_loss_per_attack": -3,
+		"reputation_gain_defend": 5,
+		"bandit_reputation_threshold": -50,
+		"hero_reputation_threshold": 50,
+		"max_attacks_per_day": 50
+	},
+	
+	"quest": {
+		"energy_costs": {
+			"easy": 5,
+			"medium": 10,
+			"hard": 15,
+			"dungeon": 20
+		},
+		"success_rates": {
+			"easy": 1.0,
+			"medium": 0.95,
+			"hard": 0.85,
+			"dungeon": 0.75
+		},
+		"critical_failure_rates": {
+			"easy": 0.0,
+			"medium": 0.01,
+			"hard": 0.05,
+			"dungeon": 0.1
+		},
+		"daily_quest_reset_hour": 0,
+		"max_active_quests": 10
+	},
+	
+	"dungeon": {
+		"energy_costs": {
+			"easy": 5,
+			"medium": 10,
+			"hard": 15,
+			"dungeon_solo": 25,
+			"dungeon_group": 35
+		},
+		"base_success_rates": {
+			"easy": 0.85,
+			"medium": 0.70,
+			"hard": 0.55,
+			"dungeon_solo": 0.45,
+			"dungeon_group": 0.60
+		},
+		"hospitalization_rates": {
+			"easy": 0.0,
+			"medium": 0.0,
+			"hard": 0.05,
+			"dungeon_solo": 0.15,
+			"dungeon_group": 0.10
+		},
+		"hospital_duration_minutes": {
+			"hard": [60, 120],
+			"dungeon_solo": [120, 360],
+			"dungeon_group": [180, 480]
+		},
+		"success_rate_weights": {
+			"gear": 0.20,
+			"skill": 0.15,
+			"level": 0.10,
+			"difficulty": 0.15,
+			"danger": 0.10
+		},
+		"min_success_rate": 0.10,
+		"max_success_rate": 0.95,
+		"critical_success_chance": 0.10,
+		"critical_success_multiplier": 1.5,
+		"failure_reward_percent": 0.30,
+		"max_parallel_dungeons": 1,
+		"dungeon_cooldown_seconds": 0,
+		"loot_drop_chance": 0.40,
+		"group_bonus_multiplier": 1.25
+	},
+	
+	"hospital": {
+		"base_duration_hours": 2,
+		"max_duration_hours": 12,
+		"gem_release_cost_per_minute": 3,
+		"healer_base_cost": 1000,
+		"healer_success_rate_min": 0.3,
+		"healer_success_rate_max": 0.7,
+		"guild_help_reduction_percent": 20,
+		"guild_help_cooldown": 3600
+	},
+	
+	"market": {
+		"order_fee_percent": 0.02,
+		"max_orders_per_player": 50,
+		"order_expiry_days": 7,
+		"price_change_alert_percent": 10,
+		"regions": ["central", "north", "south", "east", "west"],
+		"arbitrage_enabled": true
+	},
+	
+	"guild": {
+		"creation_cost": 10000,
+		"max_members": {
+			"level_1": 30,
+			"level_2": 40,
+			"level_3": 50,
+			"level_4": 75,
+			"level_5": 100
+		},
+		"default_tax_rate": 0.05,
+		"max_tax_rate": 0.2,
+		"war_duration_hours": 24,
+		"war_cooldown_hours": 72
+	},
+	
+	"enhancement": {
+		"success_rates": [1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.6, 0.6, 0.4, 0.2, 0.1],
+		"destruction_rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.05, 0.1, 0.15],
+		"stat_bonus_per_level": 0.1,
+		"scroll_cost_multiplier": [1, 1, 1, 1, 2, 2, 3, 3, 5, 8, 10]
+	},
+	
+	"monetization": {
+		"energy_refill_gem_cost": 50,
+		"hospital_release_gem_per_minute": 3,
+		"starter_pack_cost": 9.99,
+		"premium_currency_packs": [
+			{"gems": 100, "price": 0.99},
+			{"gems": 500, "price": 4.99, "bonus": 50},
+			{"gems": 1200, "price": 9.99, "bonus": 200},
+			{"gems": 2500, "price": 19.99, "bonus": 500},
+			{"gems": 6500, "price": 49.99, "bonus": 1500},
+			{"gems": 14000, "price": 99.99, "bonus": 4000}
+		]
+	},
+	
+	"season": {
+		"duration_days": 90,
+		"rewards_tiers": [
+			{"rank": 1, "gems": 5000, "title": "Season Champion"},
+			{"rank": 10, "gems": 2000, "title": "Elite Warrior"},
+			{"rank": 50, "gems": 1000, "title": "Master"},
+			{"rank": 100, "gems": 500, "title": "Expert"}
+		],
+		"reset_items": ["gold", "items", "level", "buildings"],
+		"persistent_items": ["gems", "cosmetics", "titles", "achievements"]
+	},
+	
+	"telemetry": {
+		"enabled": true,
+		"batch_size": 10,
+		"flush_interval": 60,
+		"track_performance": true,
+		"track_errors": true,
+		"track_gameplay": true
+	},
+	
+	"cache": {
+		"player_cache_ttl": 300,
+		"market_cache_ttl": 10,
+		"guild_cache_ttl": 60,
+		"quest_cache_ttl": 300,
+		"config_cache_ttl": 3600
+	},
+	
+	"rate_limits": {
+		"api_requests_per_minute": 60,
+		"quest_completions_per_hour": 20,
+		"market_orders_per_hour": 30,
+		"pvp_attacks_per_hour": 10,
+		"chat_messages_per_minute": 10
+	}
+}

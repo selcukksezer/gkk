@@ -1,0 +1,30 @@
+[default]
+
+base_color = Color(0.15, 0.15, 0.18, 1.0)
+accent_color = Color(0.4, 0.2, 0.8, 1.0)
+error_color = Color(0.8, 0.2, 0.2, 1.0)
+success_color = Color(0.2, 0.8, 0.3, 1.0)
+warning_color = Color(0.9, 0.7, 0.2, 1.0)
+
+text_primary = Color(0.95, 0.95, 0.95, 1.0)
+text_secondary = Color(0.7, 0.7, 0.7, 1.0)
+text_disabled = Color(0.4, 0.4, 0.4, 1.0)
+
+bg_dark = Color(0.1, 0.1, 0.12, 1.0)
+bg_medium = Color(0.15, 0.15, 0.18, 1.0)
+bg_light = Color(0.2, 0.2, 0.24, 1.0)
+
+border_color = Color(0.3, 0.3, 0.35, 1.0)
+shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+
+energy_color = Color(0.2, 0.8, 1.0, 1.0)
+health_color = Color(0.8, 0.2, 0.2, 1.0)
+gold_color = Color(1.0, 0.84, 0.0, 1.0)
+gem_color = Color(0.5, 0.3, 1.0, 1.0)
+
+rarity_common = Color(0.9, 0.9, 0.9, 1.0)
+rarity_uncommon = Color(0.2, 0.8, 0.2, 1.0)
+rarity_rare = Color(0.3, 0.5, 1.0, 1.0)
+rarity_epic = Color(0.6, 0.2, 0.8, 1.0)
+rarity_legendary = Color(1.0, 0.5, 0.0, 1.0)
+rarity_mythic = Color(1.0, 0.2, 0.2, 1.0)

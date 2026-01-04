@@ -1,0 +1,118 @@
+[gd_scene load_steps=2 format=3 uid="uid://cds1wmdj5p85x"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/WarehouseScreen.gd" id="1_warehouse"]
+
+[node name="WarehouseScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_warehouse")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.12, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "📦 Depo Yönetimi"
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(0.8, 0.7, 0.5, 1)
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBox/Header"]
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+text = "Geri"
+theme_override_font_sizes/font_size = 24
+
+[node name="BuildingTabs" type="TabContainer" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 22
+
+[node name="Tümü" type="ScrollContainer" parent="MarginContainer/VBox/BuildingTabs"]
+layout_mode = 2
+
+[node name="AllList" type="VBoxContainer" parent="MarginContainer/VBox/BuildingTabs/Tümü"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="Maden" type="ScrollContainer" parent="MarginContainer/VBox/BuildingTabs"]
+visible = false
+layout_mode = 2
+
+[node name="MineList" type="VBoxContainer" parent="MarginContainer/VBox/BuildingTabs/Maden"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Kereste" type="ScrollContainer" parent="MarginContainer/VBox/BuildingTabs"]
+visible = false
+layout_mode = 2
+
+[node name="LumberList" type="VBoxContainer" parent="MarginContainer/VBox/BuildingTabs/Kereste"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Simya" type="ScrollContainer" parent="MarginContainer/VBox/BuildingTabs"]
+visible = false
+layout_mode = 2
+
+[node name="AlchemyList" type="VBoxContainer" parent="MarginContainer/VBox/BuildingTabs/Simya"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Demirci" type="ScrollContainer" parent="MarginContainer/VBox/BuildingTabs"]
+visible = false
+layout_mode = 2
+
+[node name="BlacksmithList" type="VBoxContainer" parent="MarginContainer/VBox/BuildingTabs/Demirci"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Deri İşleme" type="ScrollContainer" parent="MarginContainer/VBox/BuildingTabs"]
+visible = false
+layout_mode = 2
+
+[node name="LeatherworkList" type="VBoxContainer" parent="MarginContainer/VBox/BuildingTabs/Deri İşleme"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10

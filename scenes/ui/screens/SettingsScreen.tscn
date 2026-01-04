@@ -1,0 +1,186 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7nan5qx3pwls"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/SettingsScreen.gd" id="1_settings"]
+
+[node name="SettingsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+text = "Ayarlar"
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 25
+
+[node name="AudioPanel" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox"]
+layout_mode = 2
+text = "Ses Ayarları"
+theme_override_font_sizes/font_size = 28
+
+[node name="MusicHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox/MusicHBox"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "Müzik Ses Seviyesi"
+theme_override_font_sizes/font_size = 22
+
+[node name="MusicSlider" type="HSlider" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox/MusicHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+value = 70.0
+
+[node name="SFXHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox/SFXHBox"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "Efekt Ses Seviyesi"
+theme_override_font_sizes/font_size = 22
+
+[node name="SFXSlider" type="HSlider" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AudioPanel/VBox/SFXHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+value = 80.0
+
+[node name="GameplayPanel" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox"]
+layout_mode = 2
+text = "Oynanış Ayarları"
+theme_override_font_sizes/font_size = 28
+
+[node name="NotificationsHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox/NotificationsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Bildirimler"
+theme_override_font_sizes/font_size = 22
+
+[node name="NotificationsToggle" type="CheckButton" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox/NotificationsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+
+[node name="AutoBattleHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox/AutoBattleHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Otomatik Savaş"
+theme_override_font_sizes/font_size = 22
+
+[node name="AutoBattleToggle" type="CheckButton" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox/AutoBattleHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LanguageHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox/LanguageHBox"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "Dil"
+theme_override_font_sizes/font_size = 22
+
+[node name="LanguageOption" type="OptionButton" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/GameplayPanel/VBox/LanguageHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 2
+selected = 0
+popup/item_0/text = "Türkçe"
+popup/item_0/id = 0
+popup/item_1/text = "English"
+popup/item_1/id = 1
+
+[node name="AccountPanel" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AccountPanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AccountPanel/VBox"]
+layout_mode = 2
+text = "Hesap"
+theme_override_font_sizes/font_size = 28
+
+[node name="LogoutButton" type="Button" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AccountPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+text = "Çıkış Yap"
+theme_override_font_sizes/font_size = 24
+
+[node name="DeleteAccountButton" type="Button" parent="MarginContainer/VBox/ScrollContainer/ContentVBox/AccountPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+text = "Hesabı Sil"
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)

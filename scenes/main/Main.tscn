@@ -1,0 +1,173 @@
+[gd_scene load_steps=5 format=3 uid="uid://b8k5napx7qwls"]
+
+[ext_resource type="Script" uid="uid://bhoh85fhbldce" path="res://scenes/main/Main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://con85o5qbhwvk" path="res://scenes/ui/components/TopBar.gd" id="2_topbar"]
+[ext_resource type="Script" uid="uid://bge8drw335grf" path="res://scenes/ui/components/BottomNav.gd" id="3_bottomnav"]
+[ext_resource type="Texture2D" uid="uid://bb0wjcq1h83tj" path="res://assets/sprites/ui/logo.png" id="4_logo"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+
+[node name="ScreenContainer" type="Control" parent="."]
+layout_mode = 3
+anchor_right = 1.0
+anchor_bottom = 0.93
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HUDContainer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TopBar" type="PanelContainer" parent="HUDContainer"]
+custom_minimum_size = Vector2(0, 120)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 120.0
+grow_horizontal = 2
+script = ExtResource("2_topbar")
+
+[node name="MarginContainer" type="MarginContainer" parent="HUDContainer/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="HBox" type="HBoxContainer" parent="HUDContainer/TopBar/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="PlayerInfo" type="VBoxContainer" parent="HUDContainer/TopBar/MarginContainer/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerName" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox/PlayerInfo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Oyuncu"
+
+[node name="LevelLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox/PlayerInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 18
+text = "Seviye 1"
+
+[node name="GoldLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 28
+text = "0 💰"
+vertical_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "0 💎"
+vertical_alignment = 1
+
+[node name="EnergyLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "100 ⚡"
+vertical_alignment = 1
+
+[node name="LogoutButton" type="Button" parent="HUDContainer/TopBar/MarginContainer/HBox"]
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Çıkış"
+
+[node name="BottomNav" type="PanelContainer" parent="HUDContainer"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -140.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("3_bottomnav")
+
+[node name="HBox" type="HBoxContainer" parent="HUDContainer/BottomNav"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="HomeButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "🏠
+Ana Sayfa"
+
+[node name="QuestButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "📋
+Görevler"
+
+[node name="MarketButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "🏪
+Pazar"
+
+[node name="PvPButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "⚔️
+Arena"
+
+[node name="MenuButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "☰
+Menü"
+
+[node name="LoadingOverlay" type="PanelContainer" parent="HUDContainer"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="HUDContainer/LoadingOverlay"]
+layout_mode = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="VBox" type="VBoxContainer" parent="HUDContainer/LoadingOverlay"]
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="HUDContainer/LoadingOverlay/VBox"]
+custom_minimum_size = Vector2(0, 340)
+layout_mode = 2
+
+[node name="Spinner" type="TextureRect" parent="HUDContainer/LoadingOverlay/VBox"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+texture = ExtResource("4_logo")
+stretch_mode = 2
+
+[node name="Label" type="Label" parent="HUDContainer/LoadingOverlay/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "Oturum doğrulanıyor..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="HUDContainer/LoadingOverlay"]
+
+[node name="DialogContainer" type="CanvasLayer" parent="."]
+layer = 100

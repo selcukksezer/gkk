@@ -1,0 +1,108 @@
+[gd_scene load_steps=2 format=3 uid="uid://d2guildwar123"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/GuildWarScreen.gd" id="1_gwar"]
+
+[node name="GuildWarScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gwar")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.12, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "⚔️ Lonca Savaşları"
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBox/Header"]
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+text = "Geri"
+theme_override_font_sizes/font_size = 24
+
+[node name="SeasonPanel" type="PanelContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/SeasonPanel"]
+layout_mode = 2
+
+[node name="SeasonLabel" type="Label" parent="MarginContainer/VBox/SeasonPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sezon 1 - Hafta 3"
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+horizontal_alignment = 1
+
+[node name="TimerLabel" type="Label" parent="MarginContainer/VBox/SeasonPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kalan Süre: 2g 5s 23d"
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="TabContainer" type="TabContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+
+[node name="Turnuva" type="ScrollContainer" parent="MarginContainer/VBox/TabContainer"]
+layout_mode = 2
+
+[node name="TournamentList" type="VBoxContainer" parent="MarginContainer/VBox/TabContainer/Turnuva"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="Bölgeler" type="ScrollContainer" parent="MarginContainer/VBox/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="TerritoryList" type="VBoxContainer" parent="MarginContainer/VBox/TabContainer/Bölgeler"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="Sıralama" type="ScrollContainer" parent="MarginContainer/VBox/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="RankingList" type="VBoxContainer" parent="MarginContainer/VBox/TabContainer/Sıralama"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10

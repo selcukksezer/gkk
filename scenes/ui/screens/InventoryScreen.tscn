@@ -1,0 +1,114 @@
+[gd_scene load_steps=2 format=3 uid="uid://d4k7qanx5qwls"]
+
+[ext_resource type="Script" path="res://scripts/screens/InventoryScreen.gd" id="1_inventory"]
+
+[node name="InventoryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_inventory")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 15
+
+[node name="TopBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="VBoxContainer/TopBar"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Envanter"
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+vertical_alignment = 1
+
+[node name="CapacityLabel" type="Label" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+text = "0 / 50"
+theme_override_font_sizes/font_size = 28
+vertical_alignment = 1
+
+[node name="SortButton" type="Button" parent="VBoxContainer/TopBar"]
+custom_minimum_size = Vector2(150, 60)
+layout_mode = 2
+text = "Sırala"
+theme_override_font_sizes/font_size = 20
+
+[node name="FilterBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AllButton" type="Button" parent="VBoxContainer/FilterBar"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+text = "Hepsi"
+theme_override_font_sizes/font_size = 20
+
+[node name="WeaponButton" type="Button" parent="VBoxContainer/FilterBar"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Silah"
+theme_override_font_sizes/font_size = 20
+
+[node name="ArmorButton" type="Button" parent="VBoxContainer/FilterBar"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Zırh"
+theme_override_font_sizes/font_size = 20
+
+[node name="PotionButton" type="Button" parent="VBoxContainer/FilterBar"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "İksir"
+theme_override_font_sizes/font_size = 20
+
+[node name="MaterialButton" type="Button" parent="VBoxContainer/FilterBar"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Materyal"
+theme_override_font_sizes/font_size = 20
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InventoryGrid" type="GridContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 15
+theme_override_constants/v_separation = 15
+columns = 4

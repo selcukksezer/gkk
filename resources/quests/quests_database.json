@@ -1,0 +1,295 @@
+[
+	{
+		"id": "tutorial_first_quest",
+		"name": "İlk Adım",
+		"description": "Kasabadan dışarı çık ve etrafı keşfet.",
+		"story_text": "Yolculuğun başlangıcında, önce çevreyi tanımalısın. Kasabanın dışına çık ve ne bekliyor görüver.",
+		"quest_type": "STORY",
+		"difficulty": "EASY",
+		"required_level": 1,
+		"energy_cost": 5,
+		"gold_reward": 50,
+		"exp_reward": 25,
+		"item_rewards": ["health_potion"],
+		"success_rate": 1.0,
+		"objectives": [
+			{
+				"type": "explore",
+				"target": "village_outskirts",
+				"current": 0,
+				"required": 1,
+				"description": "Kasaba dışını keşfet"
+			}
+		]
+	},
+	{
+		"id": "daily_monster_hunt",
+		"name": "Günlük Canavar Avı",
+		"description": "5 canavar öldür.",
+		"quest_type": "DAILY",
+		"difficulty": "MEDIUM",
+		"required_level": 3,
+		"energy_cost": 10,
+		"gold_reward": 200,
+		"exp_reward": 100,
+		"reputation_reward": 2,
+		"success_rate": 0.95,
+		"is_repeatable": true,
+		"cooldown": 86400,
+		"objectives": [
+			{
+				"type": "kill",
+				"target": "monster",
+				"current": 0,
+				"required": 5,
+				"description": "Canavar öldür"
+			}
+		]
+	},
+	{
+		"id": "dungeon_dark_forest",
+		"name": "Karanlık Orman Zindanı",
+		"description": "Karanlık Orman'ın derinliklerini keşfet ve bos'u yen.",
+		"story_text": "Karanlık Orman'da eski bir kötülük uyanmış. Kimse o ormana girmeye cesaret edemiyor. Sen tek umut olabilirsin.",
+		"quest_type": "DUNGEON",
+		"difficulty": "DUNGEON",
+		"required_level": 10,
+		"energy_cost": 30,
+		"gold_reward": 1000,
+		"exp_reward": 500,
+		"item_rewards": ["steel_sword", "iron_armor", "major_energy_potion"],
+		"reputation_reward": 10,
+		"success_rate": 0.75,
+		"critical_failure_rate": 0.1,
+		"critical_success_multiplier": 1.5,
+		"time_limit": 3600,
+		"objectives": [
+			{
+				"type": "boss_kill",
+				"target": "forest_guardian",
+				"current": 0,
+				"required": 1,
+				"description": "Orman Koruyucusu'nu yen"
+			}
+		]
+	},
+	{
+		"id": "weekly_guild_contribution",
+		"name": "Lonca Katkısı",
+		"description": "Lonca hazinesine 1000 altın bağışla.",
+		"quest_type": "GUILD",
+		"difficulty": "EASY",
+		"required_level": 5,
+		"energy_cost": 0,
+		"exp_reward": 200,
+		"reputation_reward": 5,
+		"success_rate": 1.0,
+		"is_repeatable": true,
+		"cooldown": 604800,
+		"objectives": [
+			{
+				"type": "donate_gold",
+				"target": "guild_treasury",
+				"current": 0,
+				"required": 1000,
+				"description": "Lonca hazinesine altın bağışla"
+			}
+		]
+	},
+	{
+		"id": "mining_expedition",
+		"name": "Maden Seferi",
+		"description": "Madende çalış ve cevher topla.",
+		"quest_type": "REPEATABLE",
+		"difficulty": "EASY",
+		"required_level": 2,
+		"energy_cost": 8,
+		"gold_reward": 100,
+		"exp_reward": 50,
+		"item_rewards": ["iron_ore", "iron_ore", "iron_ore"],
+		"success_rate": 1.0,
+		"is_repeatable": true,
+		"objectives": [
+			{
+				"type": "gather",
+				"target": "ore",
+				"current": 0,
+				"required": 10,
+				"description": "Cevher topla"
+			}
+		]
+	},
+	{
+		"id": "market_trading",
+		"name": "Market Alışverişi",
+		"description": "Marketten bir eşya al veya sat.",
+		"quest_type": "SIDE",
+		"difficulty": "EASY",
+		"required_level": 3,
+		"energy_cost": 0,
+		"gold_reward": 150,
+		"exp_reward": 75,
+		"success_rate": 1.0,
+		"objectives": [
+			{
+				"type": "market_trade",
+				"target": "any",
+				"current": 0,
+				"required": 1,
+				"description": "Market işlemi yap"
+			}
+		]
+	},
+	{
+		"id": "pvp_challenge",
+		"name": "Gladyatör Meydan Okuması",
+		"description": "3 PvP savaşı kazan.",
+		"quest_type": "WEEKLY",
+		"difficulty": "HARD",
+		"required_level": 8,
+		"energy_cost": 0,
+		"gold_reward": 800,
+		"exp_reward": 400,
+		"reputation_reward": 10,
+		"success_rate": 0.85,
+		"is_repeatable": true,
+		"cooldown": 604800,
+		"objectives": [
+			{
+				"type": "pvp_win",
+				"target": "any",
+				"current": 0,
+				"required": 3,
+				"description": "PvP savaşları kazan"
+			}
+		]
+	},
+	{
+		"id": "dungeon_dark_forest",
+		"name": "Karanlık Orman Zindanı",
+		"description": "Karanlık Orman'ın derinliklerini keşfet ve bos'u yen.",
+		"story_text": "Karanlık Orman'da eski bir kötülük uyanmış. Kimse o ormana girmeye cesaret edemiyor. Sen tek umut olabilirsin.",
+		"quest_type": "DUNGEON",
+		"difficulty": "DUNGEON",
+		"required_level": 10,
+		"energy_cost": 25,
+		"gold_reward": 1000,
+		"exp_reward": 500,
+		"item_rewards": ["steel_sword", "iron_armor", "major_energy_potion"],
+		"reputation_reward": 10,
+		"success_rate": 0.45,
+		"critical_failure_rate": 0.15,
+		"critical_success_multiplier": 1.5,
+		"danger_level": 50,
+		"min_reward_gold": 500,
+		"max_reward_gold": 2000,
+		"estimated_duration_seconds": 1800,
+		"is_group": false,
+		"max_group_size": 1,
+		"objectives": [
+			{
+				"type": "boss_kill",
+				"target": "forest_guardian",
+				"current": 0,
+				"required": 1,
+				"description": "Orman Koruyucusu'nu yen"
+			}
+		]
+	},
+	{
+		"id": "dungeon_cursed_tomb",
+		"name": "Lanetli Mezar",
+		"description": "Lanetli Mezar'ın sırlarını keşfet.",
+		"story_text": "Antik bir mezar gözü açıyor. İçeri inen her şey çıkmamış. Belki de sen döne bilirsin.",
+		"quest_type": "DUNGEON",
+		"difficulty": "DUNGEON",
+		"required_level": 15,
+		"energy_cost": 30,
+		"gold_reward": 2000,
+		"exp_reward": 1000,
+		"item_rewards": ["cursed_ring", "ancient_scroll", "elixir_of_wisdom"],
+		"reputation_reward": 15,
+		"success_rate": 0.40,
+		"critical_failure_rate": 0.20,
+		"critical_success_multiplier": 2.0,
+		"danger_level": 70,
+		"min_reward_gold": 1000,
+		"max_reward_gold": 5000,
+		"estimated_duration_seconds": 2400,
+		"is_group": false,
+		"max_group_size": 1,
+		"objectives": [
+			{
+				"type": "boss_kill",
+				"target": "tomb_spirit",
+				"current": 0,
+				"required": 1,
+				"description": "Mezar Ruhu'nu yen"
+			}
+		]
+	},
+	{
+		"id": "dungeon_dragon_lair",
+		"name": "Ejderha Yuvası",
+		"description": "Ejderha Yuvası'na gir ve hazinesini al.",
+		"story_text": "Dağın tepesinde Ejderha'nın yuvası var. Çok kaynağı var ama çok tehlikeli.",
+		"quest_type": "DUNGEON",
+		"difficulty": "DUNGEON",
+		"required_level": 25,
+		"energy_cost": 40,
+		"gold_reward": 5000,
+		"exp_reward": 2500,
+		"item_rewards": ["dragon_scale", "legendary_sword", "dragon_heart"],
+		"reputation_reward": 25,
+		"success_rate": 0.35,
+		"critical_failure_rate": 0.25,
+		"critical_success_multiplier": 3.0,
+		"danger_level": 90,
+		"min_reward_gold": 3000,
+		"max_reward_gold": 10000,
+		"estimated_duration_seconds": 3000,
+		"is_group": false,
+		"max_group_size": 1,
+		"objectives": [
+			{
+				"type": "boss_kill",
+				"target": "ancient_dragon",
+				"current": 0,
+				"required": 1,
+				"description": "Kadim Ejderha'yı yen"
+			}
+		]
+	},
+	{
+		"id": "dungeon_group_crystal_cavern",
+		"name": "Kristal Mağarası (Grup)",
+		"description": "Kristal Mağarası'nda grup halinde hazire avla.",
+		"story_text": "Kristal Mağarası'nda güç kristalleri bulunur. Tek başına tehlikeli ama grupla yapılabilir.",
+		"quest_type": "DUNGEON",
+		"difficulty": "DUNGEON",
+		"required_level": 12,
+		"energy_cost": 35,
+		"gold_reward": 3000,
+		"exp_reward": 1500,
+		"item_rewards": ["power_crystal", "rare_gem", "group_potion"],
+		"reputation_reward": 20,
+		"success_rate": 0.60,
+		"critical_failure_rate": 0.10,
+		"critical_success_multiplier": 1.8,
+		"danger_level": 55,
+		"min_reward_gold": 1500,
+		"max_reward_gold": 6000,
+		"estimated_duration_seconds": 2400,
+		"is_group": true,
+		"max_group_size": 4,
+		"objectives": [
+			{
+				"type": "collect",
+				"target": "crystal",
+				"current": 0,
+				"required": 5,
+				"description": "Güç kristalleri topla"
+			}
+		]
+	}
+]

@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://c3j8m6nyaqwls"]
 
-[ext_resource type="Script" uid="uid://b4vd6oix5pigs" path="res://scripts/screens/LoginScreen.gd" id="1_login"]
+[ext_resource type="Script" uid="uid://b4vd6oix5pigs" path="res://scenes/ui/screens/LoginScreen.gd" id="1_login"]
 [ext_resource type="Texture2D" uid="uid://bb0wjcq1h83tj" path="res://assets/sprites/ui/logo.png" id="2_logo"]
 
 [node name="LoginScreen" type="Control"]

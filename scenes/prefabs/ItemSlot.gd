@@ -1,18 +1,18 @@
 extends PanelContainer
 ## Item Slot for Inventory Grid
 
-signal clicked(item)
+signal slot_clicked(item)
 
 @onready var icon = $MarginContainer/VBox/Icon
 @onready var quantity_label = $MarginContainer/VBox/QuantityLabel
 @onready var enhancement_label = $MarginContainer/VBox/EnhancementLabel
 
-var _item: InventoryItemData
+var _item: ItemData
 
 func _ready() -> void:
 	gui_input.connect(_on_gui_input)
 
-func set_item(item: InventoryItemData) -> void:
+func set_item(item: ItemData) -> void:
 	_item = item
 	
 	# TODO: Load icon texture from item_id
@@ -32,7 +32,16 @@ func set_item(item: InventoryItemData) -> void:
 	else:
 		enhancement_label.visible = false
 
+func set_equipment_slot(slot_name: String) -> void:
+	# Equipment slot - no item initially
+	_item = null
+	
+	# TODO: Set slot-specific styling or background
+	# For now, just hide quantity and enhancement
+	quantity_label.visible = false
+	enhancement_label.visible = false
+
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			clicked.emit(_item)
+			slot_clicked.emit(_item)

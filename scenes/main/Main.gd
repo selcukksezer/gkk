@@ -29,6 +29,7 @@ const SCREENS = {
 	"home": "res://scenes/ui/screens/HomeScreen.tscn",
 	"inventory": "res://scenes/ui/screens/InventoryScreen.tscn",
 	"market": "res://scenes/ui/screens/MarketScreen.tscn",
+	"season": "res://scenes/ui/screens/SeasonScreen.tscn",
 	"quest": "res://scenes/ui/screens/QuestScreen.tscn",
 	"pvp": "res://scenes/ui/screens/PvPScreen.tscn",
 	"guild": "res://scenes/ui/screens/GuildScreen.tscn",
@@ -223,16 +224,16 @@ func _deferred_instantiate_screen_by_path(scene_path: String, screen_name: Strin
 				print("[Main] Scene preview (first 512 bytes):\n%s" % str(preview))
 			else:
 				print("[Main] Watchdog: failed to open scene file for preview")
-			# Fallback: show a simple error placeholder so the UI isn't blank
-			var placeholder = PanelContainer.new()
-			placeholder.name = "ScreenLoadError"
-			placeholder.custom_minimum_size = Vector2(400, 300)
-			var lbl = Label.new()
-			lbl.text = "Ekran yüklenemedi: %s" % screen_name
-			lbl.add_theme_font_size_override("font_size", 20)
-			placeholder.add_child(lbl)
-			screen_container.add_child(placeholder)
-			current_screen = placeholder
+			# Fallback: do nothing to avoid showing error placeholder
+			# var placeholder = PanelContainer.new()
+			# placeholder.name = "ScreenLoadError"
+			# placeholder.custom_minimum_size = Vector2(400, 300)
+			# var lbl = Label.new()
+			# lbl.text = "Ekran yüklenemedi: %s" % screen_name
+			# lbl.add_theme_font_size_override("font_size", 20)
+			# placeholder.add_child(lbl)
+			# screen_container.add_child(placeholder)
+			# current_screen = placeholder
 		else:
 			print("[Main] Watchdog: instantiation successful for %s" % screen_name)
 	)
@@ -299,14 +300,28 @@ func show_dialog(dialog_scene: PackedScene, data: Dictionary = {}) -> void:
 		dialog.setup(data)
 
 func _update_hud_visibility(screen_name: String) -> void:
-	# Hide HUD on login screen
+	# Hide HUD on login screen and expand ScreenContainer to full viewport for login
 	var show_hud = screen_name != "login"
-	
+
 	if top_bar:
 		top_bar.visible = show_hud
-	
+
 	if bottom_nav:
 		bottom_nav.visible = show_hud
+
+	# When showing login, make the ScreenContainer full screen so login uses entire viewport
+	if screen_container:
+		if not show_hud:
+			# Full screen anchors
+			screen_container.anchors_preset = 15
+			screen_container.anchor_left = 0.0
+			screen_container.anchor_top = 0.0
+			screen_container.anchor_right = 1.0
+			screen_container.anchor_bottom = 1.0
+		else:
+			# Restore default anchored area (keep space for TopBar and BottomNav)
+			screen_container.anchor_top = 0.065
+			screen_container.anchor_bottom = 0.925
 
 func _start_energy_regen() -> void:
 	var timer = Timer.new()

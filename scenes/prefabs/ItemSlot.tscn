@@ -1,34 +1,65 @@
 [gd_scene load_steps=2 format=3 uid="uid://cu7qcokcjbs3u"]
 
-[ext_resource type="Script" uid="uid://brnsok3va17xb" path="res://scenes/prefabs/ItemSlot.gd" id="1"]
+[ext_resource type="Script" path="res://scenes/ui/components/ItemSlot.gd" id="1_itemslot"]
 
 [node name="ItemSlot" type="PanelContainer"]
-custom_minimum_size = Vector2(80, 80)
-script = ExtResource("1")
+custom_minimum_size = Vector2(120, 140)
+script = ExtResource("1_itemslot")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 5
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="Icon" type="TextureRect" parent="MarginContainer/VBox"]
+[node name="Icon" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
 custom_minimum_size = Vector2(64, 64)
-layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="QuantityLabel" type="Label" parent="MarginContainer/VBox"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
-text = "99"
-horizontal_alignment = 2
+size_flags_horizontal = 3
 
-[node name="EnhancementLabel" type="Label" parent="MarginContainer/VBox"]
+[node name="NameLabel" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
-text = "+5"
+text = "Item Name"
 horizontal_alignment = 1
+autowrap_mode = 2
+max_lines_visible = 2
+
+[node name="QuantityLabel" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "x1"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+
+[node name="EnhancementLabel" type="Label" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "+0"
+horizontal_alignment = 2
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 14
+
+[node name="EquippedIndicator" type="TextureRect" parent="."]
+layout_mode = 2
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 0.0
+offset_bottom = 25.0
+expand_mode = 1
+stretch_mode = 5
+texture = preload("res://assets/sprites/ui/equipped_icon.png")
+
+[node name="RarityBorder" type="ColorRect" parent="."]
+layout_mode = 2
+color = Color(1, 1, 1, 0.5)
+show_behind_parent = true

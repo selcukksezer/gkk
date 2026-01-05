@@ -7,6 +7,10 @@ signal production_completed(building_id: String, item_id: String, quantity: int)
 signal building_upgraded(building_id: String, new_level: int)
 signal queue_updated(queue: Array)
 
+# Import required classes
+const InventoryManager = preload("res://autoload/InventoryManager.gd")
+const ItemDatabase = preload("res://core/data/ItemDatabase.gd")
+
 const MAX_QUEUE_SIZE = 10
 
 # Building definitions
@@ -133,40 +137,66 @@ func calculate_upgrade_cost(building_id: String) -> int:
 	return int(base_cost * pow(multiplier, current_level))
 
 func start_production(building_id: String, recipe_id: String) -> Dictionary:
-	"""Start a production job"""
-	# Validate queue size
-	if production_queue.size() >= MAX_QUEUE_SIZE:
-		return {"success": false, "error": "Production queue is full"}
-	
-	# Validate building level
+	"""Start production using ItemData recipe system"""
 	var building_level = get_building_level(building_id)
+
 	if building_level <= 0:
-		return {"success": false, "error": "Building not unlocked"}
-	
-	# Find recipe
-	var recipe = _find_recipe(building_id, recipe_id)
-	if recipe.is_empty():
-		return {"success": false, "error": "Recipe not found"}
-	
-	# Check level requirement
-	if recipe.get("min_level", 1) > building_level:
+		return {"success": false, "error": "Building not owned"}
+
+	# Get recipe from ItemDatabase
+	var recipe_data = ItemDatabase.get_item(recipe_id)
+	if recipe_data.is_empty() or recipe_data.item_type != "RECIPE":
+		return {"success": false, "error": "Invalid recipe"}
+
+	# Check building type match
+	if recipe_data.recipe_building_type != building_id:
+		return {"success": false, "error": "Recipe not compatible with this building"}
+
+	# Check building level requirement
+	if building_level < recipe_data.recipe_required_level:
 		return {"success": false, "error": "Building level too low"}
-	
-	# Send to backend
-	var response = await Network.http_post("/production/start", {
+
+	# Check materials
+	var inventory_manager = InventoryManager.new()
+	var player_inventory = State.get_all_items_data()
+
+	var inventory_dict = {}
+	for item in player_inventory:
+		inventory_dict[item.item_id] = item.quantity
+
+	if not recipe_data.can_craft_with_inventory(inventory_dict):
+		return {"success": false, "error": "Not enough materials"}
+
+	# Check queue size
+	if production_queue.size() >= MAX_QUEUE_SIZE:
+		return {"success": false, "error": "Production queue full"}
+
+	# Consume materials
+	for material_id in recipe_data.recipe_requirements:
+		var quantity = recipe_data.recipe_requirements[material_id]
+		await inventory_manager.remove_item(material_id, quantity)
+
+	# Add to queue
+	var production_item = {
+		"id": Time.get_unix_time_from_system(),
+		"recipe_id": recipe_id,
 		"building_id": building_id,
-		"recipe_id": recipe_id
-	})
-	
-	if response.success:
-		production_queue.append(response.data.get("production_item", {}))
-		production_started.emit(building_id, recipe_id)
-		queue_updated.emit(production_queue)
-		
-		# Start local timer for UI updates
-		_start_production_timer(response.data.get("production_item", {}))
-	
-	return response
+		"start_time": Time.get_unix_time_from_system(),
+		"duration": recipe_data.recipe_production_time,
+		"result_item_id": recipe_data.recipe_result_item_id
+	}
+
+	production_queue.append(production_item)
+	queue_updated.emit(production_queue)
+
+	production_started.emit(building_id, recipe_id)
+
+	# Save to backend
+	var response = await Network.http_post("/production/start", production_item)
+	if not response.success:
+		print("[ProductionManager] Failed to save production: ", response.error)
+
+	return {"success": true, "production": production_item}
 
 func collect_production(production_id: String) -> Dictionary:
 	"""Collect completed production"""

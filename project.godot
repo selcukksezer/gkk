@@ -33,6 +33,7 @@ Telemetry="*res://autoload/TelemetryClient.gd"
 Audio="*res://autoload/AudioManager.gd"
 Scenes="*res://autoload/SceneManager.gd"
 Config="*res://autoload/ConfigManager.gd"
+Inventory="*res://autoload/InventoryManager.gd"
 ShopManager="*res://core/managers/ShopManager.gd"
 
 [display]

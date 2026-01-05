@@ -28,7 +28,7 @@ func load_player_data(data: Dictionary) -> void:
 	current_energy = data.get("energy", 100)
 	max_energy = data.get("max_energy", 100)
 	tolerance = data.get("addiction_level", 0)
-	gold = data.get("gold", 0)
+	gold = data.get("gold", 1000)  # Test için başlangıç gold'u
 	gems = data.get("gems", 0)
 	level = data.get("level", 1)
 	xp = data.get("xp", 0)
@@ -38,9 +38,10 @@ func load_player_data(data: Dictionary) -> void:
 	
 	# Hospital durumu
 	if data.has("hospital_until") and data.hospital_until:
-		in_hospital = true
 		var hospital_time = Time.get_datetime_dict_from_datetime_string(data.hospital_until, false)
 		hospital_release_time = Time.get_unix_time_from_datetime_dict(hospital_time)
+		var current_time = Time.get_unix_time_from_system()
+		in_hospital = current_time < hospital_release_time
 	else:
 		in_hospital = false
 		hospital_release_time = 0
@@ -218,6 +219,22 @@ func add_item(item: Dictionary) -> void:
 	inventory_updated.emit()
 	state_changed.emit("inventory", inventory)
 
+func add_item_data(item: ItemData) -> void:
+	inventory.append(item.to_dict())
+	inventory_updated.emit()
+	state_changed.emit("inventory", inventory)
+
+func add_item_by_id(item_id: String) -> void:
+	var item_dict = ItemDatabase.get_item(item_id)
+	if item_dict.is_empty():
+		print("[StateStore] Item not found in database: %s" % item_id)
+		return
+	
+	inventory.append(item_dict)
+	inventory_updated.emit()
+	state_changed.emit("inventory", inventory)
+	print("[StateStore] Item added to inventory: %s" % item_id)
+
 func remove_item(item_id: String) -> void:
 	for i in range(inventory.size()):
 		if inventory[i].get("id", "") == item_id:
@@ -231,6 +248,18 @@ func get_item_by_id(item_id: String) -> Dictionary:
 		if item.get("id", "") == item_id:
 			return item
 	return {}
+
+func get_item_data_by_id(item_id: String) -> ItemData:
+	var item_dict = get_item_by_id(item_id)
+	if item_dict.is_empty():
+		return null
+	return ItemData.from_dict(item_dict)
+
+func get_all_items_data() -> Array[ItemData]:
+	var items_data: Array[ItemData] = []
+	for item_dict in inventory:
+		items_data.append(ItemData.from_dict(item_dict))
+	return items_data
 
 ## Market Methods
 func cache_market_ticker(region_id: int, data: Dictionary) -> void:
@@ -297,6 +326,14 @@ func get_hospital_remaining_seconds() -> int:
 	var current_time = Time.get_unix_time_from_system()
 	var remaining = hospital_release_time - current_time
 	return max(0, int(remaining))
+
+## Check and update hospital status if time has expired
+func check_hospital_status() -> void:
+	if in_hospital and get_hospital_remaining_seconds() <= 0:
+		in_hospital = false
+		hospital_release_time = 0
+		state_changed.emit("hospital", {"in_hospital": false, "release_time": 0})
+		print("[StateStore] Hospital time expired, player released")
 
 ## Settings
 func set_setting(key: String, value: Variant) -> void:

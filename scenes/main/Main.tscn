@@ -10,8 +10,9 @@ script = ExtResource("1_main")
 
 [node name="ScreenContainer" type="Control" parent="."]
 layout_mode = 3
+anchor_top = 0.065
 anchor_right = 1.0
-anchor_bottom = 0.93
+anchor_bottom = 0.925
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -20,23 +21,23 @@ mouse_filter = 2
 layer = 10
 
 [node name="TopBar" type="PanelContainer" parent="HUDContainer"]
-custom_minimum_size = Vector2(0, 120)
+custom_minimum_size = Vector2(0, 90)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 120.0
+offset_bottom = 90.0
 grow_horizontal = 2
 script = ExtResource("2_topbar")
 
 [node name="MarginContainer" type="MarginContainer" parent="HUDContainer/TopBar"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 15
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 15
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
 [node name="HBox" type="HBoxContainer" parent="HUDContainer/TopBar/MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 12
 
 [node name="PlayerInfo" type="VBoxContainer" parent="HUDContainer/TopBar/MarginContainer/HBox"]
 layout_mode = 2
@@ -44,26 +45,26 @@ size_flags_horizontal = 3
 
 [node name="PlayerName" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox/PlayerInfo"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 text = "Oyuncu"
 
 [node name="LevelLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox/PlayerInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 14
 text = "Seviye 1"
 
 [node name="GoldLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.84, 0, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 22
 text = "0 💰"
 vertical_alignment = 1
 
 [node name="GemsLabel" type="Label" parent="HUDContainer/TopBar/MarginContainer/HBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.6, 1, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 16
 text = "0 💎"
 vertical_alignment = 1
 
@@ -85,52 +86,53 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -140.0
+offset_top = -100.0
 grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("3_bottomnav")
 
 [node name="HBox" type="HBoxContainer" parent="HUDContainer/BottomNav"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 2
+alignment = 2
 
 [node name="HomeButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
-custom_minimum_size = Vector2(0, 130)
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 14
 text = "🏠
 Ana Sayfa"
 
-[node name="QuestButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
-custom_minimum_size = Vector2(0, 130)
+[node name="HospitalButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-text = "📋
-Görevler"
+theme_override_font_sizes/font_size = 14
+text = "🏥
+Hastane"
 
-[node name="MarketButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
-custom_minimum_size = Vector2(0, 130)
+[node name="DungeonButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-text = "🏪
-Pazar"
-
-[node name="PvPButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
-custom_minimum_size = Vector2(0, 130)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 14
 text = "⚔️
-Arena"
+Zindanlar"
+
+[node name="ShopButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
+custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "🛒
+Dükkan"
 
 [node name="MenuButton" type="Button" parent="HUDContainer/BottomNav/HBox"]
-custom_minimum_size = Vector2(0, 130)
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 14
 text = "☰
 Menü"
 

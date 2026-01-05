@@ -8,6 +8,9 @@ signal order_placed(order: Dictionary)
 signal order_filled(order: Dictionary)
 signal order_cancelled(order_id: String)
 
+# Import required classes
+const InventoryManager = preload("res://autoload/InventoryManager.gd")
+
 const MARKET_ENDPOINT = "/api/v1/market"
 
 ## Get market ticker for region
@@ -75,27 +78,31 @@ func place_buy_order(item_id: String, quantity: int, price_per_unit: int, region
 func place_sell_order(item_id: String, quantity: int, price_per_unit: int, region_id: int) -> Dictionary:
 	# Check if player has item
 	var inventory_manager = InventoryManager.new()
-	var item = State.get_item_by_id(item_id)
-	
-	if item.is_empty() or item.get("quantity", 0) < quantity:
+	var item_data = State.get_item_data_by_id(item_id)
+
+	if not item_data or item_data.quantity < quantity:
 		return {"success": false, "error": "Not enough items"}
-	
+
+	# Validate item can be traded
+	if not item_data.is_tradeable:
+		return {"success": false, "error": "Item cannot be traded"}
+
 	var result = await Network.http_post(MARKET_ENDPOINT + "/sell", {
 		"item_id": item_id,
 		"quantity": quantity,
 		"price_per_unit": price_per_unit,
 		"region_id": region_id
 	})
-	
+
 	if result.success:
 		var order = result.data.order
 		order_placed.emit(order)
-		
+
 		# Remove item from inventory (it's now in escrow)
 		await inventory_manager.remove_item(item_id, quantity)
-		
+
 		Audio.play_coin()
-		
+
 		Telemetry.track_market("sell_order", item_id, {
 			"quantity": quantity,
 			"price": price_per_unit

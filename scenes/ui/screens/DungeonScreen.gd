@@ -142,8 +142,12 @@ func _process_dungeon_data(dungeon_data: Array) -> void:
 	
 	print("[DungeonScreen] Player level: %d, energy: %d" % [player_level, player_energy])
 	
-	# Hastanelik uyarısı
-	if State and State.in_hospital:
+	# Hastane durumunu kontrol et ve güncelle
+	if State and State.has_method("check_hospital_status"):
+		State.check_hospital_status()
+	
+	# Hastanelik uyarısı - süresi bitmiş mi kontrol et
+	if State and State.in_hospital and State.get_hospital_remaining_seconds() > 0:
 		var hospital_warn = Label.new()
 		hospital_warn.text = "⚠️ Hastanelisiniz! Zindana giremezsiniz. Hastane sekmesine gidin."
 		hospital_warn.add_theme_color_override("font_color", Color.RED)
@@ -322,8 +326,12 @@ func _on_enter_dungeon(dungeon: DungeonData.DungeonDefinition) -> void:
 		print("[DungeonScreen] Network/State not ready")
 		return
 	
-	# Hastanelik kontrolü - hastaysa zindana giremesin
-	if State.in_hospital:
+	# Hastane durumunu kontrol et ve güncelle
+	if State and State.has_method("check_hospital_status"):
+		State.check_hospital_status()
+	
+	# Hastanelik kontrolü - süresi bitmiş mi kontrol et
+	if State.in_hospital and State.get_hospital_remaining_seconds() > 0:
 		print("[DungeonScreen] Player is hospitalized, cannot enter dungeon!")
 		var main = get_tree().root.get_node("Main")
 		if main:

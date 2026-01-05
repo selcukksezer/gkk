@@ -6,6 +6,10 @@ signal enhancement_started(item_id: String, current_level: int)
 signal enhancement_success(item_id: String, new_level: int)
 signal enhancement_failed(item_id: String, level: int, item_destroyed: bool)
 
+# Import required classes
+const InventoryManager = preload("res://autoload/InventoryManager.gd")
+const ItemDatabase = preload("res://core/data/ItemDatabase.gd")
+
 # Enhancement success rates by level
 const BASE_SUCCESS_RATES = {
 	0: 100,
@@ -95,11 +99,23 @@ func calculate_success_rate(current_level: int, rune_type: String = "none") -> f
 	"""Calculate success rate for enhancement"""
 	if current_level >= 10:
 		return 0.0
-	
+
 	var base_rate = BASE_SUCCESS_RATES.get(current_level, 0)
 	var rune_bonus = RUNES.get(rune_type, {}).get("success_bonus", 0)
-	
+
 	return clamp(base_rate + rune_bonus, 0, 100)
+
+func calculate_success_rate_with_rune(item: ItemData, rune: ItemData = null) -> float:
+	"""Calculate success rate using ItemData rune system"""
+	if item.enhancement_level >= item.max_enhancement:
+		return 0.0
+
+	var base_rate = item.get_enhancement_success_rate() * 100
+
+	if rune and rune.is_rune() and rune.can_apply_to_item(item):
+		base_rate += rune.rune_success_bonus
+
+	return clamp(base_rate, 0, 100)
 
 func calculate_enhancement_cost(current_level: int, rune_type: String = "none") -> Dictionary:
 	"""Calculate total cost for enhancement attempt"""
@@ -112,83 +128,104 @@ func calculate_enhancement_cost(current_level: int, rune_type: String = "none") 
 		"total": base_cost + rune_cost
 	}
 
-func can_enhance(item: Dictionary, rune_type: String = "none") -> Dictionary:
-	"""Check if item can be enhanced"""
-	var current_level = item.get("enhancement_level", 0)
-	
+func can_enhance(item: ItemData, rune: ItemData = null) -> Dictionary:
+	"""Check if item can be enhanced using ItemData"""
+	# Check if item can be enhanced
+	if not item.can_enhance:
+		return {"can_enhance": false, "reason": "Item cannot be enhanced"}
+
 	# Check max level
-	if current_level >= 10:
+	if item.enhancement_level >= item.max_enhancement:
 		return {"can_enhance": false, "reason": "Max enhancement level reached"}
-	
+
 	# Check cost
-	var cost = calculate_enhancement_cost(current_level, rune_type)
-	if State.get_gold() < cost.total:
+	var cost = calculate_enhancement_cost(item.enhancement_level, "none")  # Legacy cost calculation
+	if State.gold < cost.total:
 		return {"can_enhance": false, "reason": "Not enough gold"}
-	
+
 	# Check rune availability
-	if rune_type != "none":
-		var rune_count = State.get_inventory_item_count(rune_type + "_rune")
-		if rune_count <= 0:
+	if rune:
+		if not rune.is_rune():
+			return {"can_enhance": false, "reason": "Invalid rune"}
+		if not rune.can_apply_to_item(item):
+			return {"can_enhance": false, "reason": "Rune cannot be applied to this item"}
+		if State.get_inventory_item_count(rune.item_id) <= 0:
 			return {"can_enhance": false, "reason": "Rune not available"}
-	
+
 	return {"can_enhance": true}
 
-func enhance_item(item_id: String, rune_type: String = "none") -> Dictionary:
-	"""Attempt to enhance an item"""
-	enhancement_started.emit(item_id, 0)
-	
-	# Send request to backend
-	var response = await Network.http_post("/enhancement/enhance", {
-		"item_id": item_id,
-		"rune_type": rune_type
-	})
-	
-	if response.success:
-		var result = response.data
-		var success = result.get("success", false)
-		var new_level = result.get("new_level", 0)
-		var destroyed = result.get("destroyed", false)
-		var gold_spent = result.get("gold_spent", 0)
-		
-		# Update gold
-		State.add_gold(-gold_spent)
-		
-		if success:
-			# Success - update item in inventory
-			State.update_item_enhancement(item_id, new_level)
-			enhancement_success.emit(item_id, new_level)
-			
-			return {
-				"success": true,
-				"enhanced": true,
-				"new_level": new_level,
-				"destroyed": false
-			}
+func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
+	"""Attempt to enhance an item using ItemData"""
+	enhancement_started.emit(item.item_id, item.enhancement_level)
+
+	# Calculate success rate
+	var success_rate = calculate_success_rate_with_rune(item, rune) / 100.0
+	var roll = randf()
+
+	print("[Enhancement] Attempting enhancement: level %d -> %d, success_rate: %.2f%%, roll: %.2f" % [
+		item.enhancement_level, item.enhancement_level + 1, success_rate * 100, roll
+	])
+
+	if roll < success_rate:
+		# Success
+		item.enhancement_level += 1
+
+		# Consume rune if used
+		if rune:
+			var inventory_manager = InventoryManager.new()
+			await inventory_manager.remove_item(rune.item_id, 1)
+
+		# Update item in state
+		State.update_inventory_item(item.item_id, item.to_dict())
+
+		enhancement_success.emit(item.item_id, item.enhancement_level)
+
+		Telemetry.track_enhancement("success", item.item_id, {
+			"from_level": item.enhancement_level - 1,
+			"to_level": item.enhancement_level,
+			"rune_used": rune.item_id if rune else "none"
+		})
+
+		return {"success": true, "new_level": item.enhancement_level}
+	else:
+		# Failure - calculate penalties
+		var destruction_rate = item.get_enhancement_destruction_rate()
+		var destruction_roll = randf()
+
+		var item_destroyed = destruction_roll < destruction_rate
+		var level_loss = 0
+
+		if not item_destroyed:
+			# Apply level loss based on current level
+			var penalties = FAILURE_PENALTIES.get(item.enhancement_level, {"level_loss": 1, "can_destroy": false})
+			level_loss = penalties.level_loss
+			item.enhancement_level = max(0, item.enhancement_level - level_loss)
+
+		print("[Enhancement] Failed: destroyed=%s, level_loss=%d" % [item_destroyed, level_loss])
+
+		# Consume rune if used (even on failure)
+		if rune:
+			var inventory_manager = InventoryManager.new()
+			await inventory_manager.remove_item(rune.item_id, 1)
+
+		if item_destroyed:
+			# Remove item from inventory
+			var inventory_manager = InventoryManager.new()
+			await inventory_manager.remove_item(item.item_id, 1)
 		else:
-			# Failed - handle penalties
-			if destroyed:
-				State.remove_from_inventory(item_id, 1)
-				enhancement_failed.emit(item_id, new_level, true)
-				
-				return {
-					"success": true,
-					"enhanced": false,
-					"new_level": 0,
-					"destroyed": true
-				}
-			else:
-				# Level decreased
-				State.update_item_enhancement(item_id, new_level)
-				enhancement_failed.emit(item_id, new_level, false)
-				
-				return {
-					"success": true,
-					"enhanced": false,
-					"new_level": new_level,
-					"destroyed": false
-				}
-	
-	return response
+			# Update item with reduced level
+			State.update_inventory_item(item.item_id, item.to_dict())
+
+		enhancement_failed.emit(item.item_id, item.enhancement_level, item_destroyed)
+
+		Telemetry.track_enhancement("failure", item.item_id, {
+			"level": item.enhancement_level,
+			"destroyed": item_destroyed,
+			"level_loss": level_loss,
+			"rune_used": rune.item_id if rune else "none"
+		})
+
+		return {"success": false, "destroyed": item_destroyed, "level_loss": level_loss}
 
 func simulate_enhancement(current_level: int, rune_type: String = "none") -> Dictionary:
 	"""Simulate enhancement for UI preview (client-side only)"""

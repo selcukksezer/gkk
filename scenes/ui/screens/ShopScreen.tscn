@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8j4m7nx2qpls"]
+[gd_scene load_steps=3 format=3 uid="uid://c8j4m7nx2qpls"]
 
-[ext_resource type="Script" path="res://scenes/ui/screens/ShopScreen.gd" id="1_shop"]
+[ext_resource type="Script" path="res://scenes/ui/screens/ShopScreen.gd" id="1_shopscreen"]
+[ext_resource type="Theme" path="res://resources/themes/main_theme.tres" id="2_theme"]
 
 [node name="ShopScreen" type="Control"]
 layout_mode = 3
@@ -9,7 +10,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_shop")
+theme = ExtResource("2_theme")
+script = ExtResource("1_shopscreen")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -18,36 +20,83 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.1, 0.1, 0.15, 1)
+color = Color(0.05, 0.08, 0.12, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="TabContainer" type="TabContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -80.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 15
-
-[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+[node name="Gems" type="ScrollContainer" parent="TabContainer"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Gems"]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Dükkan"
-theme_override_font_sizes/font_size = 40
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+horizontal_scroll_mode = 0
 
-[node name="GoldPanel" type="PanelContainer" parent="MarginContainer/VBox/Header"]
+[node name="GridContainer" type="GridContainer" parent="TabContainer/Gems/ScrollContainer"]
 layout_mode = 2
+columns = 3
+
+[node name="Offers" type="ScrollContainer" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Offers"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Offers/ScrollContainer"]
+layout_mode = 2
+
+[node name="BattlePass" type="VBoxContainer" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="PassInfo" type="Label" parent="TabContainer/BattlePass"]
+layout_mode = 2
+text = "Battle Pass Info"
+
+[node name="RewardsScroll" type="ScrollContainer" parent="TabContainer/BattlePass"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="TabContainer/BattlePass/RewardsScroll"]
+layout_mode = 2
+columns = 4
+
+[node name="Items" type="ScrollContainer" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Items"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="GridContainer" type="GridContainer" parent="TabContainer/Items/ScrollContainer"]
+layout_mode = 2
+columns = 4
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -50.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Geri"
 
 [node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBox/Header/GoldPanel"]
 layout_mode = 2

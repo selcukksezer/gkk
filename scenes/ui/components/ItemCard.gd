@@ -10,10 +10,13 @@ signal item_long_pressed(item: ItemData)
 @onready var quantity_label: Label = $MarginContainer/HBoxContainer/VBoxContainer/QuantityLabel
 @onready var enhancement_label: Label = $MarginContainer/HBoxContainer/EnhancementLabel
 @onready var rarity_indicator: ColorRect = $RarityIndicator
+@onready var price_label: Label = $MarginContainer/HBoxContainer/VBoxContainer/PriceLabel
+@onready var purchase_button: Button = $MarginContainer/HBoxContainer/VBoxContainer/PurchaseButton
 
 var item: ItemData = ItemData.new()
 var show_enhancement: bool = true
 var show_quantity: bool = true
+var shop_mode: bool = false  # Show price and purchase button in shop
 
 func _ready() -> void:
 	gui_input.connect(_on_gui_input)
@@ -24,8 +27,9 @@ func _ready() -> void:
 	_long_press_timer.timeout.connect(_on_long_press_timeout)
 	add_child(_long_press_timer)
 
-func setup(item_data: ItemData) -> void:
+func setup(item_data: ItemData, is_shop: bool = false) -> void:
 	item = item_data
+	shop_mode = is_shop
 	_update_display()
 
 func _update_display() -> void:
@@ -39,7 +43,7 @@ func _update_display() -> void:
 	
 	# Quantity
 	if quantity_label and show_quantity:
-		quantity_label.visible = item.quantity > 1 or item.stackable
+		quantity_label.visible = item.quantity > 1 or item.is_stackable
 		quantity_label.text = "x%d" % item.quantity
 	
 	# Enhancement
@@ -59,9 +63,22 @@ func _update_display() -> void:
 	if rarity_indicator:
 		rarity_indicator.color = item.get_rarity_color()
 	
-	# TODO: Set icon when we have item textures
-	# if icon:
-	#     icon.texture = load("res://assets/sprites/items/%s.png" % item.item_id)
+	# Price (shop mode only)
+	if price_label:
+		price_label.visible = shop_mode
+		if shop_mode:
+			price_label.text = "💰 %d" % item.base_price
+	
+	# Purchase button (shop mode only)
+	if purchase_button:
+		purchase_button.visible = shop_mode
+		if shop_mode:
+			purchase_button.text = "Satın Al"
+			if not purchase_button.pressed.is_connected(_on_purchase_pressed):
+				purchase_button.pressed.connect(_on_purchase_pressed)
+
+func _on_purchase_pressed() -> void:
+	item_selected.emit(item)
 
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:

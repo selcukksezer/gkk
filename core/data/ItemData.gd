@@ -10,7 +10,10 @@ enum ItemType {
 	CONSUMABLE,
 	MATERIAL,
 	QUEST_ITEM,
-	POTION
+	POTION,
+	RECIPE,      # Üretim tarifleri
+	RUNE,        # Geliştirme için rün taşları
+	COSMETIC     # Kozmetik eşyalar
 }
 
 enum ItemRarity {
@@ -35,6 +38,47 @@ enum EquipSlot {
 	BELT
 }
 
+# Weapon subtypes
+enum WeaponType {
+	NONE,
+	SWORD,       # Kılıç
+	SPEAR,       # Mızrak
+	BOW,         # Yay
+	AXE,         # Balta
+	DAGGER,      # Hançer
+	STAFF,       # Asa
+	SHIELD       # Kalkan
+}
+
+# Armor subtypes
+enum ArmorType {
+	NONE,
+	PLATE,       # Plaka zırh
+	CHAIN,       # Zincir zırh
+	LEATHER,     # Deri zırh
+	CLOTH        # Kumaş zırh
+}
+
+# Material subtypes
+enum MaterialType {
+	NONE,
+	ORE,         # Cevher (demir, altın, gümüş)
+	WOOD,        # Kereste
+	LEATHER,     # Deri
+	HERB,        # Bitki/ot
+	CRYSTAL,     # Kristal
+	GEM          # Değerli taş
+}
+
+# Potion subtypes
+enum PotionType {
+	NONE,
+	ENERGY,      # Enerji iksiri
+	HEALING,     # İyileştirme iksiri
+	BUFF,        # Buff iksiri
+	ANTIDOTE     # Antidot
+}
+
 @export var item_id: String = ""
 @export var name: String = ""
 @export var description: String = ""
@@ -43,12 +87,40 @@ enum EquipSlot {
 @export var rarity: ItemRarity = ItemRarity.COMMON
 @export var equip_slot: EquipSlot = EquipSlot.NONE
 
+# Subtype exports
+@export var weapon_type: WeaponType = WeaponType.NONE
+@export var armor_type: ArmorType = ArmorType.NONE
+@export var material_type: MaterialType = MaterialType.NONE
+@export var potion_type: PotionType = PotionType.NONE
+
 ## Economy
 @export var base_price: int = 0
 @export var vendor_sell_price: int = 0
 @export var is_tradeable: bool = true
 @export var is_stackable: bool = true
 @export var max_stack: int = 999
+
+## Recipe System (for RECIPE type items)
+@export var recipe_result_item_id: String = ""  # Üretilecek item ID'si
+@export var recipe_requirements: Dictionary = {}  # {"item_id": quantity}
+@export var recipe_building_type: String = ""  # "blacksmith", "alchemy", "farm"
+@export var recipe_production_time: int = 0  # Saniye cinsinden
+@export var recipe_required_level: int = 1  # Üretim seviyesi
+
+## Rune System (for RUNE type items)
+@export var rune_enhancement_type: String = ""  # "attack", "defense", "health", "power"
+@export var rune_success_bonus: float = 0.0  # Başarı oranı bonusu (%)
+@export var rune_destruction_reduction: float = 0.0  # Yok olma riski azaltma (%)
+
+## Cosmetic System (for COSMETIC type items)
+@export var cosmetic_effect: String = ""  # Görsel efekt adı
+@export var cosmetic_bind_on_pickup: bool = true  # Alınca bağlanır
+@export var cosmetic_showcase_only: bool = false  # Sadece gösterim
+
+## Production System (for MATERIAL type items)
+@export var production_building_type: String = ""  # "mine", "sawmill", "farm"
+@export var production_rate_per_hour: int = 0  # Saat başına üretim miktarı
+@export var production_required_level: int = 1  # Bina seviyesi
 
 ## Stats (for equipment)
 @export var attack: int = 0
@@ -95,11 +167,46 @@ static func from_dict(data: Dictionary) -> ItemData:
 	var slot_str = data.get("equip_slot", "NONE")
 	item.equip_slot = EquipSlot.get(slot_str) if EquipSlot.has(slot_str) else EquipSlot.NONE
 	
+	# Parse subtypes
+	var weapon_type_str = data.get("weapon_type", "NONE")
+	item.weapon_type = WeaponType.get(weapon_type_str) if WeaponType.has(weapon_type_str) else WeaponType.NONE
+	
+	var armor_type_str = data.get("armor_type", "NONE")
+	item.armor_type = ArmorType.get(armor_type_str) if ArmorType.has(armor_type_str) else ArmorType.NONE
+	
+	var material_type_str = data.get("material_type", "NONE")
+	item.material_type = MaterialType.get(material_type_str) if MaterialType.has(material_type_str) else MaterialType.NONE
+	
+	var potion_type_str = data.get("potion_type", "NONE")
+	item.potion_type = PotionType.get(potion_type_str) if PotionType.has(potion_type_str) else PotionType.NONE
+	
 	item.base_price = data.get("base_price", 0)
 	item.vendor_sell_price = data.get("vendor_sell_price", 0)
 	item.is_tradeable = data.get("is_tradeable", true)
 	item.is_stackable = data.get("is_stackable", true)
 	item.max_stack = data.get("max_stack", 999)
+	
+	# Recipe system
+	item.recipe_result_item_id = data.get("recipe_result_item_id", "")
+	item.recipe_requirements = data.get("recipe_requirements", {})
+	item.recipe_building_type = data.get("recipe_building_type", "")
+	item.recipe_production_time = data.get("recipe_production_time", 0)
+	item.recipe_required_level = data.get("recipe_required_level", 1)
+	
+	# Rune system
+	item.rune_enhancement_type = data.get("rune_enhancement_type", "")
+	item.rune_success_bonus = data.get("rune_success_bonus", 0.0)
+	item.rune_destruction_reduction = data.get("rune_destruction_reduction", 0.0)
+	
+	# Cosmetic system
+	item.cosmetic_effect = data.get("cosmetic_effect", "")
+	item.cosmetic_bind_on_pickup = data.get("cosmetic_bind_on_pickup", true)
+	item.cosmetic_showcase_only = data.get("cosmetic_showcase_only", false)
+	
+	# Production system
+	item.production_building_type = data.get("production_building_type", "")
+	item.production_rate_per_hour = data.get("production_rate_per_hour", 0)
+	item.production_required_level = data.get("production_required_level", 1)
 	
 	item.attack = data.get("attack", 0)
 	item.defense = data.get("defense", 0)
@@ -134,11 +241,29 @@ func to_dict() -> Dictionary:
 		"item_type": ItemType.keys()[item_type],
 		"rarity": ItemRarity.keys()[rarity],
 		"equip_slot": EquipSlot.keys()[equip_slot],
+		"weapon_type": WeaponType.keys()[weapon_type],
+		"armor_type": ArmorType.keys()[armor_type],
+		"material_type": MaterialType.keys()[material_type],
+		"potion_type": PotionType.keys()[potion_type],
 		"base_price": base_price,
 		"vendor_sell_price": vendor_sell_price,
 		"is_tradeable": is_tradeable,
 		"is_stackable": is_stackable,
 		"max_stack": max_stack,
+		"recipe_result_item_id": recipe_result_item_id,
+		"recipe_requirements": recipe_requirements,
+		"recipe_building_type": recipe_building_type,
+		"recipe_production_time": recipe_production_time,
+		"recipe_required_level": recipe_required_level,
+		"rune_enhancement_type": rune_enhancement_type,
+		"rune_success_bonus": rune_success_bonus,
+		"rune_destruction_reduction": rune_destruction_reduction,
+		"cosmetic_effect": cosmetic_effect,
+		"cosmetic_bind_on_pickup": cosmetic_bind_on_pickup,
+		"cosmetic_showcase_only": cosmetic_showcase_only,
+		"production_building_type": production_building_type,
+		"production_rate_per_hour": production_rate_per_hour,
+		"production_required_level": production_required_level,
 		"attack": attack,
 		"defense": defense,
 		"health": health,
@@ -231,3 +356,174 @@ func get_enhancement_destruction_rate() -> float:
 	elif enhancement_level == 10:
 		return 0.15  # 15%
 	return 0.0
+
+## Recipe System Methods
+func can_craft_with_inventory(inventory: Dictionary) -> bool:
+	"""Check if player has required materials to craft this recipe"""
+	for item_id in recipe_requirements:
+		var required_qty = recipe_requirements[item_id]
+		var available_qty = inventory.get(item_id, 0)
+		if available_qty < required_qty:
+			return false
+	return true
+
+func get_recipe_display_requirements() -> String:
+	"""Get formatted string of recipe requirements"""
+	var requirements = []
+	for item_id in recipe_requirements:
+		var qty = recipe_requirements[item_id]
+		requirements.append("%s x%d" % [item_id, qty])
+	return ", ".join(requirements)
+
+## Rune System Methods
+func get_rune_success_modifier() -> float:
+	"""Get success rate modifier from rune"""
+	return rune_success_bonus / 100.0
+
+func get_rune_destruction_modifier() -> float:
+	"""Get destruction rate modifier from rune (negative = reduction)"""
+	return -rune_destruction_reduction / 100.0
+
+func can_apply_to_item(target_item: ItemData) -> bool:
+	"""Check if rune can be applied to target item"""
+	if not target_item.can_enhance:
+		return false
+	
+	match rune_enhancement_type:
+		"attack":
+			return target_item.attack > 0
+		"defense":
+			return target_item.defense > 0
+		"health":
+			return target_item.health > 0
+		"power":
+			return target_item.power > 0
+		_:
+			return false
+
+## Cosmetic System Methods
+func is_cosmetic_equipped() -> bool:
+	"""Check if cosmetic item is equipped (cosmetics are always 'equipped' when owned)"""
+	return item_type == ItemType.COSMETIC and not cosmetic_showcase_only
+
+## Production System Methods
+func get_production_per_hour(building_level: int) -> int:
+	"""Calculate production rate based on building level"""
+	if building_level < production_required_level:
+		return 0
+	return production_rate_per_hour * building_level
+
+func get_production_time_seconds(quantity: int) -> int:
+	"""Calculate time to produce given quantity"""
+	if production_rate_per_hour <= 0:
+		return 0
+	return int((quantity * 3600.0) / production_rate_per_hour)
+
+## Item Category Helpers
+func is_weapon() -> bool:
+	return item_type == ItemType.WEAPON
+
+func is_armor() -> bool:
+	return item_type == ItemType.ARMOR
+
+func is_equipment() -> bool:
+	return item_type in [ItemType.WEAPON, ItemType.ARMOR, ItemType.ACCESSORY]
+
+func is_consumable() -> bool:
+	return item_type in [ItemType.CONSUMABLE, ItemType.POTION]
+
+func is_material() -> bool:
+	return item_type == ItemType.MATERIAL
+
+func is_recipe() -> bool:
+	return item_type == ItemType.RECIPE
+
+func is_rune() -> bool:
+	return item_type == ItemType.RUNE
+
+func is_cosmetic() -> bool:
+	return item_type == ItemType.COSMETIC
+
+## Get item category display name
+func get_category_display_name() -> String:
+	match item_type:
+		ItemType.WEAPON:
+			return WeaponType.keys()[weapon_type]
+		ItemType.ARMOR:
+			return ArmorType.keys()[armor_type]
+		ItemType.MATERIAL:
+			return MaterialType.keys()[material_type]
+		ItemType.POTION:
+			return PotionType.keys()[potion_type]
+		ItemType.RECIPE:
+			return "Recipe"
+		ItemType.RUNE:
+			return "Rune"
+		ItemType.COSMETIC:
+			return "Cosmetic"
+		_:
+			return ItemType.keys()[item_type]
+
+## Get detailed item info for tooltips
+func get_detailed_info() -> Dictionary:
+	var info = {
+		"name": name,
+		"description": description,
+		"type": get_category_display_name(),
+		"rarity": ItemRarity.keys()[rarity],
+		"rarity_color": get_rarity_color(),
+		"tradeable": is_tradeable,
+		"stackable": is_stackable,
+		"max_stack": max_stack if is_stackable else 1
+	}
+	
+	# Equipment stats
+	if is_equipment():
+		info["stats"] = {
+			"attack": get_total_attack(),
+			"defense": get_total_defense(),
+			"health": get_total_health(),
+			"power": get_total_power(),
+			"enhancement": get_enhancement_display(),
+			"required_level": required_level
+		}
+	
+	# Consumable effects
+	if is_consumable():
+		info["effects"] = {}
+		if energy_restore > 0:
+			info["effects"]["energy"] = energy_restore
+		if heal_amount > 0:
+			info["effects"]["heal"] = heal_amount
+		if tolerance_increase > 0:
+			info["effects"]["tolerance"] = tolerance_increase
+		if overdose_risk > 0:
+			info["effects"]["overdose_risk"] = overdose_risk
+	
+	# Recipe info
+	if is_recipe():
+		info["recipe"] = {
+			"result": recipe_result_item_id,
+			"requirements": recipe_requirements,
+			"building": recipe_building_type,
+			"time": recipe_production_time,
+			"level": recipe_required_level
+		}
+	
+	# Rune info
+	if is_rune():
+		info["rune"] = {
+			"type": rune_enhancement_type,
+			"success_bonus": rune_success_bonus,
+			"destruction_reduction": rune_destruction_reduction
+		}
+	
+	# Production info
+	if is_material() and production_building_type != "":
+		info["production"] = {
+			"building": production_building_type,
+			"rate_per_hour": production_rate_per_hour,
+			"required_level": production_required_level
+		}
+	
+	return info

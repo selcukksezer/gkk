@@ -1,0 +1,122 @@
+[gd_scene load_steps=3 format=3 uid="uid://season_screen"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/SeasonScreen.gd" id="1_season"]
+[ext_resource type="Theme" path="res://resources/themes/main_theme.tres" id="2_theme"]
+
+[node name="SeasonScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_season")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SeasonHeader" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/SeasonHeader"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="SeasonTitle" type="Label" parent="MarginContainer/VBoxContainer/SeasonHeader/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Mevsim Başlığı"
+
+[node name="SeasonProgress" type="ProgressBar" parent="MarginContainer/VBoxContainer/SeasonHeader/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+max_value = 100.0
+value = 65.0
+
+[node name="ProgressLabel" type="Label" parent="MarginContainer/VBoxContainer/SeasonHeader/VBoxContainer/SeasonProgress"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.0
+offset_right = 20.0
+offset_bottom = 11.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "65%"
+horizontal_alignment = 1
+
+[node name="SeasonDescription" type="Label" parent="MarginContainer/VBoxContainer/SeasonHeader/VBoxContainer"]
+layout_mode = 2
+text = "Mevsim açıklaması burada görünecek"
+
+[node name="ChallengesSection" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ChallengesSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/VBoxContainer/ChallengesSection/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Mevsim Görevleri"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ChallengesSection/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RewardsSection" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/RewardsSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/VBoxContainer/RewardsSection/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Mevsim Ödülleri"
+
+[node name="RewardsGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/RewardsSection/VBoxContainer"]
+layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 120.0
+offset_bottom = 60.0
+text = "Geri"

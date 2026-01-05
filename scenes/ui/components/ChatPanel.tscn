@@ -1,0 +1,105 @@
+[gd_scene load_steps=3 format=3 uid="uid://driomg70qe5b1"]
+
+[ext_resource type="Script" uid="uid://bmjog5fwdek6g" path="res://scenes/ui/ChatPanel.gd" id="1"]
+[ext_resource type="Theme" path="res://resources/themes/main_theme.tres" id="2"]
+
+[node name="ChatPanel" type="Control"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -400.0
+offset_right = 400.0
+grow_vertical = 0
+theme = ExtResource("2")
+script = ExtResource("1")
+
+[node name="Background" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ChannelTabs" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 0
+
+[node name="Global" type="VBoxContainer" parent="ChannelTabs"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ChannelTabs/Global"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ChannelTabs/Global/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Guild" type="VBoxContainer" parent="ChannelTabs"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ChannelTabs/Guild"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ChannelTabs/Guild/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DM" type="VBoxContainer" parent="ChannelTabs"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ChannelTabs/DM"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ChannelTabs/DM/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Trade" type="VBoxContainer" parent="ChannelTabs"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ChannelTabs/Trade"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ChannelTabs/Trade/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MessagePanel" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="MessageInput" type="LineEdit" parent="MessagePanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Mesaj yaz..."
+max_length = 200
+
+[node name="SendButton" type="Button" parent="MessagePanel"]
+layout_mode = 2
+text = "📤 Gönder"

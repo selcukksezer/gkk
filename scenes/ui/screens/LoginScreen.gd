@@ -10,6 +10,7 @@ extends Control
 @onready var register_button = $CenterContainer/VBoxContainer/RegisterButton
 
 var _loading: bool = false
+const CREDENTIALS_FILE = "user://login_credentials.json"
 
 func _ready() -> void:
 	# Connect signals
@@ -19,6 +20,9 @@ func _ready() -> void:
 	Session.logged_in.connect(_on_logged_in)
 	Session.register_completed.connect(_on_register_completed)
 	Session.login_failed.connect(_on_login_failed)
+	
+	# Load remembered credentials
+	_load_credentials()
 	
 	# Clear status
 	status_label.text = ""
@@ -107,6 +111,12 @@ func _on_logged_in(player_data: Dictionary) -> void:
 	login_button.text = "Giriş Yap"
 	print("[LoginScreen] Login successful, transitioning to main menu...")
 	
+	# Save or clear credentials based on remember check
+	if remember_check.button_pressed:
+		_save_credentials(username_input.text, password_input.text)
+	else:
+		_clear_credentials()
+	
 	# Track success
 	Telemetry.track_event("user", "login_success", {
 		"user_id": player_data.get("id", ""),
@@ -114,7 +124,7 @@ func _on_logged_in(player_data: Dictionary) -> void:
 	})
 	
 	# Transition to main menu
-	Scenes.change_scene("res://scenes/main/MainMenu.tscn")
+	Scenes.change_scene("main")
 
 func _on_login_failed(error_message: String) -> void:
 	_loading = false
@@ -157,3 +167,31 @@ func _is_valid_email(email: String) -> bool:
 	var regex = RegEx.new()
 	regex.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
 	return regex.search(email) != null
+
+func _load_credentials() -> void:
+	if FileAccess.file_exists(CREDENTIALS_FILE):
+		var file = FileAccess.open(CREDENTIALS_FILE, FileAccess.READ)
+		if file:
+			var json = JSON.new()
+			var error = json.parse(file.get_as_text())
+			file.close()
+			if error == OK:
+				var data = json.get_data()
+				if data.has("username") and data.has("password"):
+					username_input.text = data.username
+					password_input.text = data.password
+					remember_check.button_pressed = true
+
+func _save_credentials(username: String, password: String) -> void:
+	var data = {
+		"username": username,
+		"password": password
+	}
+	var file = FileAccess.open(CREDENTIALS_FILE, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data))
+		file.close()
+
+func _clear_credentials() -> void:
+	if FileAccess.file_exists(CREDENTIALS_FILE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(CREDENTIALS_FILE))

@@ -174,9 +174,29 @@ func show_screen(screen_name: String, push_to_stack: bool = true, data: Dictiona
 	if current_screen and current_screen != Control.new():
 		current_screen.queue_free()
 	
-	# Defer loading and instantiation to avoid blocking on resource parsing
-	print("[Main] Scheduling deferred load+instantiate for: %s" % SCREENS[screen_name])
-	call_deferred("_deferred_instantiate_screen_by_path", SCREENS[screen_name], screen_name, push_to_stack, data)
+	# Load and instantiate directly
+	var scene_path = SCREENS[screen_name]
+	var screen_scene = load(scene_path)
+	if not screen_scene:
+		push_error("[Main] Failed to load scene: %s" % scene_path)
+		return
+	
+	var inst = screen_scene.instantiate()
+	if data and inst.has_method("setup"):
+		inst.setup(data)
+	
+	screen_container.add_child(inst)
+	inst.show()
+	current_screen = inst
+	
+	# Update stack
+	if push_to_stack:
+		screen_stack.append(screen_name)
+	
+	# Update HUD visibility
+	_update_hud_visibility(screen_name)
+	
+	print("[Main] Screen changed to: %s" % screen_name)
 
 func _deferred_instantiate_screen_by_path(scene_path: String, screen_name: String, push_to_stack: bool, data: Dictionary) -> void:
 	print("[Main] Deferred: loading scene resource: %s" % scene_path)

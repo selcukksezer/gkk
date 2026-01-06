@@ -22,7 +22,10 @@ enum OrderType {
 }
 
 func _ready() -> void:
+	print("[Market] MarketScreen ready")
 	market_manager = get_node("/root/MarketManager") if has_node("/root/MarketManager") else null
+	
+	print("[Market] Market manager: ", market_manager)
 	
 	if market_manager:
 		# Connect to market signals
@@ -44,16 +47,22 @@ func _ready() -> void:
 func _setup_item_selector() -> void:
 	item_selector.clear()
 	
+	print("[Market] Setting up item selector...")
+	
 	# Get available items from market
 	if market_manager and market_manager.has_method("get_tradeable_items"):
 		var items = market_manager.get_tradeable_items()
+		print("[Market] Market manager items: ", items.size())
 		for item in items:
 			item_selector.add_item(item.get("name", "Unknown"), item.get("id", 0))
 	else:
 		# Default items if no market manager
+		print("[Market] Using default items")
 		item_selector.add_item("Energy Potion", 1)
 		item_selector.add_item("Health Potion", 2)
 		item_selector.add_item("Mana Potion", 3)
+	
+	print("[Market] Item selector count: ", item_selector.item_count)
 	
 	item_selector.item_selected.connect(_on_item_selected)
 	

@@ -5,13 +5,12 @@ extends PanelContainer
 signal item_selected(item: ItemData)
 signal item_long_pressed(item: ItemData)
 
-@onready var icon: TextureRect = $MarginContainer/HBoxContainer/Icon
-@onready var name_label: Label = $MarginContainer/HBoxContainer/VBoxContainer/NameLabel
-@onready var quantity_label: Label = $MarginContainer/HBoxContainer/VBoxContainer/QuantityLabel
-@onready var enhancement_label: Label = $MarginContainer/HBoxContainer/EnhancementLabel
+@onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
+@onready var quantity_label: Label = $MarginContainer/VBoxContainer/QuantityLabel
+@onready var enhancement_label: Label = $MarginContainer/EnhancementLabel
 @onready var rarity_indicator: ColorRect = $RarityIndicator
-@onready var price_label: Label = $MarginContainer/HBoxContainer/VBoxContainer/PriceLabel
-@onready var purchase_button: Button = $MarginContainer/HBoxContainer/VBoxContainer/PurchaseButton
+@onready var price_label: Label = $MarginContainer/VBoxContainer/PriceLabel
+@onready var purchase_button: Button = $MarginContainer/VBoxContainer/PurchaseButton
 
 var item: ItemData = ItemData.new()
 var show_enhancement: bool = true

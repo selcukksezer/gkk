@@ -12,6 +12,7 @@ const SCENES = {
 	"splash": "res://scenes/main/SplashScreen.tscn",
 	"login": "res://scenes/main/LoginScreen.tscn",
 	"home": "res://scenes/main/HomeScreen.tscn",
+	"main": "res://scenes/main/Main.tscn",
 	"inventory": "res://scenes/ui/screens/InventoryScreen.tscn",
 	"market": "res://scenes/ui/screens/MarketScreen.tscn",
 	"quest": "res://scenes/ui/screens/QuestScreen.tscn",

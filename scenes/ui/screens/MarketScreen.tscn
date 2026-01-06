@@ -1,5 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b8rj3nxg4k2pm"]
 
+[ext_resource type="Theme" path="res://resources/themes/main_theme.tres" id="1"]
 [ext_resource type="Script" path="res://scenes/ui/screens/MarketScreen.gd" id="1_market"]
 
 [node name="MarketScreen" type="Control"]
@@ -9,6 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1")
 script = ExtResource("1_market")
 
 [node name="Background" type="ColorRect" parent="."]

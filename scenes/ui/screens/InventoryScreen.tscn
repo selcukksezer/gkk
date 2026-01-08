@@ -99,6 +99,44 @@ toggle_mode = true
 text = "Materyal"
 theme_override_font_sizes/font_size = 20
 
+[node name="EquippedContainerHolder" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EquippedContainer" type="GridContainer" parent="VBoxContainer/EquippedContainerHolder"]
+columns = 9
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+
+[node name="ItemDetailsPanel" type="PanelContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 160)
+layout_mode = 2
+visible = false
+
+[node name="DetailsVBox" type="VBoxContainer" parent="VBoxContainer/ItemDetailsPanel"]
+layout_mode = 2
+
+[node name="ItemNameLabel" type="Label" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox"]
+text = ""
+
+[node name="ItemDescriptionLabel" type="Label" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox"]
+text = ""
+
+[node name="ItemStatsLabel" type="Label" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox"]
+text = ""
+
+[node name="ActionButtons" type="HBoxContainer" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox"]
+layout_mode = 2
+
+[node name="UseButton" type="Button" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox/ActionButtons"]
+text = "Kullan"
+
+[node name="EquipButton" type="Button" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox/ActionButtons"]
+text = "Ekuip"
+
+[node name="SellButton" type="Button" parent="VBoxContainer/ItemDetailsPanel/DetailsVBox/ActionButtons"]
+text = "Sat"
+
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 

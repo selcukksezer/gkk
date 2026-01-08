@@ -10,16 +10,19 @@ signal item_used(item: ItemData)
 # Import required classes
 const InventoryManager = preload("res://autoload/InventoryManager.gd")
 
-@onready var equipped_container: GridContainer = $MarginContainer/VBoxContainer/HBoxContainer/EquippedContainer
-@onready var inventory_grid: GridContainer = $MarginContainer/VBoxContainer/HBoxContainer/InventoryContainer/ScrollContainer/InventoryGrid
-@onready var item_details_panel: PanelContainer = $MarginContainer/VBoxContainer/ItemDetailsPanel
-@onready var item_name_label: Label = $MarginContainer/VBoxContainer/ItemDetailsPanel/VBoxContainer/ItemNameLabel
-@onready var item_description_label: Label = $MarginContainer/VBoxContainer/ItemDetailsPanel/VBoxContainer/ItemDescriptionLabel
-@onready var item_stats_label: Label = $MarginContainer/VBoxContainer/ItemDetailsPanel/VBoxContainer/ItemStatsLabel
-@onready var use_button: Button = $MarginContainer/VBoxContainer/ItemDetailsPanel/VBoxContainer/ActionButtons/UseButton
-@onready var equip_button: Button = $MarginContainer/VBoxContainer/ItemDetailsPanel/VBoxContainer/ActionButtons/EquipButton
-@onready var sell_button: Button = $MarginContainer/VBoxContainer/ItemDetailsPanel/VBoxContainer/ActionButtons/SellButton
-@onready var filter_tabs: TabContainer = $MarginContainer/VBoxContainer/FilterTabs
+# Safe node lookups to handle scene variants
+@onready var equipped_container: GridContainer = get_node_or_null("VBoxContainer/EquippedContainerHolder/EquippedContainer")
+@onready var inventory_grid: GridContainer = get_node_or_null("VBoxContainer/ScrollContainer/InventoryGrid")
+@onready var item_details_panel: PanelContainer = get_node_or_null("VBoxContainer/ItemDetailsPanel")
+@onready var item_name_label: Label = get_node_or_null("VBoxContainer/ItemDetailsPanel/VBoxContainer/ItemNameLabel")
+@onready var item_description_label: Label = get_node_or_null("VBoxContainer/ItemDetailsPanel/VBoxContainer/ItemDescriptionLabel")
+@onready var item_stats_label: Label = get_node_or_null("VBoxContainer/ItemDetailsPanel/VBoxContainer/ItemStatsLabel")
+@onready var use_button: Button = get_node_or_null("VBoxContainer/ItemDetailsPanel/VBoxContainer/ActionButtons/UseButton")
+@onready var equip_button: Button = get_node_or_null("VBoxContainer/ItemDetailsPanel/VBoxContainer/ActionButtons/EquipButton")
+@onready var sell_button: Button = get_node_or_null("VBoxContainer/ItemDetailsPanel/VBoxContainer/ActionButtons/SellButton")
+@onready var filter_bar: HBoxContainer = get_node_or_null("FilterBar")
+# Backwards-compatible TabContainer support (if present)
+@onready var filter_tabs: TabContainer = get_node_or_null("FilterTabs")
 
 var inventory_manager: InventoryManager
 var selected_item: ItemData = null
@@ -33,77 +36,105 @@ func _ready() -> void:
 	inventory_manager = InventoryManager.new()
 
 	# Connect signals
-	State.connect("inventory_updated", _on_inventory_updated)
-	State.connect("equipment_updated", _on_equipment_updated)
+	State.connect("inventory_updated", Callable(self, "_on_inventory_updated"))
+	# InventoryManager emits equipment signals; listen to those instead of a non-existent State signal
+	# Listen to autoload singleton 'Inventory' for equipment changes
+	var inventory_singleton = get_node_or_null("/root/Inventory")
+	if inventory_singleton:
+		inventory_singleton.connect("item_equipped", Callable(self, "_on_equipment_updated"))
+		inventory_singleton.connect("item_unequipped", Callable(self, "_on_equipment_updated"))
+	else:
+		print("[InventoryScreen] Warning: Inventory singleton not found; equipment updates may be missed")
 
-	# Setup filter tabs
+	# Setup filters (supports both TabContainer and HBox FilterBar)
 	_setup_filter_tabs()
 
 	# Load initial inventory
 	_refresh_inventory()
 
 func _setup_filter_tabs() -> void:
-	# Add filter tabs for different item types
-	var all_tab = TabContainer.new()
-	all_tab.name = "All"
-	filter_tabs.add_child(all_tab)
+	if filter_tabs:
+		# Existing TabContainer-based UI
+		filter_tabs.clear()
+		var tabs = ["All", "Weapons", "Armor", "Consumables", "Materials"]
+		for t in tabs:
+			filter_tabs.add_tab(t)
+		filter_tabs.connect("tab_changed", Callable(self, "_on_filter_changed"))
+		return
 
-	var weapons_tab = TabContainer.new()
-	weapons_tab.name = "Weapons"
-	filter_tabs.add_child(weapons_tab)
+	if filter_bar:
+		# HBox button-based filter bar
+		var mapping = {
+			"AllButton": "All",
+			"WeaponButton": "Weapons",
+			"ArmorButton": "Armor",
+			"PotionButton": "Consumables",
+			"MaterialButton": "Materials"
+		}
+		for child in filter_bar.get_children():
+			if child.name in mapping:
+				child.pressed.connect(Callable(self, "_on_filter_button_pressed").bind(mapping[child.name]))
+		return
 
-	var armor_tab = TabContainer.new()
-	armor_tab.name = "Armor"
-	filter_tabs.add_child(armor_tab)
-
-	var consumables_tab = TabContainer.new()
-	consumables_tab.name = "Consumables"
-	filter_tabs.add_child(consumables_tab)
-
-	var materials_tab = TabContainer.new()
-	materials_tab.name = "Materials"
-	filter_tabs.add_child(materials_tab)
-
-	filter_tabs.connect("tab_changed", _on_filter_changed)
+	# No filter UI found, log warning
+	print("[InventoryScreen] Warning: No filter UI found; filtering disabled")
 
 func _refresh_inventory() -> void:
 	# Clear existing slots
-	for child in inventory_grid.get_children():
-		child.queue_free()
+	if inventory_grid:
+		for child in inventory_grid.get_children():
+			child.queue_free()
+	else:
+		print("[InventoryScreen] Warning: inventory_grid not found")
 
-	for child in equipped_container.get_children():
-		child.queue_free()
+	if equipped_container:
+		for child in equipped_container.get_children():
+			child.queue_free()
 
 	# Get all items
 	var all_items = State.get_all_items_data()
 
 	# Create equipped item slots
-	_create_equipped_slots()
+	if equipped_container:
+		_create_equipped_slots()
 
 	# Create inventory slots
 	for item in all_items:
 		if item.quantity > 0:  # Only show items with quantity > 0
 			var slot = SLOT_SCENE.instantiate()
 			slot.set_item(item)
-			slot.connect("slot_clicked", _on_slot_clicked)
-			inventory_grid.add_child(slot)
+			slot.connect("slot_clicked", Callable(self, "_on_slot_clicked"))
+			if inventory_grid:
+				inventory_grid.add_child(slot)
 
 func _create_equipped_slots() -> void:
 	# Equipment slots in order: Weapon, Helmet, Chest, Legs, Boots, Gloves, Ring, Amulet, Belt
 	var equipment_slots = ["weapon", "helmet", "chest", "legs", "boots", "gloves", "ring", "amulet", "belt"]
 
+	if not equipped_container:
+		return
+
 	for slot_name in equipment_slots:
 		var slot = SLOT_SCENE.instantiate()
 		slot.set_equipment_slot(slot_name)
-		slot.connect("slot_clicked", _on_equipment_slot_clicked)
+		# Connect with a small wrapper so we get both slot_name and the emitted item
+		slot.connect("slot_clicked", func(emitted_item):
+			_on_equipment_slot_clicked(slot_name, emitted_item)
+		)
 		equipped_container.add_child(slot)
 
 func _on_slot_clicked(item: ItemData) -> void:
 	selected_item = item
 	_update_item_details(item)
 
-func _on_equipment_slot_clicked(slot_name: String) -> void:
-	# Handle equipment slot clicks (unequip, etc.)
+func _on_equipment_slot_clicked(slot_name: String, clicked_item: ItemData = null) -> void:
+	# If slot emitted an item (clicked on an equipped slot with an item), show it
+	if clicked_item:
+		selected_item = clicked_item
+		_update_item_details(clicked_item)
+		return
+
+	# Otherwise, handle by slot name
 	if equipped_items.has(slot_name):
 		var item = equipped_items[slot_name]
 		selected_item = item
@@ -214,7 +245,12 @@ func _get_equipment_slot_for_item(item: ItemData) -> String:
 			return ""
 
 func _on_filter_changed(tab_index: int) -> void:
+	if not filter_tabs:
+		return
 	var filter_type = filter_tabs.get_tab_title(tab_index)
+	_refresh_inventory_with_filter(filter_type)
+
+func _on_filter_button_pressed(filter_type: String) -> void:
 	_refresh_inventory_with_filter(filter_type)
 
 func _refresh_inventory_with_filter(filter_type: String) -> void:

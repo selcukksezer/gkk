@@ -5,12 +5,13 @@ extends PanelContainer
 signal item_selected(item: ItemData)
 signal item_long_pressed(item: ItemData)
 
-@onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
-@onready var quantity_label: Label = $MarginContainer/VBoxContainer/QuantityLabel
-@onready var enhancement_label: Label = $MarginContainer/EnhancementLabel
+@onready var name_label: Label = %NameLabel
+@onready var quantity_label: Label = %QuantityLabel
+@onready var enhancement_label: Label = %EnhancementLabel
 @onready var rarity_indicator: ColorRect = $RarityIndicator
-@onready var price_label: Label = $MarginContainer/VBoxContainer/PriceLabel
-@onready var purchase_button: Button = $MarginContainer/VBoxContainer/PurchaseButton
+@onready var price_label: Label = %PriceLabel
+@onready var purchase_button: Button = %PurchaseButton
+@onready var icon_rect: TextureRect = %Icon
 
 var item: ItemData = ItemData.new()
 var show_enhancement: bool = true
@@ -34,6 +35,13 @@ func setup(item_data: ItemData, is_shop: bool = false) -> void:
 func _update_display() -> void:
 	if not item:
 		return
+	
+	# Icon
+	if icon_rect:
+		if item.icon and not item.icon.is_empty() and ResourceLoader.exists(item.icon):
+			icon_rect.texture = load(item.icon)
+		else:
+			icon_rect.texture = null
 	
 	# Name
 	if name_label:

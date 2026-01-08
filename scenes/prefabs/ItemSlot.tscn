@@ -1,65 +1,72 @@
-[gd_scene load_steps=2 format=3 uid="uid://cu7qcokcjbs3u"]
+[gd_scene load_steps=3 format=3 uid="uid://cu7qcokcjbs3u"]
 
-[ext_resource type="Script" path="res://scenes/ui/components/ItemSlot.gd" id="1_itemslot"]
+[ext_resource type="Script" path="res://scenes/prefabs/ItemSlot.gd" id="1_itemslot"]
+[ext_resource type="Texture2D" uid="uid://path_to_your_icon" path="res://assets/sprites/ui/logo.png" id="2_equipped"]
 
 [node name="ItemSlot" type="PanelContainer"]
-custom_minimum_size = Vector2(120, 140)
+custom_minimum_size = Vector2(140, 140)
+offset_right = 140.0
+offset_bottom = 140.0
 script = ExtResource("1_itemslot")
+
+[node name="RarityBorder" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+color = Color(1, 1, 1, 0.15)
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
+theme_override_constants/separation = 4
 
-[node name="Icon" type="TextureRect" parent="MarginContainer/HBoxContainer"]
-layout_mode = 2
+[node name="Icon" type="TextureRect" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_vertical = 3
 expand_mode = 1
 stretch_mode = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+[node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="NameLabel" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer"]
-layout_mode = 2
-text = "Item Name"
+theme_override_font_sizes/font_size = 14
+text = "Eşya Adı"
 horizontal_alignment = 1
 autowrap_mode = 2
 max_lines_visible = 2
 
-[node name="QuantityLabel" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "x1"
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 12
+alignment = 1
 
-[node name="EnhancementLabel" type="Label" parent="MarginContainer/HBoxContainer"]
+[node name="QuantityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "x1"
+
+[node name="EnhancementLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.815686, 0, 1)
+theme_override_font_sizes/font_size = 12
 text = "+0"
-horizontal_alignment = 2
-vertical_alignment = 1
-theme_override_font_sizes/font_size = 14
 
 [node name="EquippedIndicator" type="TextureRect" parent="."]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -20.0
-offset_top = 5.0
-offset_right = 0.0
-offset_bottom = 25.0
+size_flags_horizontal = 8
+size_flags_vertical = 0
+texture = ExtResource("2_equipped")
 expand_mode = 1
 stretch_mode = 5
-texture = preload("res://assets/sprites/ui/equipped_icon.png")
-
-[node name="RarityBorder" type="ColorRect" parent="."]
-layout_mode = 2
-color = Color(1, 1, 1, 0.5)
-show_behind_parent = true

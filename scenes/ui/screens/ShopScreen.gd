@@ -352,26 +352,27 @@ func _on_item_purchase(item_data: ItemData) -> void:
 	
 	# 2. Add item to inventory
 	var inventory_result = await inventory_manager.add_item_by_id(item_id, 1)
-	if inventory_result.success:
-		print("[Shop] Item added to inventory successfully")
-		
-		# Track purchase
-		Telemetry.track_event("shop", "item_purchased", {
-			"item_id": item_id,
-			"price": price
-		})
-		
-		# Update UI globally
+	if inventory_result.success and inventory_result.get("synced", true):
+		print("[Shop] Item added to inventory successfully (server)")
+		Telemetry.track_event("shop", "item_purchased", {"item_id": item_id, "price": price})
 		State.player_updated.emit()
-		
 		# TODO: Show success message
+	elif inventory_result.success and not inventory_result.get("synced", true):
+		# Local fallback succeeded (server sync enqueued)
+		print("[Shop] Item added locally; server sync pending: ", inventory_result.get("error", ""))
+		Telemetry.track_event("shop", "item_purchased_offline", {"item_id": item_id, "price": price})
+		State.player_updated.emit()
+		# Optional: show a small toast informing user that sync is pending
 	else:
-		print("[Shop] Failed to add item to inventory: ", inventory_result.error)
-		# Refund gold if item add failed (though gold sync already happened, so we try to revert it)
+		# Truly failed to add locally (should be rare) — refund player and show error
+		print("[Shop] Failed to add item to inventory: ", inventory_result.get("error", "Unknown"))
+		# Refund gold
 		State.gold += price
 		State.player.gold = State.gold
 		if user_id:
 			await Network.http_patch("/rest/v1/users?id=eq." + user_id, {"gold": State.gold})
+		# Notify user
+		_show_error(inventory_result.get("error", "Failed to add item"))
 
 func _on_back_pressed() -> void:
 	Scenes.change_scene("res://scenes/ui/MainMenu.tscn")

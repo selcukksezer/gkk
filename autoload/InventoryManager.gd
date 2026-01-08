@@ -21,16 +21,34 @@ func fetch_inventory() -> Dictionary:
 
 ## Add item to inventory
 func add_item(item: ItemData) -> Dictionary:
-	var result = await Network.http_post(INVENTORY_ENDPOINT + "/add", {"item": item.to_dict()})
+	# Try to add via server
+	var payload = {"item": item.to_dict()}
+	var endpoint = INVENTORY_ENDPOINT + "/add"
+	print("[InventoryManager] Adding item via server: ", endpoint, payload)
+	var result = await Network.http_post(endpoint, payload)
 
 	if result.success:
+		# Server returned canonical item (with IDs, timestamps, etc.)
 		State.add_item(result.data.item)
 		var item_data = ItemData.from_dict(result.data.item)
 		item_added.emit(item_data)
 		Audio.play_item_pickup()
-		return {"success": true, "item": item_data}
+		return {"success": true, "item": item_data, "synced": true}
 
-	return {"success": false, "error": result.get("error", "Failed to add item")}
+	# Fallback: if server add failed (missing endpoint, network error, etc.), enqueue request and add locally
+	print("[InventoryManager] Server add failed: %s - %s" % [endpoint, result])
+	# Enqueue for retry if Queue exists
+	if has_node("/root/Queue"):
+		Queue.enqueue("POST", endpoint, payload, 1)
+		print("[InventoryManager] Enqueued add_item request for later sync")
+
+	# Locally add item so player sees immediate feedback
+	State.add_item(item.to_dict())
+	var local_item = ItemData.from_dict(item.to_dict())
+	item_added.emit(local_item)
+	Audio.play_item_pickup()
+
+	return {"success": true, "item": local_item, "synced": false, "error": result.get("error", "Failed to add item") }
 
 ## Add item by ID (convenience method)
 func add_item_by_id(item_id: String, quantity: int = 1) -> Dictionary:

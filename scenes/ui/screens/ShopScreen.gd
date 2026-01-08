@@ -364,15 +364,19 @@ func _on_item_purchase(item_data: ItemData) -> void:
 		State.player_updated.emit()
 		# Optional: show a small toast informing user that sync is pending
 	else:
-		# Truly failed to add locally (should be rare) — refund player and show error
-		print("[Shop] Failed to add item to inventory: ", inventory_result.get("error", "Unknown"))
-		# Refund gold
-		State.gold += price
-		State.player.gold = State.gold
-		if user_id:
-			await Network.http_patch("/rest/v1/users?id=eq." + user_id, {"gold": State.gold})
-		# Notify user
-		_show_error(inventory_result.get("error", "Failed to add item"))
+		# Fallback: try to add locally and enqueue server sync (robust for backend path errors)
+		print("[Shop] Inventory add failed on server: %s" % inventory_result.get("error", "Unknown"))
+		# Add locally so player receives purchase immediately
+		State.add_item_by_id(item_id)
+		# Enqueue server request for later sync
+		if has_node('/root/Queue'):
+			var item_dict = ItemDatabase.get_item(item_id)
+			Queue.enqueue("POST", "/api/v1/inventory/add", {"item": item_dict}, 1)
+		# Track offline purchase
+		Telemetry.track_event("shop", "item_purchased_offline", {"item_id": item_id, "price": price})
+		State.player_updated.emit()
+		# TODO: inform user that item was added locally and will sync when online
+		_show_error("Item added locally — server sync pending")
 
 func _on_back_pressed() -> void:
 	Scenes.change_scene("res://scenes/ui/MainMenu.tscn")

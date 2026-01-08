@@ -366,6 +366,20 @@ func _on_logged_in(player_data: Dictionary) -> void:
 	# Show home immediately (player data should already be present from login response)
 	show_screen("home", false)
 	print("[Main] show_screen('home') called")
+	
+	# Load inventory from server
+	var inventory_node = get_node_or_null("/root/InventoryManager")
+	if not inventory_node:
+		inventory_node = get_node_or_null("/root/Inventory")
+	
+	if inventory_node and inventory_node.has_method("fetch_inventory"):
+		print("[Main] Loading inventory from server...")
+		var inv_result = await inventory_node.fetch_inventory()
+		if inv_result.success:
+			print("[Main] Inventory loaded: %d items" % inv_result.get("items", []).size())
+		else:
+			print("[Main] Failed to load inventory: %s" % inv_result.get("error", "Unknown error"))
+	
 	# Hide overlay after a short delay to let UI settle
 	var t = Timer.new()
 	t.wait_time = 0.5

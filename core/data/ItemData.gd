@@ -154,88 +154,123 @@ enum PotionType {
 static func from_dict(data: Dictionary) -> ItemData:
 	var item = ItemData.new()
 	
-	item.item_id = data.get("id", "")
-	item.name = data.get("name", "")
-	item.description = data.get("description", "")
-	item.icon = data.get("icon", "")
+	# Helper function to safely get string values (handle null/Nil from JSON)
+	# JSON'dan gelen null değerler Godot'da Nil olarak gelir ve String'e atanamaz
+	var safe_string = func(key: String, default: String = "") -> String:
+		var value = data.get(key, default)
+		if value == null:
+			return default
+		return str(value)
 	
-	# Parse enums
-	var type_str = data.get("item_type", "MATERIAL")
+	item.item_id = safe_string.call("id", "")
+	item.name = safe_string.call("name", "")
+	item.description = safe_string.call("description", "")
+	item.icon = safe_string.call("icon", "")
+	
+	# Parse enums - safely handle null values
+	var type_str = data.get("item_type", null)
+	if type_str == null:
+		type_str = "MATERIAL"
+	type_str = str(type_str)
 	item.item_type = ItemType.get(type_str) if ItemType.has(type_str) else ItemType.MATERIAL
 	
-	var rarity_str = data.get("rarity", "COMMON")
+	var rarity_str = data.get("rarity", null)
+	if rarity_str == null:
+		rarity_str = "COMMON"
+	rarity_str = str(rarity_str)
 	item.rarity = ItemRarity.get(rarity_str) if ItemRarity.has(rarity_str) else ItemRarity.COMMON
 	
-	var slot_str = data.get("equip_slot", "NONE")
+	var slot_str = data.get("equip_slot", null)
+	if slot_str == null:
+		slot_str = "NONE"
+	slot_str = str(slot_str)
 	item.equip_slot = EquipSlot.get(slot_str) if EquipSlot.has(slot_str) else EquipSlot.NONE
 	
 	# Parse subtypes
-	var weapon_type_str = data.get("weapon_type", "NONE")
+	var weapon_type_str = data.get("weapon_type", null)
+	if weapon_type_str == null:
+		weapon_type_str = "NONE"
+	weapon_type_str = str(weapon_type_str)
 	item.weapon_type = WeaponType.get(weapon_type_str) if WeaponType.has(weapon_type_str) else WeaponType.NONE
 	
-	var armor_type_str = data.get("armor_type", "NONE")
+	var armor_type_str = data.get("armor_type", null)
+	if armor_type_str == null:
+		armor_type_str = "NONE"
+	armor_type_str = str(armor_type_str)
 	item.armor_type = ArmorType.get(armor_type_str) if ArmorType.has(armor_type_str) else ArmorType.NONE
 	
-	var material_type_str = data.get("material_type", "NONE")
+	var material_type_str = data.get("material_type", null)
+	if material_type_str == null:
+		material_type_str = "NONE"
+	material_type_str = str(material_type_str)
 	item.material_type = MaterialType.get(material_type_str) if MaterialType.has(material_type_str) else MaterialType.NONE
 	
-	var potion_type_str = data.get("potion_type", "NONE")
+	var potion_type_str = data.get("potion_type", null)
+	if potion_type_str == null:
+		potion_type_str = "NONE"
+	potion_type_str = str(potion_type_str)
 	item.potion_type = PotionType.get(potion_type_str) if PotionType.has(potion_type_str) else PotionType.NONE
 	
-	item.base_price = data.get("base_price", 0)
-	item.vendor_sell_price = data.get("vendor_sell_price", 0)
-	item.is_tradeable = data.get("is_tradeable", true)
-	item.is_stackable = data.get("is_stackable", true)
-	item.max_stack = data.get("max_stack", 999)
+	# Numeric values - handle null
+	item.base_price = data.get("base_price", 0) if data.get("base_price", null) != null else 0
+	item.vendor_sell_price = data.get("vendor_sell_price", 0) if data.get("vendor_sell_price", null) != null else 0
+	item.is_tradeable = data.get("is_tradeable", true) if data.get("is_tradeable", null) != null else true
+	item.is_stackable = data.get("is_stackable", true) if data.get("is_stackable", null) != null else true
+	item.max_stack = data.get("max_stack", 999) if data.get("max_stack", null) != null else 999
 	
 	# Recipe system
-	item.recipe_result_item_id = data.get("recipe_result_item_id", "")
-	item.recipe_requirements = data.get("recipe_requirements", {})
-	item.recipe_building_type = data.get("recipe_building_type", "")
-	item.recipe_production_time = data.get("recipe_production_time", 0)
-	item.recipe_required_level = data.get("recipe_required_level", 1)
+	item.recipe_result_item_id = safe_string.call("recipe_result_item_id", "")
+	item.recipe_requirements = data.get("recipe_requirements", {}) if data.get("recipe_requirements", null) != null else {}
+	item.recipe_building_type = safe_string.call("recipe_building_type", "")
+	item.recipe_production_time = data.get("recipe_production_time", 0) if data.get("recipe_production_time", null) != null else 0
+	item.recipe_required_level = data.get("recipe_required_level", 1) if data.get("recipe_required_level", null) != null else 1
 	
 	# Rune system
-	item.rune_enhancement_type = data.get("rune_enhancement_type", "")
-	item.rune_success_bonus = data.get("rune_success_bonus", 0.0)
-	item.rune_destruction_reduction = data.get("rune_destruction_reduction", 0.0)
+	item.rune_enhancement_type = safe_string.call("rune_enhancement_type", "")
+	item.rune_success_bonus = data.get("rune_success_bonus", 0.0) if data.get("rune_success_bonus", null) != null else 0.0
+	item.rune_destruction_reduction = data.get("rune_destruction_reduction", 0.0) if data.get("rune_destruction_reduction", null) != null else 0.0
 	
 	# Cosmetic system
-	item.cosmetic_effect = data.get("cosmetic_effect", "")
-	item.cosmetic_bind_on_pickup = data.get("cosmetic_bind_on_pickup", true)
-	item.cosmetic_showcase_only = data.get("cosmetic_showcase_only", false)
+	item.cosmetic_effect = safe_string.call("cosmetic_effect", "")
+	item.cosmetic_bind_on_pickup = data.get("cosmetic_bind_on_pickup", true) if data.get("cosmetic_bind_on_pickup", null) != null else true
+	item.cosmetic_showcase_only = data.get("cosmetic_showcase_only", false) if data.get("cosmetic_showcase_only", null) != null else false
 	
 	# Production system
-	item.production_building_type = data.get("production_building_type", "")
-	item.production_rate_per_hour = data.get("production_rate_per_hour", 0)
-	item.production_required_level = data.get("production_required_level", 1)
+	item.production_building_type = safe_string.call("production_building_type", "")
+	item.production_rate_per_hour = data.get("production_rate_per_hour", 0) if data.get("production_rate_per_hour", null) != null else 0
+	item.production_required_level = data.get("production_required_level", 1) if data.get("production_required_level", null) != null else 1
 	
-	item.attack = data.get("attack", 0)
-	item.defense = data.get("defense", 0)
-	item.health = data.get("health", 0)
-	item.power = data.get("power", 0)
+	# Stats - handle null
+	item.attack = data.get("attack", 0) if data.get("attack", null) != null else 0
+	item.defense = data.get("defense", 0) if data.get("defense", null) != null else 0
+	item.health = data.get("health", 0) if data.get("health", null) != null else 0
+	item.power = data.get("power", 0) if data.get("power", null) != null else 0
 	
-	item.enhancement_level = data.get("enhancement_level", 0)
-	item.max_enhancement = data.get("max_enhancement", 10)
-	item.can_enhance = data.get("can_enhance", false)
+	# Enhancement - handle null
+	item.enhancement_level = data.get("enhancement_level", 0) if data.get("enhancement_level", null) != null else 0
+	item.max_enhancement = data.get("max_enhancement", 10) if data.get("max_enhancement", null) != null else 10
+	item.can_enhance = data.get("can_enhance", false) if data.get("can_enhance", null) != null else false
 	
-	item.energy_restore = data.get("energy_restore", 0)
-	item.tolerance_increase = data.get("tolerance_increase", 0)
-	item.overdose_risk = data.get("overdose_risk", 0.0)
-	item.heal_amount = data.get("heal_amount", 0)
+	# Consumable stats - handle null
+	item.energy_restore = data.get("energy_restore", 0) if data.get("energy_restore", null) != null else 0
+	item.tolerance_increase = data.get("tolerance_increase", 0) if data.get("tolerance_increase", null) != null else 0
+	item.overdose_risk = data.get("overdose_risk", 0.0) if data.get("overdose_risk", null) != null else 0.0
+	item.heal_amount = data.get("heal_amount", 0) if data.get("heal_amount", null) != null else 0
 	
-	item.required_level = data.get("required_level", 1)
-	item.required_class = data.get("required_class", "")
+	item.required_level = data.get("required_level", 1) if data.get("required_level", null) != null else 1
+	item.required_class = safe_string.call("required_class", "")
 	
-	item.quantity = data.get("quantity", 1)
-	item.obtained_at = data.get("obtained_at", 0)
-	item.bound_to_player = data.get("bound_to_player", false)
-	item.pending_sync = data.get("pending_sync", false)
+	# Meta - handle null
+	item.quantity = data.get("quantity", 1) if data.get("quantity", null) != null else 1
+	item.obtained_at = data.get("obtained_at", 0) if data.get("obtained_at", null) != null else 0
+	item.bound_to_player = data.get("bound_to_player", false) if data.get("bound_to_player", null) != null else false
+	item.pending_sync = data.get("pending_sync", false) if data.get("pending_sync", null) != null else false
 	
 	return item
 
 ## Convert to dictionary
 func to_dict() -> Dictionary:
+	# Explicitly cast integer values to ensure they serialize as integers, not floats
 	return {
 		"id": item_id,
 		"name": name,
@@ -248,42 +283,42 @@ func to_dict() -> Dictionary:
 		"armor_type": ArmorType.keys()[armor_type],
 		"material_type": MaterialType.keys()[material_type],
 		"potion_type": PotionType.keys()[potion_type],
-		"base_price": base_price,
-		"vendor_sell_price": vendor_sell_price,
+		"base_price": int(base_price),
+		"vendor_sell_price": int(vendor_sell_price),
 		"is_tradeable": is_tradeable,
 		"is_stackable": is_stackable,
-		"max_stack": max_stack,
+		"max_stack": int(max_stack),
 		"recipe_result_item_id": recipe_result_item_id,
 		"recipe_requirements": recipe_requirements,
 		"recipe_building_type": recipe_building_type,
-		"recipe_production_time": recipe_production_time,
-		"recipe_required_level": recipe_required_level,
+		"recipe_production_time": int(recipe_production_time),
+		"recipe_required_level": int(recipe_required_level),
 		"rune_enhancement_type": rune_enhancement_type,
-		"rune_success_bonus": rune_success_bonus,
-		"rune_destruction_reduction": rune_destruction_reduction,
+		"rune_success_bonus": float(rune_success_bonus),
+		"rune_destruction_reduction": float(rune_destruction_reduction),
 		"cosmetic_effect": cosmetic_effect,
 		"cosmetic_bind_on_pickup": cosmetic_bind_on_pickup,
 		"cosmetic_showcase_only": cosmetic_showcase_only,
 		"production_building_type": production_building_type,
-		"production_rate_per_hour": production_rate_per_hour,
-		"production_required_level": production_required_level,
-		"attack": attack,
-		"defense": defense,
-		"health": health,
-		"power": power,
-		"enhancement_level": enhancement_level,
-		"max_enhancement": max_enhancement,
+		"production_rate_per_hour": int(production_rate_per_hour),
+		"production_required_level": int(production_required_level),
+		"attack": int(attack),
+		"defense": int(defense),
+		"health": int(health),
+		"power": int(power),
+		"enhancement_level": int(enhancement_level),
+		"max_enhancement": int(max_enhancement),
 		"can_enhance": can_enhance,
-		"energy_restore": energy_restore,
-		"tolerance_increase": tolerance_increase,
-		"overdose_risk": overdose_risk,
-		"heal_amount": heal_amount,
-		"required_level": required_level,
+		"energy_restore": int(energy_restore),
+		"tolerance_increase": int(tolerance_increase),
+		"overdose_risk": float(overdose_risk),
+		"heal_amount": int(heal_amount),
+		"required_level": int(required_level),
 		"required_class": required_class,
-		"quantity": quantity,
-		"obtained_at": obtained_at,
+		"quantity": int(quantity),
+		"obtained_at": int(obtained_at),
 		"bound_to_player": bound_to_player,
-	"pending_sync": pending_sync
+		"pending_sync": pending_sync
 	}
 
 ## Get rarity color

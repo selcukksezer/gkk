@@ -327,13 +327,38 @@ func _on_item_purchase(item_data: ItemData) -> void:
 	var item_id = item_data.item_id
 	var price = item_data.base_price
 	
-	print("[Shop] Purchasing item: %s for %d Gold" % [item_data.name, price])
+	print("[Shop] Item clicked: %s" % [item_data.name])
 
-	# Check if player has enough gold
-	if State.gold < price:
-		print("[Shop] Not enough gold for item: ", item_id)
-		# TODO: Show error message
-		return
+	# Show confirmation dialog
+	_show_purchase_confirmation(item_data)
+
+func _show_purchase_confirmation(item_data: ItemData) -> void:
+	var item_id = item_data.item_id
+	var price = item_data.base_price
+	
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "Satın Al"
+	dialog.dialog_text = "%s satın almak istediğinize emin misiniz?\n\nFiyat: %d Altın" % [item_data.name, price]
+	dialog.ok_button_text = "Satın Al"
+	dialog.cancel_button_text = "İptal"
+	add_child(dialog)
+	dialog.popup_centered()
+	
+	# Handle confirmation
+	dialog.confirmed.connect(func(): 
+		_process_item_purchase(item_data)
+		dialog.queue_free()
+	)
+	dialog.canceled.connect(func(): 
+		print("[Shop] Purchase cancelled")
+		dialog.queue_free()
+	)
+
+func _process_item_purchase(item_data: ItemData) -> void:
+	var item_id = item_data.item_id
+	var price = item_data.base_price
+	
+	print("[Shop] Purchasing item: %s for %d Gold" % [item_data.name, price])
 	
 	# Optimistic update
 	var old_gold = State.gold
@@ -348,42 +373,48 @@ func _on_item_purchase(item_data: ItemData) -> void:
 			print("[Shop] Failed to sync gold reduction. Reverting.")
 			State.gold = old_gold
 			State.player.gold = old_gold
+			_show_error("Altın güncellemesi başarısız!")
 			return
 	
-	# 2. Add item to inventory
-	var inventory_result = await inventory_manager.add_item_by_id(item_id, 1)
+	# 2. Add item to inventory with full data (NOT just by ID)
+	print("[Shop] Adding item to inventory with full data...")
+	var inventory_result = await inventory_manager.add_item(item_data)
+	
 	if inventory_result.success and inventory_result.get("synced", true):
 		print("[Shop] Item added to inventory successfully (server)")
 		Telemetry.track_event("shop", "item_purchased", {"item_id": item_id, "price": price})
 		State.player_updated.emit()
-		# TODO: Show success message
 	elif inventory_result.success and not inventory_result.get("synced", true):
 		# Local fallback succeeded (server sync enqueued)
 		print("[Shop] Item added locally; server sync pending: ", inventory_result.get("error", ""))
 		Telemetry.track_event("shop", "item_purchased_offline", {"item_id": item_id, "price": price})
 		State.player_updated.emit()
-		# Optional: show a small toast informing user that sync is pending
 	else:
-		# Fallback: try to add locally and enqueue server sync (robust for backend path errors)
+		# Fallback: try to add locally
 		print("[Shop] Inventory add failed on server: %s" % inventory_result.get("error", "Unknown"))
-		# Add locally so player receives purchase immediately
-		State.add_item_by_id(item_id)
+		# Add locally with full data
+		State.add_item_data(item_data)
 		# Enqueue server request for later sync
 		if has_node('/root/Queue'):
-			var item_dict = ItemDatabase.get_item(item_id)
+			var item_dict = item_data.to_dict()
 			Queue.enqueue("POST", "/api/v1/inventory/add", {"item": item_dict}, 1)
 		# Track offline purchase
 		Telemetry.track_event("shop", "item_purchased_offline", {"item_id": item_id, "price": price})
 		State.player_updated.emit()
-		# TODO: inform user that item was added locally and will sync when online
-		_show_error("Item added locally — server sync pending")
+		_show_error("Item yerel olarak eklendi - senkronizasyon bekliyor")
 
 func _on_back_pressed() -> void:
 	Scenes.change_scene("res://scenes/ui/MainMenu.tscn")
 
 func _show_error(message: String) -> void:
 	var dialog = AcceptDialog.new()
-	dialog.title = "Error"
+	dialog.title = "Hata"
 	dialog.dialog_text = message
+	dialog.ok_button_text = "Tamam"
 	add_child(dialog)
 	dialog.popup_centered()
+	dialog.confirmed.connect(func(): dialog.queue_free())
+	# Auto-close after 3 seconds
+	await get_tree().create_timer(3.0).timeout
+	if dialog and is_instance_valid(dialog):
+		dialog.queue_free()

@@ -237,15 +237,31 @@ func add_item_by_id(item_id: String) -> void:
 
 func remove_item(item_id: String) -> void:
 	for i in range(inventory.size()):
-		if inventory[i].get("id", "") == item_id:
+		var item = inventory[i]
+		if item.get("item_id", item.get("id", "")) == item_id:
+			print("[StateStore] Removing item: ", item_id)
 			inventory.remove_at(i)
 			inventory_updated.emit()
 			state_changed.emit("inventory", inventory)
 			return
+	print("[StateStore] Item not found for removal: ", item_id)
+
+func update_item_quantity(item_id: String, new_quantity: int) -> void:
+	for item in inventory:
+		if item.get("item_id", item.get("id", "")) == item_id:
+			print("[StateStore] Updating item quantity: ", item_id, " to ", new_quantity)
+			item["quantity"] = new_quantity
+			if new_quantity <= 0:
+				remove_item(item_id)
+			else:
+				inventory_updated.emit()
+				state_changed.emit("inventory", inventory)
+			return
+	print("[StateStore] Item not found for quantity update: ", item_id)
 
 func get_item_by_id(item_id: String) -> Dictionary:
 	for item in inventory:
-		if item.get("id", "") == item_id:
+		if item.get("item_id", item.get("id", "")) == item_id:
 			return item
 	return {}
 
@@ -380,6 +396,21 @@ func _on_session_logged_in(data: Dictionary) -> void:
 	if data:
 		load_player_data(data)
 		print("[StateStore] Player data loaded from session login")
+	
+	# Load inventory from server
+	# InventoryManager should be available as autoload
+	var inventory_node = get_node_or_null("/root/InventoryManager")
+	if not inventory_node:
+		# Try alternative autoload name
+		inventory_node = get_node_or_null("/root/Inventory")
+	
+	if inventory_node and inventory_node.has_method("fetch_inventory"):
+		print("[StateStore] Loading inventory from server...")
+		var inv_result = await inventory_node.fetch_inventory()
+		if inv_result.get("success", false):
+			print("[StateStore] Inventory loaded: %d items" % inv_result.get("items", []).size())
+		else:
+			print("[StateStore] Failed to load inventory: %s" % inv_result.get("error", "Unknown error"))
 
 func _on_session_status_checked(is_authenticated: bool) -> void:
 	# If session validated and authenticated, fetch profile from server

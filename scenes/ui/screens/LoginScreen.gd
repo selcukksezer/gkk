@@ -2,12 +2,12 @@ extends Control
 ## Login Screen
 ## Handles user authentication (login/register)
 
-@onready var username_input = $CenterContainer/VBoxContainer/UsernameInput
-@onready var password_input = $CenterContainer/VBoxContainer/PasswordInput
-@onready var status_label = $CenterContainer/VBoxContainer/StatusLabel
-@onready var remember_check = $CenterContainer/VBoxContainer/RememberCheck
-@onready var login_button = $CenterContainer/VBoxContainer/LoginButton
-@onready var register_button = $CenterContainer/VBoxContainer/RegisterButton
+@onready var username_input = $CenterContainer/MarginContainer/VBoxContainer/UsernameInput
+@onready var password_input = $CenterContainer/MarginContainer/VBoxContainer/PasswordInput
+@onready var status_label = $CenterContainer/MarginContainer/VBoxContainer/StatusLabel
+@onready var remember_check = $CenterContainer/MarginContainer/VBoxContainer/RememberCheck
+@onready var login_button = $CenterContainer/MarginContainer/VBoxContainer/LoginButton
+@onready var register_button = $CenterContainer/MarginContainer/VBoxContainer/RegisterButton
 
 var _loading: bool = false
 const CREDENTIALS_FILE = "user://login_credentials.json"

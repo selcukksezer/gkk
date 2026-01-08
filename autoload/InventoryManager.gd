@@ -11,69 +11,103 @@ const INVENTORY_ENDPOINT = "/api/v1/inventory"
 
 ## Get player inventory from server
 func fetch_inventory() -> Dictionary:
+	# Try RPC endpoint first (preferred)
+	# Note: Supabase RPC functions without parameters should be called with empty dict
+	var rpc_result = await Network.http_post("/rest/v1/rpc/get_inventory", {})
+	
+	print("[InventoryManager] Fetch inventory RPC result: ", rpc_result)
+	
+	if rpc_result.success and rpc_result.data:
+		var response_data = rpc_result.data
+		
+		# Handle nested response structure
+		if typeof(response_data) == TYPE_DICTIONARY:
+			if response_data.has("items"):
+				print("[InventoryManager] Found items in response: %d items" % response_data.items.size())
+				State.set_inventory(response_data.items)
+				return {"success": true, "items": response_data.items}
+			elif response_data.has("data"):
+				# Sometimes Supabase wraps the response
+				var data = response_data.data
+				if typeof(data) == TYPE_DICTIONARY and data.has("items"):
+					print("[InventoryManager] Found items in data.items: %d items" % data.items.size())
+					State.set_inventory(data.items)
+					return {"success": true, "items": data.items}
+				elif typeof(data) == TYPE_ARRAY:
+					print("[InventoryManager] Found items as array in data: %d items" % data.size())
+					State.set_inventory(data)
+					return {"success": true, "items": data}
+		
+		# Fallback: try direct array
+		if typeof(response_data) == TYPE_ARRAY:
+			print("[InventoryManager] Found items as direct array: %d items" % response_data.size())
+			State.set_inventory(response_data)
+			return {"success": true, "items": response_data}
+		
+		print("[InventoryManager] Unexpected response structure: ", response_data)
+	
+	# Fallback to old endpoint if RPC fails
+	print("[InventoryManager] RPC failed, trying old endpoint...")
 	var result = await Network.http_get(INVENTORY_ENDPOINT)
 	
 	if result.success and result.data.has("items"):
 		State.set_inventory(result.data.items)
 		return {"success": true, "items": result.data.items}
 	
-	return {"success": false, "error": result.get("error", "Unknown error")}
+	print("[InventoryManager] All inventory fetch methods failed")
+	return {"success": false, "error": rpc_result.get("error", result.get("error", "Unknown error"))}
 
 ## Add item to inventory
 func add_item(item: ItemData) -> Dictionary:
-	# Try to add via server
-	var payload = {"item": item.to_dict()}
-	var endpoint = INVENTORY_ENDPOINT + "/add"
-	print("[InventoryManager] Adding item via server: ", endpoint, payload)
+	# Convert item to dict
+	var item_dict = item.to_dict()
+	
+	# Try to add via Server RPC (Normalized DB Handler)
+	var endpoint = "/rest/v1/rpc/add_inventory_item"
+	var payload = {"item_data": item_dict}
+	
+	print("[InventoryManager] Adding item via RPC: ", endpoint)
 	var result = await Network.http_post(endpoint, payload)
 
 	if result.success:
-		# Server returned canonical item (with IDs, timestamps, etc.)
-		State.add_item(result.data.item)
-		var item_data = ItemData.from_dict(result.data.item)
-		item_added.emit(item_data)
+		# Server returned the inventory row
+		var returned_data = result.data
+		
+		# If RPC returns stringified JSON, parse it
+		if typeof(returned_data) == TYPE_STRING:
+			var json = JSON.new()
+			if json.parse(returned_data) == OK:
+				returned_data = json.data
+				
+		# Merge local definition with server instance data
+		var final_item = item_dict.duplicate()
+		if typeof(returned_data) == TYPE_DICTIONARY:
+			# Update quantity, row_id, etc from server response
+			for k in returned_data:
+				final_item[k] = returned_data[k]
+				
+		State.add_item(final_item)
+		var item_obj = ItemData.from_dict(final_item)
+		item_added.emit(item_obj)
 		Audio.play_item_pickup()
-		return {"success": true, "item": item_data, "synced": true}
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
+		return {"success": true, "item": item_obj, "synced": true}
 
-	# Fallback: if server add failed (missing endpoint, network error, etc.), try REST fallback then enqueue and/or add locally
-	print("[InventoryManager] Server add failed: %s - %s" % [endpoint, result])
-	# 1) Try Supabase REST insertion as an alternate path
-	var rest_endpoint = "/rest/v1/inventory"
-	print("[InventoryManager] Attempting fallback REST insert to: %s" % rest_endpoint)
-	var rest_result = await Network.http_post(rest_endpoint, item.to_dict())
-	if rest_result.success:
-		# Use returned data if available. Supabase may return an array of rows.
-		var returned = item.to_dict()
-		if rest_result.data:
-			if typeof(rest_result.data) == TYPE_ARRAY and rest_result.data.size() > 0:
-				returned = rest_result.data[0]
-			elif typeof(rest_result.data) == TYPE_DICTIONARY:
-				returned = rest_result.data
-		# Add returned/inserted item
-		State.add_item(returned)
-		var rest_item = ItemData.from_dict(returned)
-		item_added.emit(rest_item)
-		Audio.play_item_pickup()
-		print("[InventoryManager] Fallback REST insert succeeded")
-		return {"success": true, "item": rest_item, "synced": true}
-
-	# 2) REST fallback failed — enqueue REST endpoint for later retry if available
-	print("[InventoryManager] REST fallback failed: %s" % rest_result)
-	if typeof(Queue) != TYPE_NIL and Queue.has_method("enqueue"):
-		Queue.enqueue("POST", rest_endpoint, {"item": item.to_dict()}, 1)
-		print("[InventoryManager] Enqueued REST add_item request for later sync")
-	else:
-		print("[InventoryManager] Queue not available; request not enqueued")
-
-	# 3) Locally add item so player sees immediate feedback (client-first UX)
+	print("[InventoryManager] Server RPC add failed: %s" % result)
+	
+	# Fallback: Local Add (Offline / Error Tolerance)
+	print("[InventoryManager] Adding locally (pending sync)")
 	var local_dict = item.to_dict()
 	local_dict["pending_sync"] = true
 	State.add_item(local_dict)
 	var local_item = ItemData.from_dict(local_dict)
 	item_added.emit(local_item)
 	Audio.play_item_pickup()
+	if State.has_user_signal("inventory_updated"):
+		State.emit_signal("inventory_updated")
 
-	return {"success": true, "item": local_item, "synced": false, "error": result.get("error", "Failed to add item") }
+	return {"success": true, "item": local_item, "synced": false, "error": result.get("error", "RPC failed") }
 
 ## Add item by ID (convenience method)
 func add_item_by_id(item_id: String, quantity: int = 1) -> Dictionary:
@@ -85,21 +119,62 @@ func add_item_by_id(item_id: String, quantity: int = 1) -> Dictionary:
 
 ## Remove item from inventory
 func remove_item(item_id: String, quantity: int = 1) -> Dictionary:
+	print("[InventoryManager] Removing item: ", item_id, " quantity: ", quantity)
+	
+	# Check if item exists and has enough quantity
+	var current_quantity = _get_item_quantity(item_id)
+	if current_quantity <= 0:
+		return {"success": false, "error": "Item not found in inventory"}
+	
+	if quantity > current_quantity:
+		return {"success": false, "error": "Not enough items (have: %d, trying to remove: %d)" % [current_quantity, quantity]}
+	
+	# Try RPC endpoint first
+	var rpc_result = await Network.http_post("/rest/v1/rpc/remove_inventory_item", {
+		"p_item_id": item_id,
+		"p_quantity": quantity
+	})
+	
+	if rpc_result.success:
+		print("[InventoryManager] Item removed from database via RPC")
+		# Update local state (current_quantity already declared at function start)
+		if quantity >= current_quantity:
+			# Remove completely
+			State.remove_item(item_id)
+		else:
+			# Update quantity
+			var new_quantity = current_quantity - quantity
+			State.update_item_quantity(item_id, new_quantity)
+		
+		item_removed.emit(item_id)
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
+		return {"success": true}
+	
+	print("[InventoryManager] RPC failed, trying fallback endpoint")
+	# Fallback to old endpoint
 	var result = await Network.http_post(INVENTORY_ENDPOINT + "/remove", {
 		"item_id": item_id,
 		"quantity": quantity
 	})
 	
 	if result.success:
-		if quantity >= _get_item_quantity(item_id):
+		print("[InventoryManager] Item removed from database via fallback")
+		# Update local state (current_quantity already declared at function start)
+		if quantity >= current_quantity:
+			# Remove completely
 			State.remove_item(item_id)
 		else:
 			# Update quantity
-			_update_item_quantity(item_id, -quantity)
+			var new_quantity = current_quantity - quantity
+			State.update_item_quantity(item_id, new_quantity)
 		
 		item_removed.emit(item_id)
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
 		return {"success": true}
 	
+	print("[InventoryManager] All remove methods failed: ", result.get("error", "Unknown"))
 	return {"success": false, "error": result.get("error", "Failed to remove item")}
 
 ## Use item (consumable)
@@ -177,16 +252,22 @@ func unequip_item(slot: String) -> Dictionary:
 
 ## Get item quantity
 func _get_item_quantity(item_id: String) -> int:
-	var item = State.get_item_by_id(item_id)
-	return item.get("quantity", 1)
+	var all_items = State.get_all_items_data()
+	for item in all_items:
+		if item.item_id == item_id:
+			return item.quantity
+	return 0
 
 ## Update item quantity
 func _update_item_quantity(item_id: String, delta: int) -> void:
-	for item in State.inventory:
-		if item.get("id", "") == item_id:
-			item.quantity = max(0, item.get("quantity", 1) + delta)
-			State.inventory_updated.emit()
+	var all_items = State.get_all_items_data()
+	for item in all_items:
+		if item.item_id == item_id:
+			var new_quantity = max(0, item.quantity + delta)
+			print("[InventoryManager] Updating quantity for ", item_id, " from ", item.quantity, " to ", new_quantity)
+			State.update_item_quantity(item_id, new_quantity)
 			return
+	print("[InventoryManager] Item not found for quantity update: ", item_id)
 
 ## Get total inventory value
 func get_total_value() -> int:

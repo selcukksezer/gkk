@@ -43,7 +43,42 @@ const ITEMS = {
 		"can_enhance": true,
 		"max_enhancement": 10
 	},
-	
+
+	"weapon_custom_longsword": {
+		"id": "weapon_custom_longsword",
+		"name": "Eşsiz Uzun Kılıç",
+		"description": "Kullanıcının eklediği kılıç.",
+		"icon": "res://assets/sprites/items/sword_custom.png",
+		"item_type": "WEAPON",
+		"weapon_type": "SWORD",
+		"rarity": "EPIC",
+		"equip_slot": "WEAPON",
+		"base_price": 1200,
+		"vendor_sell_price": 600,
+		"attack": 60,
+		"required_level": 10,
+		"can_enhance": true,
+		"max_enhancement": 15
+	},
+
+	"armor_custom_plate": {
+		"id": "armor_custom_plate",
+		"name": "Eşsiz Zırh",
+		"description": "Kullanıcının eklediği plaka zırh.",
+		"icon": "res://assets/sprites/items/armor_custom.png",
+		"item_type": "ARMOR",
+		"armor_type": "PLATE",
+		"rarity": "EPIC",
+		"equip_slot": "CHEST",
+		"base_price": 1500,
+		"vendor_sell_price": 750,
+		"defense": 80,
+		"health": 120,
+		"required_level": 12,
+		"can_enhance": true,
+		"max_enhancement": 15
+	},
+
 	# Armor
 	"armor_chest_leather": {
 		"id": "armor_chest_leather",

@@ -109,11 +109,19 @@ func _build_headers(custom_headers: Dictionary = {}) -> PackedStringArray:
 	var headers = PackedStringArray()
 	
 	# Add authentication token if available
-	if Session.access_token != "":
+	if Session and Session.access_token != "":
 		headers.append("Authorization: Bearer %s" % Session.access_token)
 	
+	# Add API key header (useful for Supabase REST endpoints)
+	var api_key = ProjectSettings.get_setting("game_settings/server/api_key", "")
+	if api_key and not str(api_key).is_empty():
+		headers.append("apikey: %s" % str(api_key))
+
+	# Prefer representation for REST inserts (helpful to get inserted row back)
+	headers.append("Prefer: return=representation")
+
 	# Add device ID
-	if Session.device_id != "":
+	if Session and Session.device_id != "":
 		headers.append("X-Device-ID: %s" % Session.device_id)
 	
 	# Add custom headers

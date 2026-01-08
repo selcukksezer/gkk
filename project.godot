@@ -18,7 +18,7 @@ config/name="Gölge Krallık: Kadim Mühür'ün Çöküşü"
 config/description="Ortaçağ temalı mobil MMORPG"
 config/version="0.1.0"
 run/main_scene="res://scenes/main/Main.tscn"
-config/features=PackedStringArray("4.5", "Mobile")
+config/features=PackedStringArray("4.6", "Mobile")
 boot_splash/bg_color=Color(0.1, 0.1, 0.12, 1)
 boot_splash/show_image=false
 config/icon="res://icon.svg"
@@ -41,7 +41,6 @@ ShopManager="*res://core/managers/ShopManager.gd"
 window/size/viewport_width=648
 window/size/viewport_height=1152
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
 window/handheld/orientation=1
 
 [editor]

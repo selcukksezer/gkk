@@ -35,14 +35,31 @@ func add_item(item: ItemData) -> Dictionary:
 		Audio.play_item_pickup()
 		return {"success": true, "item": item_data, "synced": true}
 
-	# Fallback: if server add failed (missing endpoint, network error, etc.), enqueue request and add locally
+	# Fallback: if server add failed (missing endpoint, network error, etc.), try REST fallback then enqueue and/or add locally
 	print("[InventoryManager] Server add failed: %s - %s" % [endpoint, result])
-	# Enqueue for retry if Queue exists
-	if has_node("/root/Queue"):
-		Queue.enqueue("POST", endpoint, payload, 1)
-		print("[InventoryManager] Enqueued add_item request for later sync")
+	# 1) Try Supabase REST insertion as an alternate path
+	var rest_endpoint = "/rest/v1/inventory"
+	print("[InventoryManager] Attempting fallback REST insert to: %s" % rest_endpoint)
+	var rest_result = await Network.http_post(rest_endpoint, item.to_dict())
+	if rest_result.success:
+		# Use returned data if available
+		var returned = rest_result.data if rest_result.data and typeof(rest_result.data) == TYPE_DICTIONARY else item.to_dict()
+		State.add_item(returned)
+		var rest_item = ItemData.from_dict(returned)
+		item_added.emit(rest_item)
+		Audio.play_item_pickup()
+		print("[InventoryManager] Fallback REST insert succeeded")
+		return {"success": true, "item": rest_item, "synced": true}
 
-	# Locally add item so player sees immediate feedback
+	# 2) REST fallback failed — enqueue REST endpoint for later retry if available
+	print("[InventoryManager] REST fallback failed: %s" % rest_result)
+	if typeof(Queue) != TYPE_NIL and Queue.has_method("enqueue"):
+		Queue.enqueue("POST", rest_endpoint, {"item": item.to_dict()}, 1)
+		print("[InventoryManager] Enqueued REST add_item request for later sync")
+	else:
+		print("[InventoryManager] Queue not available; request not enqueued")
+
+	# 3) Locally add item so player sees immediate feedback (client-first UX)
 	State.add_item(item.to_dict())
 	var local_item = ItemData.from_dict(item.to_dict())
 	item_added.emit(local_item)

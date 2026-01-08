@@ -29,38 +29,44 @@ func set_item(item: ItemData) -> void:
 	_item = item
 	
 	# İkon yükleme (ItemData içinde 'icon' özelliği path olarak var)
-	if item.icon and not item.icon.is_empty():
-		var texture = load(item.icon)
-		if texture:
-			icon_rect.texture = texture
+	if icon_rect:
+		if item.icon and not item.icon.is_empty() and ResourceLoader.exists(item.icon):
+			icon_rect.texture = load(item.icon)
 		else:
-			# Geçici: Icon yüklenemezse placeholder kullan
 			icon_rect.texture = null
 	else:
-		icon_rect.texture = null
+		# icon_rect not found in scene, skip icon assignment
+		pass
 	
 	# İsim güncelleme
-	name_label.text = item.name
-	
+	if name_label:
+		name_label.text = item.name
+		if item.pending_sync:
+			name_label.text += " (syncing...)"
+
 	# Miktar gösterimi
-	if item.quantity > 1:
-		quantity_label.text = "x%d" % item.quantity
-		quantity_label.visible = true
-	else:
-		quantity_label.visible = false
-	
+	if quantity_label:
+		if item.quantity > 1:
+			quantity_label.text = "x%d" % item.quantity
+			quantity_label.visible = true
+		else:
+			quantity_label.visible = false
+
 	# Geliştirme seviyesi gösterimi
-	if item.enhancement_level > 0:
-		enhancement_label.text = "+%d" % item.enhancement_level
-		enhancement_label.visible = true
-	else:
-		enhancement_label.visible = false
+	if enhancement_label:
+		if item.enhancement_level > 0:
+			enhancement_label.text = "+%d" % item.enhancement_level
+			enhancement_label.visible = true
+		else:
+			enhancement_label.visible = false
 
 	# Nadirlik rengi
-	rarity_border.color = item.get_rarity_color()
-	
+	if rarity_border:
+		rarity_border.color = item.get_rarity_color()
+
 	# Kuşanılmış durumu (bu inventory'den gelmeli, şimdilik gizli)
-	equipped_indicator.visible = false
+	if equipped_indicator:
+		equipped_indicator.visible = false
 
 ## Slotu boşaltır (Reset)
 func clear_slot() -> void:

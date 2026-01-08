@@ -42,8 +42,14 @@ func add_item(item: ItemData) -> Dictionary:
 	print("[InventoryManager] Attempting fallback REST insert to: %s" % rest_endpoint)
 	var rest_result = await Network.http_post(rest_endpoint, item.to_dict())
 	if rest_result.success:
-		# Use returned data if available
-		var returned = rest_result.data if rest_result.data and typeof(rest_result.data) == TYPE_DICTIONARY else item.to_dict()
+		# Use returned data if available. Supabase may return an array of rows.
+		var returned = item.to_dict()
+		if rest_result.data:
+			if typeof(rest_result.data) == TYPE_ARRAY and rest_result.data.size() > 0:
+				returned = rest_result.data[0]
+			elif typeof(rest_result.data) == TYPE_DICTIONARY:
+				returned = rest_result.data
+		# Add returned/inserted item
 		State.add_item(returned)
 		var rest_item = ItemData.from_dict(returned)
 		item_added.emit(rest_item)
@@ -60,8 +66,10 @@ func add_item(item: ItemData) -> Dictionary:
 		print("[InventoryManager] Queue not available; request not enqueued")
 
 	# 3) Locally add item so player sees immediate feedback (client-first UX)
-	State.add_item(item.to_dict())
-	var local_item = ItemData.from_dict(item.to_dict())
+	var local_dict = item.to_dict()
+	local_dict["pending_sync"] = true
+	State.add_item(local_dict)
+	var local_item = ItemData.from_dict(local_dict)
 	item_added.emit(local_item)
 	Audio.play_item_pickup()
 

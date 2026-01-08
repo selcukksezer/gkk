@@ -46,6 +46,8 @@ func _update_display() -> void:
 	# Name
 	if name_label:
 		name_label.text = item.name
+		if item.pending_sync:
+			name_label.text += " (syncing...)"
 		name_label.add_theme_color_override("font_color", item.get_rarity_color())
 	
 	# Quantity

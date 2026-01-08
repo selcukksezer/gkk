@@ -147,6 +147,8 @@ enum PotionType {
 @export var quantity: int = 1
 @export var obtained_at: int = 0
 @export var bound_to_player: bool = false
+## Client-only flags
+@export var pending_sync: bool = false
 
 ## Create from dictionary
 static func from_dict(data: Dictionary) -> ItemData:
@@ -228,6 +230,7 @@ static func from_dict(data: Dictionary) -> ItemData:
 	item.quantity = data.get("quantity", 1)
 	item.obtained_at = data.get("obtained_at", 0)
 	item.bound_to_player = data.get("bound_to_player", false)
+	item.pending_sync = data.get("pending_sync", false)
 	
 	return item
 
@@ -279,7 +282,8 @@ func to_dict() -> Dictionary:
 		"required_class": required_class,
 		"quantity": quantity,
 		"obtained_at": obtained_at,
-		"bound_to_player": bound_to_player
+		"bound_to_player": bound_to_player,
+	"pending_sync": pending_sync
 	}
 
 ## Get rarity color

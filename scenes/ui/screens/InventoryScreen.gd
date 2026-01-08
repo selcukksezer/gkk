@@ -49,8 +49,15 @@ func _ready() -> void:
 	# Setup filters (supports both TabContainer and HBox FilterBar)
 	_setup_filter_tabs()
 
+	# Responsive behaviour: update grid columns when viewport size changes
+	if get_viewport():
+		get_viewport().size_changed.connect(Callable(self, "_on_viewport_size_changed"))
+
 	# Load initial inventory
 	_refresh_inventory()
+
+	# Initial layout adjustment
+	_update_grid_columns()
 
 func _setup_filter_tabs() -> void:
 	if filter_tabs:
@@ -107,6 +114,9 @@ func _refresh_inventory() -> void:
 			if inventory_grid:
 				inventory_grid.add_child(slot)
 
+	# Adjust grid to current viewport size
+	_update_grid_columns()
+
 func _create_equipped_slots() -> void:
 	# Equipment slots in order: Weapon, Helmet, Chest, Legs, Boots, Gloves, Ring, Amulet, Belt
 	var equipment_slots = ["weapon", "helmet", "chest", "legs", "boots", "gloves", "ring", "amulet", "belt"]
@@ -123,11 +133,23 @@ func _create_equipped_slots() -> void:
 		)
 		equipped_container.add_child(slot)
 
+const SMALL_SCREEN_WIDTH:int = 600
+
 func _on_slot_clicked(item: ItemData) -> void:
+	# On small screens show a popup rather than the side details panel
+	if get_viewport_rect().size.x <= SMALL_SCREEN_WIDTH:
+		_show_item_popup(item)
+		return
+
 	selected_item = item
 	_update_item_details(item)
 
 func _on_equipment_slot_clicked(slot_name: String, clicked_item: ItemData = null) -> void:
+	# On small screens show a popup
+	if clicked_item and get_viewport_rect().size.x <= SMALL_SCREEN_WIDTH:
+		_show_item_popup(clicked_item)
+		return
+	
 	# If slot emitted an item (clicked on an equipped slot with an item), show it
 	if clicked_item:
 		selected_item = clicked_item
@@ -301,3 +323,40 @@ func _show_error(message: String) -> void:
 	dialog.dialog_text = message
 	add_child(dialog)
 	dialog.popup_centered()
+
+# Responsive helpers
+func _on_viewport_size_changed() -> void:
+	_update_grid_columns()
+
+func _update_grid_columns() -> void:
+	if not inventory_grid:
+		return
+
+	# Estimate slot width (including spacing). Tune this to match `ItemSlot` widget size.
+	var slot_width = 180
+	var padding = 60
+	var width = get_viewport_rect().size.x - padding
+	var cols = int(floor(width / slot_width))
+	cols = clamp(cols, 1, 8)
+	inventory_grid.columns = cols
+
+	# Hide side details on small screens to avoid half-screen being obscured
+	if item_details_panel:
+		if width < SMALL_SCREEN_WIDTH:
+			item_details_panel.visible = false
+		else:
+			# Only show item details panel when an item is selected
+			item_details_panel.visible = selected_item != null
+
+	# Force redraw if there are items
+	if inventory_grid.get_child_count() > 0:
+		inventory_grid.queue_sort()
+
+func _show_item_popup(item: ItemData) -> void:
+	# Simple popup for small screens
+	var popup = AcceptDialog.new()
+	popup.title = item.get_enhancement_display() + " " + item.name
+	popup.dialog_text = item.description
+	popup.get_ok().text = "Close"
+	add_child(popup)
+	popup.popup_centered_minsize(Vector2(300, 200))

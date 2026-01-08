@@ -380,3 +380,10 @@ func _on_item_purchase(item_data: ItemData) -> void:
 
 func _on_back_pressed() -> void:
 	Scenes.change_scene("res://scenes/ui/MainMenu.tscn")
+
+func _show_error(message: String) -> void:
+	var dialog = AcceptDialog.new()
+	dialog.title = "Error"
+	dialog.dialog_text = message
+	add_child(dialog)
+	dialog.popup_centered()

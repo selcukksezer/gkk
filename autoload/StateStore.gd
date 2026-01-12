@@ -215,12 +215,63 @@ func set_inventory(items: Array) -> void:
 	state_changed.emit("inventory", inventory)
 
 func add_item(item: Dictionary) -> void:
-	inventory.append(item)
+	# IMPORTANT: Parse through ItemData.from_dict() to merge with ItemDatabase
+	# This ensures the item has correct properties (icon, rarity, etc.)
+	var item_data = ItemData.from_dict(item)
+	
+	# Check if item is stackable and already exists
+	if item_data.is_stackable:
+		var existing_index = -1
+		for i in range(inventory.size()):
+			var inv_item_dict = inventory[i]
+			var inv_item_id = inv_item_dict.get("item_id", inv_item_dict.get("id", ""))
+			if inv_item_id == item_data.item_id:
+				existing_index = i
+				break
+		
+		if existing_index >= 0:
+			# Stack with existing item
+			var existing_dict = inventory[existing_index]
+			var current_qty = existing_dict.get("quantity", 1)
+			var new_qty = current_qty + item_data.quantity
+			existing_dict["quantity"] = new_qty
+			print("[StateStore] Stacked item: ", item_data.item_id, " new quantity: ", new_qty)
+			inventory_updated.emit()
+			state_changed.emit("inventory", inventory)
+			return
+	
+	# Not stackable or first occurrence - add as new entry
+	# Convert back to dict with merged data
+	inventory.append(item_data.to_dict())
+	print("[StateStore] Added new item: ", item_data.item_id, " stackable: ", item_data.is_stackable)
 	inventory_updated.emit()
 	state_changed.emit("inventory", inventory)
 
 func add_item_data(item: ItemData) -> void:
+	# Already an ItemData object, handle stacking
+	if item.is_stackable:
+		var existing_index = -1
+		for i in range(inventory.size()):
+			var inv_item_dict = inventory[i]
+			var inv_item_id = inv_item_dict.get("item_id", inv_item_dict.get("id", ""))
+			if inv_item_id == item.item_id:
+				existing_index = i
+				break
+		
+		if existing_index >= 0:
+			# Stack with existing item
+			var existing_dict = inventory[existing_index]
+			var current_qty = existing_dict.get("quantity", 1)
+			var new_qty = current_qty + item.quantity
+			existing_dict["quantity"] = new_qty
+			print("[StateStore] Stacked ItemData: ", item.item_id, " new quantity: ", new_qty)
+			inventory_updated.emit()
+			state_changed.emit("inventory", inventory)
+			return
+	
+	# Not stackable or first occurrence
 	inventory.append(item.to_dict())
+	print("[StateStore] Added new ItemData: ", item.item_id, " stackable: ", item.is_stackable)
 	inventory_updated.emit()
 	state_changed.emit("inventory", inventory)
 

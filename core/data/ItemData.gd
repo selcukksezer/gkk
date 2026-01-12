@@ -162,105 +162,146 @@ static func from_dict(data: Dictionary) -> ItemData:
 			return default
 		return str(value)
 	
-	item.item_id = safe_string.call("id", "")
-	item.name = safe_string.call("name", "")
-	item.description = safe_string.call("description", "")
-	item.icon = safe_string.call("icon", "")
+	# IMPORTANT: First, try to load base definition from ItemDatabase
+	# This ensures we always have the latest item properties (icon, rarity, description, etc.)
+	var item_id = safe_string.call("id", safe_string.call("item_id", ""))
+	
+	# If we have an item_id, try to get base definition from ItemDatabase
+	var base_definition: Dictionary = {}
+	var has_database_def = false
+	if item_id != "" and ItemDatabase.item_exists(item_id):
+		base_definition = ItemDatabase.get_item(item_id)
+		has_database_def = true
+		print("[ItemData] Loading base definition from ItemDatabase for: ", item_id)
+	else:
+		print("[ItemData] No ItemDatabase definition found for: ", item_id, " - using data as-is")
+	
+	# CRITICAL: Only merge instance-specific properties from server data
+	# Static properties (name, icon, rarity, stats) should ALWAYS come from ItemDatabase
+	var instance_only_keys = ["quantity", "enhancement_level", "obtained_at", "bound_to_player", "pending_sync", "is_equipped", "equip_slot"]
+	
+	var parse_data: Dictionary
+	if has_database_def:
+		# Use ItemDatabase as base, only override with instance properties
+		parse_data = base_definition.duplicate()
+		for key in instance_only_keys:
+			if data.has(key):
+				parse_data[key] = data[key]
+		print("[ItemData] Using ItemDatabase definition with instance overrides")
+	else:
+		# No database definition, use all data from server
+		parse_data = data.duplicate()
+		print("[ItemData] Using server data directly (no database definition)")
+	
+	# Now parse from merged data
+	item.item_id = item_id
+	item.name = parse_data.get("name", "")
+	item.description = parse_data.get("description", "")
+	item.icon = parse_data.get("icon", "")
+	
+	# Use merged_data for parsing to get base definition values with instance overrides
+	# (renamed from merged_data to parse_data for clarity)
 	
 	# Parse enums - safely handle null values
-	var type_str = data.get("item_type", null)
+	var type_str = parse_data.get("item_type", null)
 	if type_str == null:
 		type_str = "MATERIAL"
 	type_str = str(type_str)
 	item.item_type = ItemType.get(type_str) if ItemType.has(type_str) else ItemType.MATERIAL
 	
-	var rarity_str = data.get("rarity", null)
+	var rarity_str = parse_data.get("rarity", null)
 	if rarity_str == null:
 		rarity_str = "COMMON"
 	rarity_str = str(rarity_str)
 	item.rarity = ItemRarity.get(rarity_str) if ItemRarity.has(rarity_str) else ItemRarity.COMMON
 	
-	var slot_str = data.get("equip_slot", null)
+	var slot_str = parse_data.get("equip_slot", null)
 	if slot_str == null:
 		slot_str = "NONE"
 	slot_str = str(slot_str)
 	item.equip_slot = EquipSlot.get(slot_str) if EquipSlot.has(slot_str) else EquipSlot.NONE
 	
 	# Parse subtypes
-	var weapon_type_str = data.get("weapon_type", null)
+	var weapon_type_str = parse_data.get("weapon_type", null)
 	if weapon_type_str == null:
 		weapon_type_str = "NONE"
 	weapon_type_str = str(weapon_type_str)
 	item.weapon_type = WeaponType.get(weapon_type_str) if WeaponType.has(weapon_type_str) else WeaponType.NONE
 	
-	var armor_type_str = data.get("armor_type", null)
+	var armor_type_str = parse_data.get("armor_type", null)
 	if armor_type_str == null:
 		armor_type_str = "NONE"
 	armor_type_str = str(armor_type_str)
 	item.armor_type = ArmorType.get(armor_type_str) if ArmorType.has(armor_type_str) else ArmorType.NONE
 	
-	var material_type_str = data.get("material_type", null)
+	var material_type_str = parse_data.get("material_type", null)
 	if material_type_str == null:
 		material_type_str = "NONE"
 	material_type_str = str(material_type_str)
 	item.material_type = MaterialType.get(material_type_str) if MaterialType.has(material_type_str) else MaterialType.NONE
 	
-	var potion_type_str = data.get("potion_type", null)
+	var potion_type_str = parse_data.get("potion_type", null)
 	if potion_type_str == null:
 		potion_type_str = "NONE"
 	potion_type_str = str(potion_type_str)
 	item.potion_type = PotionType.get(potion_type_str) if PotionType.has(potion_type_str) else PotionType.NONE
 	
-	# Numeric values - handle null
-	item.base_price = data.get("base_price", 0) if data.get("base_price", null) != null else 0
-	item.vendor_sell_price = data.get("vendor_sell_price", 0) if data.get("vendor_sell_price", null) != null else 0
-	item.is_tradeable = data.get("is_tradeable", true) if data.get("is_tradeable", null) != null else true
-	item.is_stackable = data.get("is_stackable", true) if data.get("is_stackable", null) != null else true
-	item.max_stack = data.get("max_stack", 999) if data.get("max_stack", null) != null else 999
+	# Numeric values - handle null - use parse_data for base values
+	item.base_price = parse_data.get("base_price", 0) if parse_data.get("base_price", null) != null else 0
+	item.vendor_sell_price = parse_data.get("vendor_sell_price", 0) if parse_data.get("vendor_sell_price", null) != null else 0
+	item.is_tradeable = parse_data.get("is_tradeable", true) if parse_data.get("is_tradeable", null) != null else true
+	item.is_stackable = parse_data.get("is_stackable", true) if parse_data.get("is_stackable", null) != null else true
+	item.max_stack = parse_data.get("max_stack", 999) if parse_data.get("max_stack", null) != null else 999
 	
 	# Recipe system
-	item.recipe_result_item_id = safe_string.call("recipe_result_item_id", "")
-	item.recipe_requirements = data.get("recipe_requirements", {}) if data.get("recipe_requirements", null) != null else {}
-	item.recipe_building_type = safe_string.call("recipe_building_type", "")
-	item.recipe_production_time = data.get("recipe_production_time", 0) if data.get("recipe_production_time", null) != null else 0
-	item.recipe_required_level = data.get("recipe_required_level", 1) if data.get("recipe_required_level", null) != null else 1
+	var recipe_result_id = parse_data.get("recipe_result_item_id", null)
+	item.recipe_result_item_id = str(recipe_result_id) if recipe_result_id != null else ""
+	item.recipe_requirements = parse_data.get("recipe_requirements", {}) if parse_data.get("recipe_requirements", null) != null else {}
+	var recipe_building = parse_data.get("recipe_building_type", null)
+	item.recipe_building_type = str(recipe_building) if recipe_building != null else ""
+	item.recipe_production_time = parse_data.get("recipe_production_time", 0) if parse_data.get("recipe_production_time", null) != null else 0
+	item.recipe_required_level = parse_data.get("recipe_required_level", 1) if parse_data.get("recipe_required_level", null) != null else 1
 	
 	# Rune system
-	item.rune_enhancement_type = safe_string.call("rune_enhancement_type", "")
-	item.rune_success_bonus = data.get("rune_success_bonus", 0.0) if data.get("rune_success_bonus", null) != null else 0.0
-	item.rune_destruction_reduction = data.get("rune_destruction_reduction", 0.0) if data.get("rune_destruction_reduction", null) != null else 0.0
+	var rune_type = parse_data.get("rune_enhancement_type", null)
+	item.rune_enhancement_type = str(rune_type) if rune_type != null else ""
+	item.rune_success_bonus = parse_data.get("rune_success_bonus", 0.0) if parse_data.get("rune_success_bonus", null) != null else 0.0
+	item.rune_destruction_reduction = parse_data.get("rune_destruction_reduction", 0.0) if parse_data.get("rune_destruction_reduction", null) != null else 0.0
 	
 	# Cosmetic system
-	item.cosmetic_effect = safe_string.call("cosmetic_effect", "")
-	item.cosmetic_bind_on_pickup = data.get("cosmetic_bind_on_pickup", true) if data.get("cosmetic_bind_on_pickup", null) != null else true
-	item.cosmetic_showcase_only = data.get("cosmetic_showcase_only", false) if data.get("cosmetic_showcase_only", null) != null else false
+	var cosmetic_fx = parse_data.get("cosmetic_effect", null)
+	item.cosmetic_effect = str(cosmetic_fx) if cosmetic_fx != null else ""
+	item.cosmetic_bind_on_pickup = parse_data.get("cosmetic_bind_on_pickup", true) if parse_data.get("cosmetic_bind_on_pickup", null) != null else true
+	item.cosmetic_showcase_only = parse_data.get("cosmetic_showcase_only", false) if parse_data.get("cosmetic_showcase_only", null) != null else false
 	
 	# Production system
-	item.production_building_type = safe_string.call("production_building_type", "")
-	item.production_rate_per_hour = data.get("production_rate_per_hour", 0) if data.get("production_rate_per_hour", null) != null else 0
-	item.production_required_level = data.get("production_required_level", 1) if data.get("production_required_level", null) != null else 1
+	var prod_building = parse_data.get("production_building_type", null)
+	item.production_building_type = str(prod_building) if prod_building != null else ""
+	item.production_rate_per_hour = parse_data.get("production_rate_per_hour", 0) if parse_data.get("production_rate_per_hour", null) != null else 0
+	item.production_required_level = parse_data.get("production_required_level", 1) if parse_data.get("production_required_level", null) != null else 1
 	
-	# Stats - handle null
-	item.attack = data.get("attack", 0) if data.get("attack", null) != null else 0
-	item.defense = data.get("defense", 0) if data.get("defense", null) != null else 0
-	item.health = data.get("health", 0) if data.get("health", null) != null else 0
-	item.power = data.get("power", 0) if data.get("power", null) != null else 0
+	# Stats - handle null - use parse_data for base stats
+	item.attack = parse_data.get("attack", 0) if parse_data.get("attack", null) != null else 0
+	item.defense = parse_data.get("defense", 0) if parse_data.get("defense", null) != null else 0
+	item.health = parse_data.get("health", 0) if parse_data.get("health", null) != null else 0
+	item.power = parse_data.get("power", 0) if parse_data.get("power", null) != null else 0
 	
-	# Enhancement - handle null
+	# Enhancement - INSTANCE-SPECIFIC - use original data, not base definition
 	item.enhancement_level = data.get("enhancement_level", 0) if data.get("enhancement_level", null) != null else 0
-	item.max_enhancement = data.get("max_enhancement", 10) if data.get("max_enhancement", null) != null else 10
-	item.can_enhance = data.get("can_enhance", false) if data.get("can_enhance", null) != null else false
+	item.max_enhancement = parse_data.get("max_enhancement", 10) if parse_data.get("max_enhancement", null) != null else 10
+	item.can_enhance = parse_data.get("can_enhance", false) if parse_data.get("can_enhance", null) != null else false
 	
 	# Consumable stats - handle null
-	item.energy_restore = data.get("energy_restore", 0) if data.get("energy_restore", null) != null else 0
-	item.tolerance_increase = data.get("tolerance_increase", 0) if data.get("tolerance_increase", null) != null else 0
-	item.overdose_risk = data.get("overdose_risk", 0.0) if data.get("overdose_risk", null) != null else 0.0
-	item.heal_amount = data.get("heal_amount", 0) if data.get("heal_amount", null) != null else 0
+	item.energy_restore = parse_data.get("energy_restore", 0) if parse_data.get("energy_restore", null) != null else 0
+	item.tolerance_increase = parse_data.get("tolerance_increase", 0) if parse_data.get("tolerance_increase", null) != null else 0
+	item.overdose_risk = parse_data.get("overdose_risk", 0.0) if parse_data.get("overdose_risk", null) != null else 0.0
+	item.heal_amount = parse_data.get("heal_amount", 0) if parse_data.get("heal_amount", null) != null else 0
 	
-	item.required_level = data.get("required_level", 1) if data.get("required_level", null) != null else 1
-	item.required_class = safe_string.call("required_class", "")
+	item.required_level = parse_data.get("required_level", 1) if parse_data.get("required_level", null) != null else 1
+	var req_class = parse_data.get("required_class", null)
+	item.required_class = str(req_class) if req_class != null else ""
 	
-	# Meta - handle null
+	# Meta - INSTANCE-SPECIFIC - always use original data
 	item.quantity = data.get("quantity", 1) if data.get("quantity", null) != null else 1
 	item.obtained_at = data.get("obtained_at", 0) if data.get("obtained_at", null) != null else 0
 	item.bound_to_player = data.get("bound_to_player", false) if data.get("bound_to_player", null) != null else false
@@ -318,6 +359,18 @@ func to_dict() -> Dictionary:
 		"quantity": int(quantity),
 		"obtained_at": int(obtained_at),
 		"bound_to_player": bound_to_player,
+		"pending_sync": pending_sync
+	}
+
+## Convert to instance-specific dictionary (for database storage)
+## This only includes instance data, not static ItemDatabase properties
+func to_instance_dict() -> Dictionary:
+	return {
+		"item_id": item_id,  # Reference to ItemDatabase
+		"quantity": int(quantity),
+		"enhancement_level": int(enhancement_level),
+		"bound_to_player": bound_to_player,
+		"obtained_at": int(obtained_at),
 		"pending_sync": pending_sync
 	}
 

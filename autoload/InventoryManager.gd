@@ -59,7 +59,7 @@ func fetch_inventory() -> Dictionary:
 
 ## Add item to inventory
 func add_item(item: ItemData) -> Dictionary:
-	# Convert item to dict
+	# Convert item to dict - RPC expects full data and handles normalization server-side
 	var item_dict = item.to_dict()
 	
 	# Try to add via Server RPC (Normalized DB Handler)

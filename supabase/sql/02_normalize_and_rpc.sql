@@ -290,59 +290,68 @@ begin
         return '{"success": false, "error": "item_id cannot be null or empty"}'::jsonb;
     end if;
     
-    -- If player already has this item, increase quantity (unless it's non-stackable unique like equipment, but for now we stack)
-    -- Start simple: Insert or Update quantity
-    if exists (select 1 from public.inventory where user_id = v_user_id and item_id = v_item_id) then
-        update public.inventory
-        set quantity = quantity + v_quantity,
-            updated_at = now()
-        where user_id = v_user_id and item_id = v_item_id
-        returning to_jsonb(inventory.*) into v_new_row;
-    else
-        -- Insert new item
-        -- Handle case where old 'id' column might exist and need a value
-        declare
-            v_has_old_id_column boolean;
-        begin
-            -- Check if old 'id' text column exists
-            select exists (
-                select 1 from information_schema.columns 
-                where table_schema = 'public' 
-                and table_name = 'inventory' 
-                and column_name = 'id' 
-                and data_type = 'text'
-            ) into v_has_old_id_column;
-            
-            if v_has_old_id_column then
-                -- Insert with old 'id' column set to item_id value
-                insert into public.inventory (
-                    user_id, item_id, id, quantity, enhancement_level, is_equipped, obtained_at
-                ) values (
-                    v_user_id,
-                    v_item_id,
-                    v_item_id,  -- Set old 'id' column to item_id value
-                    v_quantity,
-                    public._jsonb_to_int(item_data->'enhancement_level', 0),
-                    false,
-                    extract(epoch from now())::bigint
-                )
-                returning to_jsonb(inventory.*) into v_new_row;
-            else
-                -- Standard insert without old 'id' column
-                insert into public.inventory (
-                    user_id, item_id, quantity, enhancement_level, is_equipped, obtained_at
-                ) values (
-                    v_user_id,
-                    v_item_id,
-                    v_quantity,
-                    public._jsonb_to_int(item_data->'enhancement_level', 0),
-                    false,
-                    extract(epoch from now())::bigint
-                )
-                returning to_jsonb(inventory.*) into v_new_row;
-            end if;
-        end;
-    end if;
+    -- Check if item is stackable from items definition
+    declare
+        v_is_stackable boolean;
+    begin
+        select coalesce(is_stackable, true) into v_is_stackable
+        from public.items
+        where id = v_item_id;
+        
+        -- If item is stackable AND player already has it, increase quantity
+        -- If item is NOT stackable (equipment), always insert new row
+        if v_is_stackable and exists (select 1 from public.inventory where user_id = v_user_id and item_id = v_item_id) then
+            update public.inventory
+            set quantity = quantity + v_quantity,
+                updated_at = now()
+            where user_id = v_user_id and item_id = v_item_id
+            returning to_jsonb(inventory.*) into v_new_row;
+        else
+            -- Insert new item (for non-stackable items or first-time stackable items)
+            -- Handle case where old 'id' column might exist and need a value
+            declare
+                v_has_old_id_column boolean;
+            begin
+                -- Check if old 'id' text column exists
+                select exists (
+                    select 1 from information_schema.columns 
+                    where table_schema = 'public' 
+                    and table_name = 'inventory' 
+                    and column_name = 'id' 
+                    and data_type = 'text'
+                ) into v_has_old_id_column;
+                
+                if v_has_old_id_column then
+                    -- Insert with old 'id' column set to item_id value
+                    insert into public.inventory (
+                        user_id, item_id, id, quantity, enhancement_level, is_equipped, obtained_at
+                    ) values (
+                        v_user_id,
+                        v_item_id,
+                        v_item_id,  -- Set old 'id' column to item_id value
+                        v_quantity,
+                        public._jsonb_to_int(item_data->'enhancement_level', 0),
+                        false,
+                        extract(epoch from now())::bigint
+                    )
+                    returning to_jsonb(inventory.*) into v_new_row;
+                else
+                    -- Standard insert without old 'id' column
+                    insert into public.inventory (
+                        user_id, item_id, quantity, enhancement_level, is_equipped, obtained_at
+                    ) values (
+                        v_user_id,
+                        v_item_id,
+                        v_quantity,
+                        public._jsonb_to_int(item_data->'enhancement_level', 0),
+                        false,
+                        extract(epoch from now())::bigint
+                    )
+                    returning to_jsonb(inventory.*) into v_new_row;
+                end if;
+            end;
+        end if;
+    end;
 
     return jsonb_build_object('success', true, 'data', v_new_row);
 end;

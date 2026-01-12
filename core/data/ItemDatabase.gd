@@ -23,7 +23,8 @@ const ITEMS = {
 		"defense": 5,
 		"required_level": 1,
 		"can_enhance": true,
-		"max_enhancement": 10
+		"max_enhancement": 10,
+		"is_stackable": false
 	},
 	
 	"weapon_bow_elven": {
@@ -41,7 +42,8 @@ const ITEMS = {
 		"power": 10,
 		"required_level": 15,
 		"can_enhance": true,
-		"max_enhancement": 10
+		"max_enhancement": 10,
+		"is_stackable": false
 	},
 
 	"weapon_custom_longsword": {
@@ -58,7 +60,8 @@ const ITEMS = {
 		"attack": 60,
 		"required_level": 10,
 		"can_enhance": true,
-		"max_enhancement": 15
+		"max_enhancement": 15,
+		"is_stackable": false
 	},
 
 	"armor_custom_plate": {
@@ -76,7 +79,8 @@ const ITEMS = {
 		"health": 120,
 		"required_level": 12,
 		"can_enhance": true,
-		"max_enhancement": 15
+		"max_enhancement": 15,
+		"is_stackable": false
 	},
 
 	# Armor
@@ -95,7 +99,8 @@ const ITEMS = {
 		"health": 20,
 		"required_level": 1,
 		"can_enhance": true,
-		"max_enhancement": 10
+		"max_enhancement": 10,
+		"is_stackable": false
 	},
 	
 	"armor_chest_plate": {
@@ -113,7 +118,8 @@ const ITEMS = {
 		"health": 40,
 		"required_level": 8,
 		"can_enhance": true,
-		"max_enhancement": 10
+		"max_enhancement": 10,
+		"is_stackable": false
 	},
 	
 	# Potions

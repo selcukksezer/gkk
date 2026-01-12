@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=11 format=3 uid="uid://cj7gicc2ekijh"]
+[gd_resource type="Theme" format=3 uid="uid://cj7gicc2ekijh"]
 
 [sub_resource type="StyleBoxFlat" id="ButtonDisabled"]
 bg_color = Color(0.15, 0.15, 0.15, 1)
@@ -86,18 +86,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="TabContainerTab"]
-bg_color = Color(0.2, 0.25, 0.35, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.5, 0.6, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [sub_resource type="StyleBoxFlat" id="TabContainerTabSelected"]
 bg_color = Color(0.25, 0.3, 0.4, 1)
 border_width_left = 2
@@ -105,6 +93,18 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.6, 0.7, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="TabContainerTab"]
+bg_color = Color(0.2, 0.25, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.5, 0.6, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -127,5 +127,5 @@ PanelContainer/styles/panel = SubResource("PanelStyle")
 ProgressBar/styles/background = SubResource("ProgressBarBackground")
 ProgressBar/styles/fill = SubResource("ProgressBarFill")
 TabContainer/styles/panel = SubResource("TabContainerPanel")
-TabContainer/styles/tab_unselected = SubResource("TabContainerTab")
 TabContainer/styles/tab_selected = SubResource("TabContainerTabSelected")
+TabContainer/styles/tab_unselected = SubResource("TabContainerTab")

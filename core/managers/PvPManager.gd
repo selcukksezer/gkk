@@ -81,7 +81,11 @@ func attack_player(target_player_id: String) -> Dictionary:
 	return outcome_data
 
 ## Calculate win chance (client-side preview)
-func calculate_win_chance(attacker_power: int, defender_power: int) -> float:
+func calculate_win_chance(attacker_power: int = -1, defender_power: int = -1) -> float:
+	# If attacker_power not provided, get from EquipmentManager
+	if attacker_power < 0:
+		attacker_power = get_player_power()
+	
 	var config = Config.get_pvp_config()
 	var base_chance = config.get("base_win_chance", 0.5)
 	var power_factor = config.get("power_factor", 0.01)
@@ -93,6 +97,19 @@ func calculate_win_chance(attacker_power: int, defender_power: int) -> float:
 	win_chance = clamp(win_chance, 0.05, 0.95)
 	
 	return win_chance
+
+## Get total player power including equipment
+func get_player_power() -> int:
+	var base_power = State.player.get("level", 1) * 10  # Base from level
+	
+	# Add equipment power via EquipmentManager
+	var equipment_manager = get_node_or_null("/root/Equipment")
+	if equipment_manager:
+		var total_stats = equipment_manager.get_total_stats()
+		var equipment_power = total_stats.get("attack", 0) + total_stats.get("power", 0)
+		return base_power + equipment_power
+	
+	return base_power
 
 ## Get outcome description
 func get_outcome_description(outcome: String) -> String:

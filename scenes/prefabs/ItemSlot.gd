@@ -19,10 +19,11 @@ var _is_equipment_slot: bool = false
 var _drag_preview: Control = null
 var _is_dragging: bool = false
 var _drag_start_pos: Vector2 = Vector2.ZERO
+var slot_position: int = -1  # Inventory slot position (0-19), -1 = unassigned
 
 func _ready() -> void:
 	pressed.connect(_on_pressed)
-	custom_minimum_size = Vector2(80, 80)
+	custom_minimum_size = Vector2(90, 90)
 	
 	# Enable drag and drop for non-trash slots
 	gui_input.connect(_on_gui_input)
@@ -118,7 +119,10 @@ func _end_drag() -> void:
 		item_dropped.emit(_item, drop_target)
 		print("[ItemSlot] Item dropped on target: ", drop_target.name if drop_target.name else "unknown")
 	else:
-		print("[ItemSlot] No valid drop target found")
+		# If no specific target found, emit to self (or let InventoryScreen handle the 'no target' case)
+		# Always emit signal - let InventoryScreen handle the logic
+		item_dropped.emit(_item, self)
+		print("[ItemSlot] Item dropped on target: ", name)
 	
 	# Cleanup
 	_drag_preview.queue_free()
@@ -249,6 +253,9 @@ func set_trash_slot() -> void:
 
 func is_trash_slot() -> bool:
 	return _is_trash_slot
+
+func get_slot_position() -> int:
+	return slot_position
 
 func get_item() -> ItemData:
 	return _item

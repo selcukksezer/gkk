@@ -35,6 +35,7 @@ Scenes="*res://autoload/SceneManager.gd"
 Config="*res://autoload/ConfigManager.gd"
 Inventory="*res://autoload/InventoryManager.gd"
 ShopManager="*res://core/managers/ShopManager.gd"
+Equipment="*res://core/managers/EquipmentManager.gd"
 
 [display]
 

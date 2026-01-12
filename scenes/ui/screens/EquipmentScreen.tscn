@@ -1,0 +1,135 @@
+[gd_scene format=3 uid="uid://b8j3vh5xw6d2s"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/EquipmentScreen.gd" id="1_1"]
+[ext_resource type="PackedScene" uid="uid://byms2sn7xtx18" path="res://scenes/ui/components/CharacterPaperdoll.tscn" id="2_1"]
+[ext_resource type="PackedScene" uid="uid://cq8vnx7y6wpn2" path="res://scenes/ui/components/EquipmentSlot.tscn" id="3_1"]
+
+[node name="EquipmentScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "EKIPMAN"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Kapat"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PaperdollContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/PaperdollContainer"]
+layout_mode = 2
+text = "Karakter"
+horizontal_alignment = 1
+
+[node name="Paperdoll" parent="MarginContainer/VBoxContainer/HBoxContainer/PaperdollContainer" instance=ExtResource("2_1")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SlotsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer"]
+layout_mode = 2
+text = "Ekipman Slotları"
+horizontal_alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="WeaponSlot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "WEAPON"
+
+[node name="HelmetSlot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "HEAD"
+
+[node name="ChestSlot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "CHEST"
+
+[node name="GlovesSlot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "HANDS"
+
+[node name="PantsSlot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "LEGS"
+
+[node name="BootsSlot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "FEET"
+
+[node name="Accessory1Slot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "ACCESSORY_1"
+
+[node name="Accessory2Slot" parent="MarginContainer/VBoxContainer/HBoxContainer/SlotsContainer/GridContainer" instance=ExtResource("3_1")]
+layout_mode = 2
+slot_type = "ACCESSORY_2"
+
+[node name="StatsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/StatsContainer"]
+layout_mode = 2
+text = "Toplam İstatistikler"
+horizontal_alignment = 1
+
+[node name="AttackLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "⚔️ ATK: 0"
+
+[node name="DefenseLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "🛡️ DEF: 0"
+
+[node name="HealthLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "❤️ HP: +0"
+
+[node name="PowerLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "⚡ PWR: 0"

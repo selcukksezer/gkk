@@ -27,6 +27,7 @@ var _reward_card_scene = preload("res://scenes/prefabs/RewardCard.tscn")
 var _item_card_scene = preload("res://scenes/ui/components/ItemCard.tscn")
 
 var inventory_manager: InventoryManager
+var purchase_in_progress: bool = false  # Prevent race condition on fast clicks
 
 # Gem packages (prices in Gold)
 const GEM_PACKAGES = [
@@ -324,13 +325,147 @@ func _on_gold_purchase(package: Dictionary) -> void:
 		State.player_updated.emit() # Revert UI
 
 func _on_item_purchase(item_data: ItemData) -> void:
-	var item_id = item_data.item_id
-	var price = item_data.base_price
+	print("[ShopScreen] Item selected: ", item_data.name)
 	
-	print("[Shop] Item clicked: %s" % [item_data.name])
+	# Prevent race condition - check if purchase already in progress
+	if purchase_in_progress:
+		print("[ShopScreen] ⚠️ Purchase already in progress, ignoring")
+		return
+	
+	# Check inventory space (MAX 20 unique slots)
+	# Stackable items: only count if they DON'T exist in inventory yet
+	# Non-stackable: always count as new slot
+	# IMPORTANT: Only count NON-EQUIPPED items
+	
+	# Filter out equipped items
+	var unequipped_items = []
+	for inv_item in State.get_all_items_data():
+		if not inv_item.is_equipped:
+			unequipped_items.append(inv_item)
+	
+	if item_data.is_stackable:
+		# Check if this item already exists in UNEQUIPPED inventory
+		var item_exists = false
+		for existing_item in unequipped_items:
+			if existing_item.item_id == item_data.item_id:
+				item_exists = true
+				print("[ShopScreen] ✅ Stackable item exists in inventory, can stack")
+				break
+		
+		# If item doesn't exist and we're at limit, block purchase
+		if not item_exists:
+			var total_unique_items = unequipped_items.size()
+			if total_unique_items >= 20:
+				_show_error("Envanteriniz dolu! (Maksimum 20 farklı item)")
+				return
+			else:
+				print("[ShopScreen] ✅ New stackable item, slots available: ", 20 - total_unique_items)
+	else:
+		# Non-stackable: always takes a new slot
+		var total_unique_items = unequipped_items.size()
+		if total_unique_items >= 20:
+			_show_error("Envanteriniz dolu! (Maksimum 20 slot)")
+			return
+		else:
+			print("[ShopScreen] ✅ Non-stackable item, slots available: ", 20 - total_unique_items)
+	
+	# Show item for potential purchase
+	if item_data.is_stackable:
+		_show_quantity_purchase_confirmation(item_data)
+	else:
+		_show_purchase_confirmation(item_data)
 
-	# Show confirmation dialog
-	_show_purchase_confirmation(item_data)
+func _show_quantity_purchase_confirmation(item_data: ItemData) -> void:
+	var price = item_data.base_price
+	var max_stack = item_data.max_stack
+	
+	# Calculate max purchasable quantity based on inventory space
+	# Calculate max purchasable quantity based on inventory space
+	var occupied_slots = 0
+	var existing_stack_space = 0
+	
+	# Current Logic: User wants Total Item Limit = 20 (Grid + Equipped)
+	occupied_slots = State.inventory.size()
+	
+	# Calculate stack space for existing items of the same type
+	for item in State.inventory:
+		if item.get("item_id") == item_data.item_id:
+			var current_qty = item.get("quantity", 0)
+			if current_qty < max_stack:
+				existing_stack_space += (max_stack - current_qty)
+			
+	var empty_slots = max(0, 20 - occupied_slots)
+	var max_capacity = existing_stack_space + (empty_slots * max_stack)
+	
+	# Debug
+	print("[ShopScreen] Capacity calc - Empty: %d, StackSpace: %d, MaxCap: %d" % [empty_slots, existing_stack_space, max_capacity])
+	
+	var purchase_limit = min(50, max_capacity) # Hard cap 50 or inventory limit
+	
+	if purchase_limit <= 0:
+		_show_error("Envanteriniz tamamen dolu! Yer açmanız gerekiyor.")
+		return
+	
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "Satın Al"
+	
+	var vbox = VBoxContainer.new()
+	var label = Label.new()
+	label.text = "%s satın almak istiyorsunuz.\nBirim Fiyat: %d Altın" % [item_data.name, price]
+	vbox.add_child(label)
+	
+	var hbox = HBoxContainer.new()
+	var qty_label = Label.new()
+	qty_label.text = "Miktar (Maks %d):" % purchase_limit
+	hbox.add_child(qty_label)
+	
+	var spinbox = SpinBox.new()
+	spinbox.min_value = 1
+	spinbox.max_value = purchase_limit
+	spinbox.value = 1
+	spinbox.step = 1
+	spinbox.allow_greater = false
+	spinbox.allow_lesser = false
+	hbox.add_child(spinbox)
+	vbox.add_child(hbox)
+	
+	var total_label = Label.new()
+	total_label.text = "Toplam: %d Altın" % price
+	vbox.add_child(total_label)
+	
+	# Update total price label when value changes
+	spinbox.value_changed.connect(func(val):
+		total_label.text = "Toplam: %d Altın" % (price * int(val))
+	)
+	
+	# Force clamp and update price instantly when typing
+	spinbox.get_line_edit().text_changed.connect(func(new_text):
+		var val = int(new_text)
+		if val > purchase_limit:
+			spinbox.value = purchase_limit
+			spinbox.get_line_edit().text = str(purchase_limit)
+			# Move cursor to end
+			spinbox.get_line_edit().caret_column = str(purchase_limit).length()
+			val = purchase_limit
+		
+		# Update label immediately while typing
+		if val > 0:
+			total_label.text = "Toplam: %d Altın" % (price * val)
+	)
+	
+	dialog.add_child(vbox)
+	dialog.ok_button_text = "Satın Al"
+	dialog.cancel_button_text = "İptal"
+	add_child(dialog)
+	dialog.popup_centered()
+	
+	dialog.confirmed.connect(func(): 
+		_process_item_purchase(item_data, int(spinbox.value))
+		dialog.queue_free()
+	)
+	dialog.canceled.connect(func(): 
+		dialog.queue_free()
+	)
 
 func _show_purchase_confirmation(item_data: ItemData) -> void:
 	var item_id = item_data.item_id
@@ -346,7 +481,7 @@ func _show_purchase_confirmation(item_data: ItemData) -> void:
 	
 	# Handle confirmation
 	dialog.confirmed.connect(func(): 
-		_process_item_purchase(item_data)
+		_process_item_purchase(item_data, 1)
 		dialog.queue_free()
 	)
 	dialog.canceled.connect(func(): 
@@ -354,11 +489,38 @@ func _show_purchase_confirmation(item_data: ItemData) -> void:
 		dialog.queue_free()
 	)
 
-func _process_item_purchase(item_data: ItemData) -> void:
+func _process_item_purchase(item_data: ItemData, quantity: int = 1) -> void:
 	var item_id = item_data.item_id
-	var price = item_data.base_price
+	var price = item_data.base_price * quantity
 	
-	print("[Shop] Purchasing item: %s for %d Gold" % [item_data.name, price])
+	# Lock purchases
+	purchase_in_progress = true
+	print("[ShopScreen] 🔒 Purchase locked")
+	
+	if item_data.is_stackable:
+		# Check if item exists
+		var item_exists = false
+		for existing_item in State.inventory:
+			if existing_item.item_id == item_data.item_id:
+				item_exists = true
+				break
+		
+		# If item doesn't exist, we need a free slot
+		if not item_exists:
+			if State.inventory.size() >= 20:
+				_show_error("Envanteriniz dolu! (Toplam 20 eşya/ekipman)")
+				purchase_in_progress = false
+				print("[ShopScreen] 🔓 Purchase unlocked (inventory full)")
+				return
+	else:
+		# Non-stackable: always needs a free slot
+		if State.inventory.size() >= 20:
+			_show_error("Envanteriniz dolu! (Toplam 20 eşya/ekipman)")
+			purchase_in_progress = false
+			print("[ShopScreen] 🔓 Purchase unlocked (inventory full)")
+			return
+	
+	print("[ShopScreen] Purchasing item: %s for %d Gold" % [item_data.name, price])
 	
 	# Optimistic update
 	var old_gold = State.gold
@@ -370,28 +532,42 @@ func _process_item_purchase(item_data: ItemData) -> void:
 	if user_id:
 		var result = await Network.http_patch("/rest/v1/users?id=eq." + user_id, {"gold": State.gold})
 		if not result.success:
-			print("[Shop] Failed to sync gold reduction. Reverting.")
+			print("[ShopScreen] Failed to sync gold reduction. Reverting.")
 			State.gold = old_gold
 			State.player.gold = old_gold
 			_show_error("Altın güncellemesi başarısız!")
+			purchase_in_progress = false  # Unlock
+			print("[ShopScreen] 🔓 Purchase unlocked (error)")
 			return
 	
-	# 2. Add item to inventory with full data (NOT just by ID)
-	print("[Shop] Adding item to inventory with full data...")
-	var inventory_result = await inventory_manager.add_item(item_data)
+	# 2. Add item to inventory
+	print("[ShopScreen] Adding item to inventory (Qty: %d)..." % quantity)
 	
-	if inventory_result.success and inventory_result.get("synced", true):
-		print("[Shop] Item added to inventory successfully (server)")
+	# Create a copy/duplicate to not affect the base shop item
+	# We need to pass the correct quantity to add_item
+	var purchase_item = item_data.duplicate()
+	purchase_item.quantity = quantity
+	
+	var inventory_result = await inventory_manager.add_item(purchase_item)
+	
+	if inventory_result.success:
+		print("[ShopScreen] Item added to inventory successfully")
+		
+		# CRITICAL: Fetch latest inventory to ensure all slots/IDs are synced
+		# This fixes the issue of items not appearing until restart
+		print("[ShopScreen] Force fetching inventory from server to sync state...")
+		await inventory_manager.fetch_inventory()
+		
+		# Emit signal to refresh inventory screen
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
+			
 		Telemetry.track_event("shop", "item_purchased", {"item_id": item_id, "price": price})
-		State.player_updated.emit()
-	elif inventory_result.success and not inventory_result.get("synced", true):
-		# Local fallback succeeded (server sync enqueued)
-		print("[Shop] Item added locally; server sync pending: ", inventory_result.get("error", ""))
-		Telemetry.track_event("shop", "item_purchased_offline", {"item_id": item_id, "price": price})
+		State.player_updated.emit() # Update UI for Gold change
 		State.player_updated.emit()
 	else:
 		# Fallback: try to add locally
-		print("[Shop] Inventory add failed on server: %s" % inventory_result.get("error", "Unknown"))
+		print("[ShopScreen] Inventory add failed on server: %s" % inventory_result.get("error", "Unknown"))
 		# Add locally with full data
 		State.add_item_data(item_data)
 		# Enqueue server request for later sync
@@ -402,6 +578,10 @@ func _process_item_purchase(item_data: ItemData) -> void:
 		Telemetry.track_event("shop", "item_purchased_offline", {"item_id": item_id, "price": price})
 		State.player_updated.emit()
 		_show_error("Item yerel olarak eklendi - senkronizasyon bekliyor")
+	
+	# Unlock purchases
+	purchase_in_progress = false
+	print("[ShopScreen] 🔓 Purchase unlocked")
 
 func _on_back_pressed() -> void:
 	Scenes.change_scene("res://scenes/ui/MainMenu.tscn")

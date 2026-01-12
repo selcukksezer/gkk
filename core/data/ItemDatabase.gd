@@ -152,7 +152,7 @@ const ITEMS = {
 		"vendor_sell_price": 50,
 		"tolerance_increase": -5,
 		"is_stackable": true,
-		"max_stack": 20
+		"max_stack": 50
 	},
 	
 	# Materials
@@ -170,7 +170,7 @@ const ITEMS = {
 		"production_rate_per_hour": 10,
 		"production_required_level": 1,
 		"is_stackable": true,
-		"max_stack": 100
+		"max_stack": 50
 	},
 	
 	"material_wood": {
@@ -187,7 +187,7 @@ const ITEMS = {
 		"production_rate_per_hour": 15,
 		"production_required_level": 1,
 		"is_stackable": true,
-		"max_stack": 200
+		"max_stack": 50
 	},
 	
 	# Recipes

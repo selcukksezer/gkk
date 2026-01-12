@@ -28,14 +28,12 @@ enum ItemRarity {
 enum EquipSlot {
 	NONE,
 	WEAPON,
-	HELMET,
-	CHEST,
-	LEGS,
-	BOOTS,
-	GLOVES,
-	RING,
-	AMULET,
-	BELT
+	HEAD,        # Helmet/Helm
+	CHEST,       # Body armor
+	HANDS,       # Gloves
+	LEGS,        # Pants/Greaves
+	FEET,        # Boots
+	ACCESSORY    # Rings, Amulets, Belts
 }
 
 # Weapon subtypes
@@ -98,7 +96,7 @@ enum PotionType {
 @export var vendor_sell_price: int = 0
 @export var is_tradeable: bool = true
 @export var is_stackable: bool = true
-@export var max_stack: int = 999
+@export var max_stack: int = 50
 
 ## Recipe System (for RECIPE type items)
 @export var recipe_result_item_id: String = ""  # Üretilecek item ID'si
@@ -143,10 +141,14 @@ enum PotionType {
 @export var required_level: int = 1
 @export var required_class: String = ""  # Empty = all classes
 
-## Meta
+## Instance tracking
+@export var row_id: String = ""  # Database UUID (server-side ID)
+@export var is_equipped: bool = false  # Whether item is currently equipped
 @export var quantity: int = 1
 @export var obtained_at: int = 0
 @export var bound_to_player: bool = false
+@export var is_favorite: bool = false
+@export var slot_position: int = -1  # Inventory slot position (0-19), -1 = unassigned
 ## Client-only flags
 @export var pending_sync: bool = false
 
@@ -177,8 +179,8 @@ static func from_dict(data: Dictionary) -> ItemData:
 		print("[ItemData] No ItemDatabase definition found for: ", item_id, " - using data as-is")
 	
 	# CRITICAL: Only merge instance-specific properties from server data
-	# Static properties (name, icon, rarity, stats) should ALWAYS come from ItemDatabase
-	var instance_only_keys = ["quantity", "enhancement_level", "obtained_at", "bound_to_player", "pending_sync", "is_equipped", "equip_slot"]
+	# Static properties (name, icon, rarity, stats, equip_slot) should ALWAYS come from ItemDatabase
+	var instance_only_keys = ["quantity", "enhancement_level", "obtained_at", "bound_to_player", "pending_sync", "is_equipped"]
 	
 	var parse_data: Dictionary
 	if has_database_def:
@@ -251,7 +253,7 @@ static func from_dict(data: Dictionary) -> ItemData:
 	item.vendor_sell_price = parse_data.get("vendor_sell_price", 0) if parse_data.get("vendor_sell_price", null) != null else 0
 	item.is_tradeable = parse_data.get("is_tradeable", true) if parse_data.get("is_tradeable", null) != null else true
 	item.is_stackable = parse_data.get("is_stackable", true) if parse_data.get("is_stackable", null) != null else true
-	item.max_stack = parse_data.get("max_stack", 999) if parse_data.get("max_stack", null) != null else 999
+	item.max_stack = parse_data.get("max_stack", 50) if parse_data.get("max_stack", null) != null else 50
 	
 	# Recipe system
 	var recipe_result_id = parse_data.get("recipe_result_item_id", null)
@@ -302,9 +304,13 @@ static func from_dict(data: Dictionary) -> ItemData:
 	item.required_class = str(req_class) if req_class != null else ""
 	
 	# Meta - INSTANCE-SPECIFIC - always use original data
+	item.row_id = data.get("row_id", "") if data.get("row_id", null) != null else ""
+	item.is_equipped = data.get("is_equipped", false) if data.get("is_equipped", null) != null else false
 	item.quantity = data.get("quantity", 1) if data.get("quantity", null) != null else 1
 	item.obtained_at = data.get("obtained_at", 0) if data.get("obtained_at", null) != null else 0
 	item.bound_to_player = data.get("bound_to_player", false) if data.get("bound_to_player", null) != null else false
+	item.is_favorite = data.get("is_favorite", false) if data.get("is_favorite", null) != null else false
+	item.slot_position = data.get("slot_position", -1) if data.get("slot_position", null) != null else -1
 	item.pending_sync = data.get("pending_sync", false) if data.get("pending_sync", null) != null else false
 	
 	return item
@@ -517,6 +523,9 @@ func is_weapon() -> bool:
 
 func is_armor() -> bool:
 	return item_type == ItemType.ARMOR
+
+func is_potion() -> bool:
+	return item_type == ItemType.POTION
 
 func is_equipment() -> bool:
 	return item_type in [ItemType.WEAPON, ItemType.ARMOR, ItemType.ACCESSORY]

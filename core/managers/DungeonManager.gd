@@ -110,11 +110,17 @@ func start_dungeon(dungeon_def: DungeonData.DungeonDefinition, player_data: Dict
 func _calculate_success_rate(dungeon_def: DungeonData.DungeonDefinition, player_data: Dictionary) -> float:
 	var base_rate = BASE_SUCCESS_RATES.get(dungeon_def.difficulty, 0.5)
 	
-	# Ekipman faktörü (silah gücü + zırh savunması = karakter gücü)
-	var weapon_power = _get_gear_power(player_data.get("equipped_weapon", {}))
-	var armor_defense = _get_gear_defense(player_data.get("equipped_armor", {}))
-	# Normalize 0-1: max ekipman 150 (weapon) + 150 (armor) = 300
-	var gear_score = clamp((weapon_power + armor_defense) / 300.0, 0.0, 1.0)
+	# Ekipman faktörü - EquipmentManager'dan toplam stats al
+	var equipment_manager = get_node_or_null("/root/Equipment")
+	var total_attack = 0
+	var total_defense = 0
+	if equipment_manager:
+		var stats = equipment_manager.get_total_stats()
+		total_attack = stats.get("attack", 0)
+		total_defense = stats.get("defense", 0)
+	
+	# Normalize 0-1: max ekipman 300 (attack) + 300 (defense) = 600
+	var gear_score = clamp((total_attack + total_defense) / 600.0, 0.0, 1.0)
 	
 	# Seviye faktörü - karakter seviyesi vs. gereken seviye
 	var level = float(player_data.get("level", 1))
@@ -166,9 +172,15 @@ func _calculate_success_rate(dungeon_def: DungeonData.DungeonDefinition, player_
 func preview_success_rate(dungeon_def: DungeonData.DungeonDefinition, player_data: Dictionary) -> Dictionary:
 	var base_rate = BASE_SUCCESS_RATES.get(dungeon_def.difficulty, 0.5)
 
-	var weapon_power = _get_gear_power(player_data.get("equipped_weapon", {}))
-	var armor_defense = _get_gear_defense(player_data.get("equipped_armor", {}))
-	var gear_score = clamp((weapon_power + armor_defense) / 200.0, 0.0, 1.0)
+	# Get equipment stats from EquipmentManager
+	var equipment_manager = get_node_or_null("/root/Equipment")
+	var total_attack = 0
+	var total_defense = 0
+	if equipment_manager:
+		var stats = equipment_manager.get_total_stats()
+		total_attack = stats.get("attack", 0)
+		total_defense = stats.get("defense", 0)
+	var gear_score = clamp((total_attack + total_defense) / 600.0, 0.0, 1.0)
 
 	var level = float(player_data.get("level", 1))
 	var required_level = float(dungeon_def.required_level)
@@ -202,19 +214,14 @@ func preview_success_rate(dungeon_def: DungeonData.DungeonDefinition, player_dat
 		"calculated_rate": calculated_rate
 	}
 
-## Gear power helper (weapon)
-func _get_gear_power(weapon: Dictionary) -> float:
-	if weapon.is_empty():
-		return 10.0  # Base power
-	var rarity_bonus = weapon.get("rarity", "common") == "rare" and 20.0 or 10.0
-	return float(weapon.get("power", 10)) + rarity_bonus
-
-## Gear defense helper (armor)
-func _get_gear_defense(armor: Dictionary) -> float:
-	if armor.is_empty():
-		return 10.0  # Base defense
-	var rarity_bonus = armor.get("rarity", "common") == "rare" and 20.0 or 10.0
-	return float(armor.get("defense", 10)) + rarity_bonus
+## Get total power from equipment (for reward calculations)
+func get_total_equipment_power() -> float:
+	var equipment_manager = get_node_or_null("/root/Equipment")
+	if not equipment_manager:
+		return 20.0  # Base power if no equipment
+	
+	var stats = equipment_manager.get_total_stats()
+	return float(stats.get("attack", 10) + stats.get("defense", 10))
 
 ## 3. Dungeon çözümleme (başarı/başarısızlık RNG)
 func resolve_dungeon(instance_id: String, player_data: Dictionary) -> Dictionary:

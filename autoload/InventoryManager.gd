@@ -62,36 +62,51 @@ func add_item(item: ItemData) -> Dictionary:
 	# Convert item to dict - RPC expects full data and handles normalization server-side
 	var item_dict = item.to_dict()
 	
-	# Try to add via Server RPC (Normalized DB Handler)
-	var endpoint = "/rest/v1/rpc/add_inventory_item"
-	var payload = {"item_data": item_dict}
+	# Use v2 RPC which supports slot_position (finds first empty slot automatically)
+	var endpoint = "/rest/v1/rpc/add_inventory_item_v2"
+	var payload = {"item_data": item_dict, "p_slot_position": null}  # null = auto-assign
 	
-	print("[InventoryManager] Adding item via RPC: ", endpoint)
+	print("[InventoryManager] Adding item via RPC v2: ", endpoint)
 	var result = await Network.http_post(endpoint, payload)
 
 	if result.success:
 		# Server returned the inventory row
 		var returned_data = result.data
 		
-		# If RPC returns stringified JSON, parse it
+		# If RPC returns stringified JSON, parse it matches other RPCs
 		if typeof(returned_data) == TYPE_STRING:
 			var json = JSON.new()
 			if json.parse(returned_data) == OK:
 				returned_data = json.data
-				
+		
+		# Unwrap 'data' if present (RPC v2 wrapper)
+		if typeof(returned_data) == TYPE_DICTIONARY and returned_data.has("data"):
+			returned_data = returned_data.data
+		
 		# Merge local definition with server instance data
 		var final_item = item_dict.duplicate()
 		if typeof(returned_data) == TYPE_DICTIONARY:
-			# Update quantity, row_id, etc from server response
+			# Update quantity, row_id, slot_position etc from server response
 			for k in returned_data:
 				final_item[k] = returned_data[k]
-				
+			
+			print("[InventoryManager] Merged server data: row_id=%s slot=%s" % [final_item.get("row_id"), final_item.get("slot_position")])
+		
+		# CRITICAL: Ensure slot_position is valid (0-19) for UI display
+		if not final_item.has("slot_position") or final_item.slot_position == null or int(final_item.slot_position) < 0:
+			print("[InventoryManager] Item missing slot_position from server, finding local slot...")
+			final_item["slot_position"] = _find_first_empty_slot()
+			print("[InventoryManager] Assigned local slot: ", final_item.slot_position)
+		
 		State.add_item(final_item)
 		var item_obj = ItemData.from_dict(final_item)
 		item_added.emit(item_obj)
 		Audio.play_item_pickup()
+		
+		# Force immediate update
 		if State.has_user_signal("inventory_updated"):
 			State.emit_signal("inventory_updated")
+			
 		return {"success": true, "item": item_obj, "synced": true}
 
 	print("[InventoryManager] Server RPC add failed: %s" % result)
@@ -100,10 +115,13 @@ func add_item(item: ItemData) -> Dictionary:
 	print("[InventoryManager] Adding locally (pending sync)")
 	var local_dict = item.to_dict()
 	local_dict["pending_sync"] = true
+	local_dict["slot_position"] = _find_first_empty_slot() # Assign local slot
+	
 	State.add_item(local_dict)
 	var local_item = ItemData.from_dict(local_dict)
 	item_added.emit(local_item)
 	Audio.play_item_pickup()
+	
 	if State.has_user_signal("inventory_updated"):
 		State.emit_signal("inventory_updated")
 
@@ -176,6 +194,55 @@ func remove_item(item_id: String, quantity: int = 1) -> Dictionary:
 	
 	print("[InventoryManager] All remove methods failed: ", result.get("error", "Unknown"))
 	return {"success": false, "error": result.get("error", "Failed to remove item")}
+
+## Remove item by row_id (specific instance)
+func remove_item_by_row_id(row_id: String, quantity: int = 1) -> Dictionary:
+	print("[InventoryManager] Removing item by row_id: ", row_id, " quantity: ", quantity)
+	
+	# Find item in local state
+	var item_to_remove = null
+	for item in State.inventory:
+		if item.get("row_id") == row_id:
+			item_to_remove = item
+			break
+	
+	if not item_to_remove:
+		return {"success": false, "error": "Item not found in local inventory"}
+	
+	# Try RPC endpoint first (preferred for precise removal)
+	var rpc_result = await Network.http_post("/rest/v1/rpc/remove_inventory_item_by_row", {
+		"p_row_id": row_id,
+		"p_quantity": quantity
+	})
+	
+	if rpc_result.success:
+		print("[InventoryManager] Item removed/updated via RPC by row_id")
+		
+		# Update local state
+		var current_qty = item_to_remove.get("quantity", 1)
+		
+		if quantity >= current_qty:
+			# Removed completely
+			State.inventory.erase(item_to_remove)
+		else:
+			# Reduced quantity
+			item_to_remove["quantity"] = current_qty - quantity
+			
+		var item_id = item_to_remove.get("item_id")
+		item_removed.emit(item_id)
+		
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
+			
+		return {"success": true}
+	
+	print("[InventoryManager] RPC remove_by_row failed, falling back to basic remove")
+	# Fallback: Use item_id for server call (less precise)
+	var item_id = item_to_remove.get("item_id")
+	var result = await remove_item(item_id, quantity)
+	
+	return result
+
 
 ## Use item (consumable)
 func use_item(item: ItemData) -> Dictionary:
@@ -296,15 +363,99 @@ func is_slot_equipped(slot: String) -> bool:
 
 ## Get inventory capacity (if implemented)
 func get_capacity() -> int:
-	return 100  # TODO: Make dynamic based on player level/upgrades
+	return 20  # Fixed 20 slots (0-19)
 
-## Get current inventory size
+## Get current inventory size (count items with assigned slots)
 func get_current_size() -> int:
-	var total = 0
+	var assigned_slots = 0
 	for item in State.inventory:
-		total += item.get("quantity", 1)
-	return total
+		var slot_pos = item.get("slot_position")
+		# Count only items with valid slot positions (0-19)
+		if slot_pos != null and slot_pos >= 0 and slot_pos <= 19:
+			assigned_slots += 1
+	return assigned_slots
 
 ## Check if inventory is full
 func is_inventory_full() -> bool:
 	return get_current_size() >= get_capacity()
+
+## Move item to specific slot position (for drag-and-drop)
+func move_item_to_slot(item: ItemData, target_position: int) -> Dictionary:
+	print("[InventoryManager] Moving item ", item.name, " to slot position ", target_position)
+	
+	# Validate position (0-19)
+	if target_position < 0 or target_position > 19:
+		return {"success": false, "error": "Invalid slot position: %d (must be 0-19)" % target_position}
+	
+	# Call server RPC to update position
+	var payload = {
+		"p_updates": [
+			{
+				"row_id": item.row_id,
+				"slot_position": target_position
+			}
+		]
+	}
+	
+	var result = await Network.http_post("/rest/v1/rpc/update_item_positions", payload)
+	
+	if result.success:
+		print("[InventoryManager] Item position updated successfully")
+		# Update local state
+		for inv_item in State.inventory:
+			if inv_item.get("row_id") == item.row_id:
+				inv_item["slot_position"] = target_position
+				break
+		
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
+		return {"success": true}
+	
+	print("[InventoryManager] Failed to update item position: ", result.get("error", "Unknown"))
+	return {"success": false, "error": result.get("error", "Failed to update position")}
+
+## Batch update item positions (for sort operations)
+func batch_update_positions(items: Array[ItemData]) -> Dictionary:
+	print("[InventoryManager] Batch updating positions for %d items" % items.size())
+	
+	# Build updates array
+	var updates = []
+	for i in range(items.size()):
+		var item = items[i]
+		updates.append({
+			"row_id": item.row_id,
+			"slot_position": i  # Sequential positions 0,1,2...
+		})
+	
+	# Call server RPC
+	var payload = {"p_updates": updates}
+	var result = await Network.http_post("/rest/v1/rpc/update_item_positions", payload)
+	
+	if result.success:
+		print("[InventoryManager] Batch position update successful")
+		# Update local state
+		for update in updates:
+			for inv_item in State.inventory:
+				if inv_item.get("row_id") == update.row_id:
+					inv_item["slot_position"] = update.slot_position
+					break
+		
+		if State.has_user_signal("inventory_updated"):
+			State.emit_signal("inventory_updated")
+		return {"success": true, "updated_count": updates.size()}
+	
+	print("[InventoryManager] Failed to batch update positions: ", result.get("error", "Unknown"))
+	return {"success": false, "error": result.get("error", "Failed to update positions")}
+
+## Helper: Find first empty slot (0-19) in local state
+func _find_first_empty_slot() -> int:
+	var occupied_slots = []
+	for item in State.inventory:
+		var pos = item.get("slot_position")
+		if pos != null and pos >= 0:
+			occupied_slots.append(int(pos))
+	
+	for i in range(20):
+		if not i in occupied_slots:
+			return i
+	return -1 # Full

@@ -16,7 +16,7 @@ const MAX_INVENTORY_SLOTS = 20  # Maximum inventory slots
 @onready var inventory_grid: GridContainer = %InventoryGrid
 @onready var equipment_grid: GridContainer = %EquipmentGrid
 @onready var filter_bar: HBoxContainer = %FilterBar
-
+@onready var sort_button: Button = %SortButton
 
 # Details Panel
 @onready var item_details_panel: PanelContainer = %ItemDetailsPanel
@@ -31,7 +31,8 @@ const MAX_INVENTORY_SLOTS = 20  # Maximum inventory slots
 var inventory_manager: InventoryManager
 var selected_item: ItemData = null
 var current_filter: String = "All"
-
+var current_sort: String = "name"
+var sort_ascending: bool = true
 var trash_slot: Control = null
 var current_drag_source: Control = null  # Track where drag started from
 

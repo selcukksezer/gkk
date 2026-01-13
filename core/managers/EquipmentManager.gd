@@ -50,38 +50,115 @@ func equip_item(item: ItemData) -> Dictionary:
 	
 	# Check if slot is already occupied
 	var old_item = equipped_items[slot_key] if equipped_items.has(slot_key) else null
+	
+	# INSTANT VISUAL FEEDBACK (Optimistic Update)
+	# Update local state BEFORE server call for instant UI response
+	var old_item_slot_pos = item.slot_position  # Save for rollback
+	
+	# Update item states locally
+	item.is_equipped = true
+	item.slot_position = -1
+	
 	if old_item:
-		# Unequip old item first
-		var unequip_result = await unequip_item(slot_key)
-		if not unequip_result.success:
-			return {"success": false, "error": "Failed to unequip existing item"}
+		old_item.is_equipped = false
+		old_item.slot_position = old_item_slot_pos  # Will be updated by server response
 	
-	# Try to sync to server first (server-side validation)
-	var server_result = await _sync_equip_to_server(item, slot_key)
+	# Update equipped_items immediately
+	equipped_items[slot_key] = item
 	
-	if server_result.success:
-		# Server confirmed - now update locally
-		item.is_equipped = true  # Mark as equipped
+	# Trigger UI updates immediately
+	equipment_changed.emit(slot_key, item)
+	_recalculate_stats()
+	
+	# Update State.inventory for instant grid refresh
+	var found_item_in_inv = false
+	var found_old_item_in_inv = false
+	
+	for inv_item in State.inventory:
+		if inv_item.get("row_id") == item.row_id:
+			print("[EquipmentManager] Local Update: Marking item ", item.name, " (", item.row_id, ") as EQUIPPED")
+			inv_item["is_equipped"] = true
+			inv_item["slot_position"] = -1
+			found_item_in_inv = true
+		elif old_item and inv_item.get("row_id") == old_item.row_id:
+			print("[EquipmentManager] Local Update: Marking old item ", old_item.name, " (", old_item.row_id, ") as UNEQUIPPED at pos ", old_item_slot_pos)
+			inv_item["is_equipped"] = false
+			inv_item["slot_position"] = old_item_slot_pos
+			found_old_item_in_inv = true
+	
+	if not found_item_in_inv:
+		print("[EquipmentManager] WARNING: Equipping item not found in State.inventory!")
+	if old_item and not found_old_item_in_inv:
+		print("[EquipmentManager] WARNING: Unequipping old item not found in State.inventory!")
+	
+	State.inventory_updated.emit()
+	
+	# Try to sync to server (server-side validation)
+	# If swapping (old item exists), use the atomic swap RPC
+	var server_result = {}
+	if old_item:
+		print("[EquipmentManager] performing atomic swap via RPC...")
+		server_result = await _sync_swap_equip_to_server(item, slot_key)
+	else:
+		server_result = await _sync_equip_to_server(item, slot_key)
+	
+	# Check data.success (RPC result) not outer success (HTTP status)
+	var rpc_success = server_result and server_result.has("data") and server_result["data"].get("success", false)
+	if rpc_success:
+		# Server confirmed - verify local state matches server response
+		print("[EquipmentManager] ✅ Server confirmed equip/swap")
 		
-		# CRITICAL: Update the flag in State.inventory too
-		for inv_item in State.inventory:
-			if inv_item.row_id == item.row_id:
-				inv_item.is_equipped = true
-				print("[EquipmentManager] Updated is_equipped flag in State.inventory for: ", inv_item.name)
-				break
+		# Update slot positions from server response if provided
+		if old_item and server_result.data.has("swapped_slot_pos"):
+			var new_pos = int(server_result.data.swapped_slot_pos)
+			print("[EquipmentManager] Updating old item position to: ", new_pos)
+			old_item.slot_position = new_pos
+			# Update in State.inventory too
+			for inv_item in State.inventory:
+				if inv_item.get("row_id") == old_item.row_id:
+					inv_item["slot_position"] = new_pos
 		
-		equipped_items[slot_key] = item
-		print("[EquipmentManager] ✅ Equipped: ", item.name, " to slot: ", slot_key)
-		equipment_changed.emit(slot_key, item)
-		_recalculate_stats()
+		# Force consistency check by fetching fresh data from server
+		print("[EquipmentManager] Forcing inventory fetch to ensure sync...")
+		var inv_mgr = get_node_or_null("/root/Inventory")
+		if inv_mgr:
+			await inv_mgr.fetch_inventory()
 		
-		# Update State.inventory to trigger UI refresh
+		# Final UI refresh with server-confirmed data
 		State.inventory_updated.emit()
 		
 		return {"success": true, "slot": slot_key}
 	else:
-		# Server rejected - don't equip
-		print("[EquipmentManager] ❌ Server rejected equip: ", server_result.get("error", "Unknown"))
+		# Server rejected - rollback optimistic update
+		var err_msg = "Unknown"
+		if server_result and server_result.has("data"):
+			err_msg = server_result["data"].get("error", "Unknown RPC error")
+		print("[EquipmentManager] ❌ Server rejected equip: ", err_msg)
+		
+		# Rollback local changes
+		item.is_equipped = false
+		item.slot_position = old_item_slot_pos
+		
+		if old_item:
+			old_item.is_equipped = true
+			old_item.slot_position = -1
+			equipped_items[slot_key] = old_item
+		else:
+			equipped_items[slot_key] = null
+		
+		# Rollback State.inventory
+		for inv_item in State.inventory:
+			if inv_item.get("row_id") == item.row_id:
+				inv_item["is_equipped"] = false
+				inv_item["slot_position"] = old_item_slot_pos
+			elif old_item and inv_item.get("row_id") == old_item.row_id:
+				inv_item["is_equipped"] = true
+				inv_item["slot_position"] = -1
+		
+		equipment_changed.emit(slot_key, old_item)
+		_recalculate_stats()
+		State.inventory_updated.emit()
+		
 		return {"success": false, "error": server_result.get("error", "Server error")}
 
 ## Unequip item from slot
@@ -92,40 +169,75 @@ func unequip_item(slot_key: String, target_slot_index: int = -1) -> Dictionary:
 	
 	var item = equipped_items[slot_key]
 	print("[EquipmentManager] 🔄 Unequip request for slot: ", slot_key, " to target: ", target_slot_index)
-	print("[EquipmentManager] Unequipping item: ", item.name, " from slot: ", slot_key)
+	
+	# INSTANT VISUAL FEEDBACK (Optimistic Update)
+	var old_equipped_state = item.is_equipped
+	var final_target_slot = target_slot_index
+	
+	# Update local state immediately
+	item.is_equipped = false
+	if target_slot_index != -1:
+		item.slot_position = target_slot_index
+	
+	equipped_items[slot_key] = null
+	
+	# Update State.inventory immediately
+	for inv_item in State.inventory:
+		if inv_item.get("row_id") == item.row_id:
+			inv_item["is_equipped"] = false
+			if target_slot_index != -1:
+				inv_item["slot_position"] = target_slot_index
+	
+	# Trigger immediate UI updates
+	equipment_changed.emit(slot_key, null)
+	_recalculate_stats()
+	State.inventory_updated.emit()
 	
 	# Sync to server
 	var server_result = await _sync_unequip_to_server(item, target_slot_index)
 	
-	if server_result.success:
-		# Server confirmed
-		item.is_equipped = false  # Mark as unequipped
+	# Check data.success (RPC result) not outer success (HTTP status)
+	var rpc_success = server_result and server_result.has("data") and server_result["data"].get("success", false)
+	if rpc_success:
+		print("[EquipmentManager] ✅ Server confirmed unequip")
 		
-		# Update slot position if returned
+		# Update slot position from server if provided
 		if server_result.has("new_slot_position"):
-			item.slot_position = int(server_result.new_slot_position)
-		elif target_slot_index != -1:
-			item.slot_position = target_slot_index
+			final_target_slot = int(server_result.new_slot_position)
+			item.slot_position = final_target_slot
+			
+			# Update in State.inventory
+			for inv_item in State.inventory:
+				if inv_item.get("row_id") == item.row_id:
+					inv_item["slot_position"] = final_target_slot
 		
-		# CRITICAL: Update the flag in State.inventory too
-		for inv_item in State.inventory:
-			if inv_item.row_id == item.row_id:
-				inv_item.is_equipped = false
-				inv_item.slot_position = item.slot_position # Sync position
-				print("[EquipmentManager] Updated is_equipped flag in State.inventory for: ", inv_item.name)
-				break
+		# Force consistency check
+		var inv_mgr = get_node_or_null("/root/Inventory")
+		if inv_mgr:
+			await inv_mgr.fetch_inventory()
 		
-		equipped_items[slot_key] = null
-		print("[EquipmentManager] ✅ Unequipped from slot: ", slot_key)
-		equipment_changed.emit(slot_key, null)
-		_recalculate_stats()
-		
-		# Update State.inventory to trigger UI refresh
 		State.inventory_updated.emit()
 		
 		return {"success": true}
 	else:
-		print("[EquipmentManager] ❌ Server rejected unequip. Result: ", server_result)
+		# Server rejected - rollback
+		print("[EquipmentManager] ❌ Server rejected unequip: ", server_result.get("error", "Unknown"))
+		
+		# Rollback local changes
+		item.is_equipped = old_equipped_state
+		item.slot_position = -1
+		equipped_items[slot_key] = item
+		
+		# Rollback State.inventory
+		for inv_item in State.inventory:
+			if inv_item.get("row_id") == item.row_id:
+				inv_item["is_equipped"] = old_equipped_state
+				inv_item["slot_position"] = -1
+		
+		equipment_changed.emit(slot_key, item)
+		_recalculate_stats()
+		State.inventory_updated.emit()
+		
 		return {"success": false, "error": server_result.get("error", "Server error")}
 
 ## Check if player can equip item
@@ -234,6 +346,21 @@ func _sync_equip_to_server(item: ItemData, slot_key: String) -> Dictionary:
 	var payload = {
 		"item_instance_id": item_instance_id,
 		"target_slot": slot_key
+	}
+	
+	var result = await Network.http_post(endpoint, payload)
+	if result == null:
+		return {"success": false, "error": "Network error"}
+	return result
+
+## Sync swap equip action to server (New Atomic RPC)
+func _sync_swap_equip_to_server(item: ItemData, slot_key: String) -> Dictionary:
+	var item_instance_id = item.row_id if "row_id" in item else item.item_id
+	
+	var endpoint = "/rest/v1/rpc/swap_equip_item"
+	var payload = {
+		"p_item_instance_id": item_instance_id,
+		"p_target_equip_slot": slot_key
 	}
 	
 	var result = await Network.http_post(endpoint, payload)

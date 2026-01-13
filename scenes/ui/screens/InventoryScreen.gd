@@ -16,7 +16,7 @@ const MAX_INVENTORY_SLOTS = 20  # Maximum inventory slots
 @onready var inventory_grid: GridContainer = %InventoryGrid
 @onready var equipment_grid: GridContainer = %EquipmentGrid
 @onready var filter_bar: HBoxContainer = %FilterBar
-@onready var sort_button: Button = %SortButton
+
 
 # Details Panel
 @onready var item_details_panel: PanelContainer = %ItemDetailsPanel
@@ -31,8 +31,7 @@ const MAX_INVENTORY_SLOTS = 20  # Maximum inventory slots
 var inventory_manager: InventoryManager
 var selected_item: ItemData = null
 var current_filter: String = "All"
-var current_sort: String = "name"
-var sort_ascending: bool = true
+
 var trash_slot: Control = null
 var current_drag_source: Control = null  # Track where drag started from
 
@@ -50,7 +49,7 @@ func _ready() -> void:
 		inventory_grid.columns = GRID_COLUMNS
 	
 	# Connect to inventory_updated signal for shop and other screen updates
-	if State.has_user_signal("inventory_updated"):
+	if State.has_signal("inventory_updated"):
 		if not State.inventory_updated.is_connected(_on_inventory_updated):
 			if State.inventory_updated.connect(_on_inventory_updated) == OK:
 				print("[InventoryScreen] ✅ Connected to inventory_updated signal")
@@ -157,6 +156,25 @@ func _refresh_inventory(filter_type: String = "") -> void:
 	var all_items = State.get_all_items_data().filter(func(item):
 		return not item.is_equipped and item.quantity > 0 and item.slot_position >= 0
 	)
+	
+	# Debug duplicates
+	var row_id_counts = {}
+	for item in all_items:
+		var r_id = item.row_id
+		row_id_counts[r_id] = row_id_counts.get(r_id, 0) + 1
+	
+	for r_id in row_id_counts:
+		if row_id_counts[r_id] > 1:
+			print("[InventoryScreen] ⚠️ WARNING: Duplicate item ROW_ID found: ", r_id, " (Count: ", row_id_counts[r_id], ")")
+			
+	# Update Capacity Label (if exists, or console)
+	var capacity_count = all_items.size()
+	print("[InventoryScreen] Inventory Capacity: ", capacity_count, " / 20")
+	
+	# Try to find a Label to show this info
+	var title_label = find_child("TitleLabel", true, false) # Assuming standard naming
+	if title_label:
+		title_label.text = "Envanter (%d/20)" % capacity_count
 	
 	# Apply filter
 	var filtered_items = []
@@ -501,7 +519,6 @@ func _on_item_dropped(item: ItemData, dropped_on_control: Control) -> void:
 		if is_on_inventory:
 			print("[InventoryScreen] ✅ Dropped on inventory area - unequipping")
 			
-			# Determine target slot index if dropped on a specific slot
 			var target_slot_index = -1
 			if to_slot and to_slot.has_method("get_slot_position"):
 				target_slot_index = to_slot.get_slot_position()
@@ -511,19 +528,115 @@ func _on_item_dropped(item: ItemData, dropped_on_control: Control) -> void:
 				target_slot_index = to_slot.slot_position
 				print("[InventoryScreen] 🎯 Target slot identified (prop): ", target_slot_index)
 			
+			# If dropped on background or unknown target (-1), find first empty slot
+			if target_slot_index == -1:
+				print("[InventoryScreen] ℹ️ Dropped on background/empty area, finding first free slot...")
+				# We can use InventoryManager's helper or implement a local one to be safe
+				# Local check for visual consistency:
+				var occupied_slots = []
+				for inv_item in State.get_all_items_data():
+					if not inv_item.is_equipped and inv_item.slot_position >= 0:
+						occupied_slots.append(inv_item.slot_position)
+				
+				for i in range(20):
+					if not i in occupied_slots:
+						target_slot_index = i
+						print("[InventoryScreen] ✅ Auto-assigned to empty slot: ", i)
+						break
+				
+				if target_slot_index == -1:
+					print("[InventoryScreen] ❌ Inventory is full, cannot unequip to empty slot")
+					# Show error using print for now to avoid crashes
+					print("HATA: Envanter dolu! Çıkarmak için boş yer yok.")
+					current_drag_source = null
+					return
+
 			# Get slot type from EquipmentSlot
 			var source_slot = source_slot_control.get_slot_type()
 			if source_slot != "":
 				var equipment_manager = get_node_or_null("/root/Equipment")
 				if equipment_manager:
-					# Pass target_slot_index to manager
-					var result = await equipment_manager.unequip_item(source_slot, target_slot_index)
-					if result.success:
-						print("[InventoryScreen] ✅ Unequip successful")
-						_refresh_inventory()
-						_update_equipment_slots()
+					# CHECK IF TARGET IS OCCUPIED (Safe Swap Logic)
+					var target_item: ItemData = null
+					# Find if any item currently occupies this slot
+					for inv_item in State.get_all_items_data():
+						if not inv_item.is_equipped and inv_item.slot_position == target_slot_index:
+							target_item = inv_item
+							break
+					
+					if target_item:
+						print("[InventoryScreen] ⚠️ Target slot ", target_slot_index, " is occupied by: ", target_item.name)
+						
+						# Check if target item can be equipped to the SOURCE slot (swap-equip)
+						if target_item.is_equipment() and equipment_manager.can_equip(target_item):
+							var required_slot = equipment_manager.get_slot_key_for_item(target_item)
+							if required_slot == source_slot:
+								# Target item CAN be equipped to source slot → Perform atomic swap-equip
+								print("[InventoryScreen] 🔄 Performing Atomic Swap-Equip (kılıç ↔ yay)...")
+								var item_instance_id = target_item.row_id
+								var payload = {
+									"p_item_instance_id": item_instance_id,
+									"p_target_equip_slot": source_slot
+								}
+								var result = await Network.http_post("/rest/v1/rpc/swap_equip_item", payload)
+								print("[InventoryScreen] 🔍 Swap-Equip RPC response: ", result)
+								
+								# Check data.success (RPC result) not outer success (HTTP status)
+								var rpc_success = result and result.has("data") and result["data"].get("success", false)
+								if rpc_success:
+									print("[InventoryScreen] ✅ Swap-Equip successful")
+									# Force full refresh from server
+									var inv_mgr = get_node_or_null("/root/Inventory")
+									if inv_mgr:
+										await inv_mgr.fetch_inventory()
+									await equipment_manager.fetch_equipped_items()
+									_refresh_inventory()
+									_update_equipment_slots()
+								else:
+									var err_msg = "Network error"
+									if result and result.has("data"):
+										err_msg = result["data"].get("error", "Unknown RPC error")
+									print("[InventoryScreen] ❌ Swap-Equip failed: ", err_msg)
+							else:
+								# Target item belongs to DIFFERENT slot → Just unequip, displace target
+								print("[InventoryScreen] ❌ Target item belongs to ", required_slot, " not ", source_slot, " - just unequipping")
+								var result = await equipment_manager.unequip_item(source_slot, target_slot_index)
+								if result.get("success", false):
+									print("[InventoryScreen] ✅ Unequip successful, target displaced")
+									var inv_mgr = get_node_or_null("/root/Inventory")
+									if inv_mgr:
+										await inv_mgr.fetch_inventory()
+									await equipment_manager.fetch_equipped_items()
+									_refresh_inventory()
+									_update_equipment_slots()
+								else:
+									print("[InventoryScreen] ❌ Unequip failed: ", result.get("error", "Unknown"))
+						else:
+							# Target is NOT equipment or can't equip → Just unequip, displace target
+							print("[InventoryScreen] 🔄 Target not equippable - just unequipping")
+							var result = await equipment_manager.unequip_item(source_slot, target_slot_index)
+							if result.get("success", false):
+								print("[InventoryScreen] ✅ Unequip successful, target displaced")
+								var inv_mgr = get_node_or_null("/root/Inventory")
+								if inv_mgr:
+									await inv_mgr.fetch_inventory()
+								await equipment_manager.fetch_equipped_items()
+								_refresh_inventory()
+								_update_equipment_slots()
+							else:
+								print("[InventoryScreen] ❌ Unequip failed: ", result.get("error", "Unknown"))
 					else:
-						print("[InventoryScreen] ❌ Unequip failed: ", result.get("error", "Unknown"))
+						# Slot is empty, proceed with standard unequip
+						var result = await equipment_manager.unequip_item(source_slot, target_slot_index)
+						if result.success:
+							print("[InventoryScreen] ✅ Unequip successful")
+							_refresh_inventory()
+							_update_equipment_slots()
+						else:
+							print("[InventoryScreen] ❌ Unequip failed: ", result.get("error", "Unknown"))
+							# Force verify state to fix any visual glitches
+							_refresh_inventory()
+							_update_equipment_slots()
 			current_drag_source = null  # Clear drag source
 			return
 	
@@ -574,7 +687,21 @@ func _on_item_dropped(item: ItemData, dropped_on_control: Control) -> void:
 			print("[InventoryScreen] Swapping items: ", item.name, " <-> ", target_item.name)
 			var source_position = item.slot_position
 			
-			# Update both positions via batch update
+			# OPTIMISTIC UPDATE: Update local state immediately for instant feedback
+			item.slot_position = target_position
+			target_item.slot_position = source_position
+			
+			# Update State.inventory immediately
+			for inv_item in State.inventory:
+				if inv_item.get("row_id") == item.row_id:
+					inv_item["slot_position"] = target_position
+				elif inv_item.get("row_id") == target_item.row_id:
+					inv_item["slot_position"] = source_position
+			
+			# Trigger immediate UI refresh
+			_refresh_inventory()
+			
+			# Update both positions via batch update (server confirmation)
 			var updates = [
 				{"row_id": item.row_id, "slot_position": target_position},
 				{"row_id": target_item.row_id, "slot_position": source_position}
@@ -583,22 +710,55 @@ func _on_item_dropped(item: ItemData, dropped_on_control: Control) -> void:
 			var payload = {"p_updates": updates}
 			var result = await Network.http_post("/rest/v1/rpc/update_item_positions", payload)
 			
-			if result.success:
-				print("[InventoryScreen] ✅ Items swapped successfully")
-				# Update local state
-				for inv_item in State.inventory:
-					if inv_item.get("row_id") == item.row_id:
-						inv_item["slot_position"] = target_position
-					elif inv_item.get("row_id") == target_item.row_id:
-						inv_item["slot_position"] = source_position
+			print("[InventoryScreen] Server swap result: ", result)
+			
+			if result and result.get("success", false):
+				print("[InventoryScreen] ✅ Server confirmed inventory swap")
+				# Force consistency check
+				var inv_mgr = get_node_or_null("/root/InventoryManager")
+				if inv_mgr:
+					await inv_mgr.fetch_inventory()
 				_refresh_inventory()
 			else:
-				print("[InventoryScreen] ❌ Swap failed: ", result.get("error", "Unknown"))
+				print("[InventoryScreen] ❌ Swap failed on server: ", result.get("error", "Unknown") if result else "Network error")
+				# Rollback optimistic update
+				item.slot_position = source_position
+				target_item.slot_position = target_position
+				
+				for inv_item in State.inventory:
+					if inv_item.get("row_id") == item.row_id:
+						inv_item["slot_position"] = source_position
+					elif inv_item.get("row_id") == target_item.row_id:
+						inv_item["slot_position"] = target_position
+				
+				_refresh_inventory()
 		else:
 			# Move to empty ItemSlot position
+			print("[InventoryScreen] Moving item to empty position: ", target_position)
+			var old_position = item.slot_position
+			
+			# OPTIMISTIC UPDATE
+			item.slot_position = target_position
+			for inv_item in State.inventory:
+				if inv_item.get("row_id") == item.row_id:
+					inv_item["slot_position"] = target_position
+			
+			_refresh_inventory()
+			
+			# Confirm with server
 			var result = await inventory_manager.move_item_to_slot(item, target_position)
 			if result.success:
 				print("[InventoryScreen] ✅ Item moved to position ", target_position)
+				# Force consistency check
+				await inventory_manager.fetch_inventory()
+				_refresh_inventory()
+			else:
+				print("[InventoryScreen] ❌ Move failed: ", result.get("error", "Unknown"))
+				# Rollback
+				item.slot_position = old_position
+				for inv_item in State.inventory:
+					if inv_item.get("row_id") == item.row_id:
+						inv_item["slot_position"] = old_position
 				_refresh_inventory()
 		
 		current_drag_source = null
@@ -636,7 +796,8 @@ func _on_item_double_clicked(item: ItemData) -> void:
 	print("[InventoryScreen] 🎯 _on_item_double_clicked called for: ", item.name)
 	print("[InventoryScreen] Item type check - is_equipment: ", item.is_equipment(), " is_consumable: ", item.is_consumable())
 	
-	if item.is_equipment():
+	# Only allow EQUPPING (not unequipping via double click)
+	if item.is_equipment() and not item.is_equipped:
 		print("[InventoryScreen] Auto-equipping: ", item.name)
 		var equipment_manager = get_node_or_null("/root/Equipment")
 		if equipment_manager:
@@ -738,10 +899,46 @@ func _delete_item_confirm(item: ItemData) -> void:
 		
 		confirm_dialog.confirmed.connect(func():
 			print("[InventoryScreen] Delete confirmed for row_id: ", item.row_id)
+			
+			# If item is equipped, we must handle the unequip logic locally first to update visuals
+			if item.is_equipped:
+				print("[InventoryScreen] Deleting equipped item - clearing equipment slot")
+				var slot_key = ""
+				# Find which slot it was equipped in
+				if item.get("equip_slot_key"): 
+					slot_key = item.equip_slot_key 
+				else:
+					# Fallback: search in equipment manager
+					var equipment_manager = get_node_or_null("/root/Equipment")
+					if equipment_manager:
+						for key in equipment_manager.equipped_items:
+							var equipped = equipment_manager.equipped_items[key]
+							if equipped and equipped.row_id == item.row_id:
+								slot_key = key
+								break
+				
+				if slot_key != "":
+					var equipment_manager = get_node_or_null("/root/Equipment")
+					if equipment_manager:
+						if equipment_manager.equipped_items.has(slot_key):
+							equipment_manager.equipped_items[slot_key] = null
+							equipment_manager.equipment_changed.emit(slot_key, null)
+
 			var result = await inventory_manager.remove_item_by_row_id(item.row_id)
 			if result.success:
 				print("[InventoryScreen] Item deleted")
 				_refresh_inventory()
+				_update_equipment_slots()
+				
+				# Force fetch from server to handle any state de-sync
+				print("[InventoryScreen] Force syncing state after delete...")
+				if inventory_manager: await inventory_manager.fetch_inventory()
+				var equipment_manager = get_node_or_null("/root/Equipment")
+				if equipment_manager: await equipment_manager.fetch_equipped_items()
+				
+				# Refresh again after fetch
+				_refresh_inventory()
+				_update_equipment_slots()
 			confirm_dialog.queue_free()
 		)
 		
@@ -792,3 +989,16 @@ func _on_empty_slot_drop(item: ItemData, target_position: int) -> void:
 func get_remaining_slots() -> int:
 	var item_count = State.get_all_items_data().size()
 	return max(0, MAX_INVENTORY_SLOTS - item_count)
+
+func _show_error(message: String) -> void:
+	var dialog = AcceptDialog.new()
+	dialog.title = "Hata"
+	dialog.dialog_text = message
+	dialog.ok_button_text = "Tamam"
+	add_child(dialog)
+	dialog.popup_centered()
+	dialog.confirmed.connect(func(): dialog.queue_free())
+	# Auto-close after 3 seconds
+	await get_tree().create_timer(3.0).timeout
+	if dialog and is_instance_valid(dialog):
+		dialog.queue_free()

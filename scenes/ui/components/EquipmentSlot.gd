@@ -120,9 +120,9 @@ func _gui_input(event: InputEvent):
 				# Check for double-click
 				var current_time = Time.get_ticks_msec() / 1000.0
 				if current_time - last_click_time < DOUBLE_CLICK_TIME and current_item:
-					# Double-click - unequip
-					print("[EquipmentSlot] Double-click - unequipping: ", current_item.name)
-					_unequip_item()
+					# Double-click detected - BUT user wants only drag-drop
+					# Do nothing or maybe print a message "Drag to unequip"
+					print("[EquipmentSlot] Double-click detected (Ignored - Drag to unequip)")
 					last_click_time = 0.0
 				else:
 					last_click_time = current_time
@@ -210,9 +210,13 @@ func _destroy_drag_preview():
 		drag_preview = null
 
 func _find_control_at_position(pos: Vector2) -> Control:
-	var root = get_tree().root
-	var screen = root.get_child(root.get_child_count() - 1)
-	return _find_control_recursive(screen, pos)
+	# Better approach: Search from the current scene root
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		# Fallback for when running scene directly or edge cases
+		current_scene = get_tree().root.get_child(get_tree().root.get_child_count() - 1)
+		
+	return _find_control_recursive(current_scene, pos)
 
 func _find_control_recursive(node: Node, pos: Vector2) -> Control:
 	# Skip the drag preview itself
@@ -222,15 +226,20 @@ func _find_control_recursive(node: Node, pos: Vector2) -> Control:
 	if node is Control:
 		var control = node as Control
 		if control.visible and control.get_global_rect().has_point(pos):
-			# Check children first (depth-first)
-			for child in control.get_children():
-				var result = _find_control_recursive(child, pos)
+			# Check children first (depth-first, reverse order for Z-index)
+			var m_children = control.get_children()
+			var child_count = m_children.size()
+			for i in range(child_count - 1, -1, -1):
+				var result = _find_control_recursive(m_children[i], pos)
 				if result:
 					return result
 			return control
 	else:
-		for child in node.get_children():
-			var result = _find_control_recursive(child, pos)
+		# Iterate children in reverse order (top to bottom)
+		var m_children = node.get_children()
+		var child_count = m_children.size()
+		for i in range(child_count - 1, -1, -1):
+			var result = _find_control_recursive(m_children[i], pos)
 			if result:
 				return result
 	return null

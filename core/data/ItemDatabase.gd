@@ -31,7 +31,7 @@ const ITEMS = {
 		"id": "weapon_bow_elven",
 		"name": "Elf Yayı",
 		"description": "Elf ustalarının yaptığı hafif ve güçlü yay.",
-		"icon": "res://assets/sprites/items/bow_elven.png",
+		"icon": "res://assets/sprites/items/bow.png",
 		"item_type": "WEAPON",
 		"weapon_type": "BOW",
 		"rarity": "RARE",

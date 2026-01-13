@@ -340,7 +340,9 @@ func _on_item_purchase(item_data: ItemData) -> void:
 	# Filter out equipped items
 	var unequipped_items = []
 	for inv_item in State.get_all_items_data():
-		if not inv_item.is_equipped:
+		# Strictly filter out "ghost" items (quantity <= 0 or invalid slot)
+		# Also ignore equipped items as they don't take up inventory grid space
+		if not inv_item.is_equipped and inv_item.quantity > 0 and inv_item.slot_position >= 0:
 			unequipped_items.append(inv_item)
 	
 	if item_data.is_stackable:
@@ -379,13 +381,9 @@ func _show_quantity_purchase_confirmation(item_data: ItemData) -> void:
 	var price = item_data.base_price
 	var max_stack = item_data.max_stack
 	
-	# Calculate max purchasable quantity based on inventory space
-	# Calculate max purchasable quantity based on inventory space
-	var occupied_slots = 0
-	var existing_stack_space = 0
-	
 	# Current Logic: User wants Total Item Limit = 20 (Grid + Equipped)
-	occupied_slots = State.inventory.size()
+	var occupied_slots = inventory_manager.get_current_size()
+	var existing_stack_space = 0
 	
 	# Calculate stack space for existing items of the same type
 	for item in State.inventory:
@@ -507,14 +505,14 @@ func _process_item_purchase(item_data: ItemData, quantity: int = 1) -> void:
 		
 		# If item doesn't exist, we need a free slot
 		if not item_exists:
-			if State.inventory.size() >= 20:
+			if inventory_manager.get_current_size() >= 20:
 				_show_error("Envanteriniz dolu! (Toplam 20 eşya/ekipman)")
 				purchase_in_progress = false
 				print("[ShopScreen] 🔓 Purchase unlocked (inventory full)")
 				return
 	else:
 		# Non-stackable: always needs a free slot
-		if State.inventory.size() >= 20:
+		if inventory_manager.get_current_size() >= 20:
 			_show_error("Envanteriniz dolu! (Toplam 20 eşya/ekipman)")
 			purchase_in_progress = false
 			print("[ShopScreen] 🔓 Purchase unlocked (inventory full)")

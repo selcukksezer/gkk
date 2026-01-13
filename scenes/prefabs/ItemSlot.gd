@@ -28,6 +28,15 @@ func _ready() -> void:
 	# Enable drag and drop for non-trash slots
 	gui_input.connect(_on_gui_input)
 
+func _input(event: InputEvent) -> void:
+	# Global mouse release - cleanup drag preview if it exists
+	if event is InputEventMouseButton:
+		var mb_event = event as InputEventMouseButton
+		if mb_event.button_index == MOUSE_BUTTON_LEFT and not mb_event.pressed:
+			if _drag_preview:
+				_end_drag()
+				_is_dragging = false
+
 func _on_gui_input(event: InputEvent) -> void:
 	if _is_trash_slot or not _item:
 		return
@@ -132,6 +141,11 @@ func _end_drag() -> void:
 	modulate = Color(1, 1, 1, 1)
 	
 	set_process(false)
+
+func _exit_tree() -> void:
+	if _drag_preview:
+		_drag_preview.queue_free()
+		_drag_preview = null
 
 func _find_slot_at_position(pos: Vector2) -> Control:
 	# Find the ItemSlot at the given position

@@ -174,9 +174,9 @@ static func from_dict(data: Dictionary) -> ItemData:
 	if item_id != "" and ItemDatabase.item_exists(item_id):
 		base_definition = ItemDatabase.get_item(item_id)
 		has_database_def = true
-		print("[ItemData] Loading base definition from ItemDatabase for: ", item_id)
+		# Verbose log disabled: Loading base definition from ItemDatabase
 	else:
-		print("[ItemData] No ItemDatabase definition found for: ", item_id, " - using data as-is")
+		pass # No ItemDatabase definition found - using data as-is
 	
 	# CRITICAL: Only merge instance-specific properties from server data
 	# Static properties (name, icon, rarity, stats, equip_slot) should ALWAYS come from ItemDatabase
@@ -189,11 +189,11 @@ static func from_dict(data: Dictionary) -> ItemData:
 		for key in instance_only_keys:
 			if data.has(key):
 				parse_data[key] = data[key]
-		print("[ItemData] Using ItemDatabase definition with instance overrides")
+		# Verbose log disabled: Using ItemDatabase definition with instance overrides
 	else:
 		# No database definition, use all data from server
 		parse_data = data.duplicate()
-		print("[ItemData] Using server data directly (no database definition)")
+		# Verbose log disabled: Using server data directly
 	
 	# Now parse from merged data
 	item.item_id = item_id

@@ -459,3 +459,45 @@ func _find_first_empty_slot() -> int:
 		if not i in occupied_slots:
 			return i
 	return -1 # Full
+
+## Update item enhancement level
+func update_item_enhancement(item: ItemData, new_level: int) -> Dictionary:
+	print("[InventoryManager] Updating enhancement level for %s to +%d" % [item.name, new_level])
+	
+	if item.row_id.is_empty():
+		return {"success": false, "error": "Item has no row_id, cannot update persistence"}
+	
+	# Use RPC to bypass RLS and ensure safe update
+	var result = await Network.http_post("/rest/v1/rpc/upgrade_item_enhancement", {
+		"p_row_id": item.row_id,
+		"p_new_level": new_level
+	})
+	
+	# RPC returns a single object which might be wrapped in "data" or "result" depending on Network helper
+	# But Network.http_post returns {"success": bool, "data": ...}
+	
+	# Check if network request itself succeeded
+	if result.success:
+		# Check RPC logical result
+		var rpc_data = result.get("data", {})
+		# If rpc_data is null (void return) or valid dict
+		if rpc_data and rpc_data.get("success", false):
+			print("[InventoryManager] Enhancement synced to database (RPC)")
+			# Update local state
+			for inv_item in State.inventory:
+				if inv_item.get("row_id") == item.row_id:
+					inv_item["enhancement_level"] = new_level
+					break
+			
+			if State.has_user_signal("inventory_updated"):
+				State.emit_signal("inventory_updated")
+				
+			return {"success": true}
+		else:
+			var err = rpc_data.get("error", "RPC returned failure") if rpc_data else "Empty RPC response"
+			print("[InventoryManager] RPC failure: ", err)
+			return {"success": false, "error": err}
+
+	
+	print("[InventoryManager] Failed to sync enhancement! Full Result: ", result)
+	return {"success": false, "error": result.get("error", "Failed to sync")}

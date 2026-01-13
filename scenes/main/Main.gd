@@ -37,7 +37,7 @@ const SCREENS = {
 	"shop": "res://scenes/ui/screens/ShopScreen.tscn",
 	"settings": "res://scenes/ui/screens/SettingsScreen.tscn",
 	"hospital": "res://scenes/ui/screens/HospitalScreen.tscn",
-	"anvil": "res://scenes/ui/screens/AnvilScreen.tscn",
+	"anvil": "res://scenes/ui/screens/BlacksmithScreen.tscn",
 	"crafting": "res://scenes/ui/screens/CraftingScreen.tscn",
 	"leaderboard": "res://scenes/ui/screens/LeaderboardScreen.tscn",
 	"bank": "res://scenes/ui/screens/BankScreen.tscn",

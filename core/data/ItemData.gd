@@ -13,6 +13,7 @@ enum ItemType {
 	POTION,
 	RECIPE,      # Üretim tarifleri
 	RUNE,        # Geliştirme için rün taşları
+	SCROLL,      # Geliştirme kağıtları (Upgrade Scrolls)
 	COSMETIC     # Kozmetik eşyalar
 }
 
@@ -209,19 +210,19 @@ static func from_dict(data: Dictionary) -> ItemData:
 	if type_str == null:
 		type_str = "MATERIAL"
 	type_str = str(type_str)
-	item.item_type = ItemType.get(type_str) if ItemType.has(type_str) else ItemType.MATERIAL
+	item.item_type = ItemType[type_str] if type_str in ItemType else ItemType.MATERIAL
 	
 	var rarity_str = parse_data.get("rarity", null)
 	if rarity_str == null:
 		rarity_str = "COMMON"
 	rarity_str = str(rarity_str)
-	item.rarity = ItemRarity.get(rarity_str) if ItemRarity.has(rarity_str) else ItemRarity.COMMON
+	item.rarity = ItemRarity[rarity_str] if rarity_str in ItemRarity else ItemRarity.COMMON
 	
 	var slot_str = parse_data.get("equip_slot", null)
 	if slot_str == null:
 		slot_str = "NONE"
 	slot_str = str(slot_str)
-	item.equip_slot = EquipSlot.get(slot_str) if EquipSlot.has(slot_str) else EquipSlot.NONE
+	item.equip_slot = EquipSlot[slot_str] if slot_str in EquipSlot else EquipSlot.NONE
 	
 	# Parse subtypes
 	var weapon_type_str = parse_data.get("weapon_type", null)
@@ -545,6 +546,9 @@ func is_rune() -> bool:
 func is_cosmetic() -> bool:
 	return item_type == ItemType.COSMETIC
 
+func is_scroll() -> bool:
+	return item_type == ItemType.SCROLL
+
 ## Get item category display name
 func get_category_display_name() -> String:
 	match item_type:
@@ -562,6 +566,8 @@ func get_category_display_name() -> String:
 			return "Rune"
 		ItemType.COSMETIC:
 			return "Cosmetic"
+		ItemType.SCROLL:
+			return "Upgrade Scroll"
 		_:
 			return ItemType.keys()[item_type]
 

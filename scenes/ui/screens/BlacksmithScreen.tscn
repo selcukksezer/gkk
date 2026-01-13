@@ -1,0 +1,264 @@
+[gd_scene format=3 uid="uid://d3fu2o5ou5iu8"]
+
+[ext_resource type="Script" uid="uid://5d86qcr0vjma" path="res://scenes/ui/screens/BlacksmithScreen.gd" id="1_blacksmith"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.08, 0.08, 0.1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.12, 0.12, 0.14, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.25, 0.28, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_anvil"]
+bg_color = Color(0.1, 0.1, 0.12, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.4, 0.3, 0.1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(0.05, 0.05, 0.07, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.3, 0.3, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Gradient" id="Gradient_sparks"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(1, 0.9, 0.6, 1, 1, 0.6, 0.2, 1, 1, 0.2, 0, 0)
+
+[node name="BlacksmithScreen" type="Control" unique_id=1422304598]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_blacksmith")
+
+[node name="Background" type="Panel" parent="." unique_id=1318799698]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="MainContainer" type="VBoxContainer" parent="." unique_id=114612826]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="UpgradePanel" type="PanelContainer" parent="MainContainer" unique_id=521500903]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_anvil")
+
+[node name="VBox" type="VBoxContainer" parent="MainContainer/UpgradePanel" unique_id=1718049507]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="Title" type="Label" parent="MainContainer/UpgradePanel/VBox" unique_id=1107970356]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.6, 1)
+theme_override_font_sizes/font_size = 36
+text = "Kadim Örs"
+horizontal_alignment = 1
+
+[node name="AnvilArea" type="Control" parent="MainContainer/UpgradePanel/VBox" unique_id=1334415976]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+
+[node name="TargetSlot" type="Panel" parent="MainContainer/UpgradePanel/VBox/AnvilArea" unique_id=1738856996]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -60.0
+offset_right = -60.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Label" type="Label" parent="MainContainer/UpgradePanel/VBox/AnvilArea/TargetSlot" unique_id=870032002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Eşya"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="MainContainer/UpgradePanel/VBox/AnvilArea/TargetSlot" unique_id=380281946]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlusLabel" type="Label" parent="MainContainer/UpgradePanel/VBox/AnvilArea" unique_id=1733055224]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -30.0
+offset_right = 20.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 48
+text = "+"
+horizontal_alignment = 1
+
+[node name="ScrollSlot" type="Panel" parent="MainContainer/UpgradePanel/VBox/AnvilArea" unique_id=1187017706]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 60.0
+offset_top = -60.0
+offset_right = 180.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Label" type="Label" parent="MainContainer/UpgradePanel/VBox/AnvilArea/ScrollSlot" unique_id=904393621]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Kağıt"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="MainContainer/UpgradePanel/VBox/AnvilArea/ScrollSlot" unique_id=427725675]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SuccessParticles" type="CPUParticles2D" parent="MainContainer/UpgradePanel/VBox/AnvilArea" unique_id=1235489101]
+position = Vector2(0, 0)
+emitting = false
+amount = 32
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 100)
+initial_velocity_min = 100.0
+initial_velocity_max = 200.0
+scale_amount_min = 4.0
+scale_amount_max = 8.0
+color_ramp = SubResource("Gradient_sparks")
+
+[node name="InfoLabel" type="Label" parent="MainContainer/UpgradePanel/VBox" unique_id=1855060163]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Geliştirilecek eşyayı seçin..."
+horizontal_alignment = 1
+
+[node name="CostLabel" type="Label" parent="MainContainer/UpgradePanel/VBox" unique_id=472754151]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "Maliyet: 0"
+horizontal_alignment = 1
+
+[node name="UpgradeButton" type="Button" parent="MainContainer/UpgradePanel/VBox" unique_id=1018140022]
+custom_minimum_size = Vector2(240, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 24
+text = "YÜKSELT"
+
+[node name="InventoryPanel" type="PanelContainer" parent="MainContainer" unique_id=1591282100]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="MainContainer/InventoryPanel" unique_id=1424959484]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Header" type="Label" parent="MainContainer/InventoryPanel/VBox" unique_id=1557844192]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Envanter"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MainContainer/InventoryPanel/VBox" unique_id=1009908598]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="MainContainer/InventoryPanel/VBox/ScrollContainer" unique_id=1475457327]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 8
+[node name="CloseButton" type="Button" parent="." unique_id=1279189053]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -60.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 20
+text = "X"

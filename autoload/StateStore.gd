@@ -297,6 +297,13 @@ func remove_item(item_id: String) -> void:
 			return
 	print("[StateStore] Item not found for removal: ", item_id)
 
+func get_inventory_item_count(item_id: String) -> int:
+	var count = 0
+	for item in inventory:
+		if item.get("item_id", item.get("id", "")) == item_id:
+			count += item.get("quantity", 1)
+	return count
+
 func update_item_quantity(item_id: String, new_quantity: int) -> void:
 	for item in inventory:
 		if item.get("item_id", item.get("id", "")) == item_id:

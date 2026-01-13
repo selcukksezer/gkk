@@ -143,6 +143,11 @@ func can_enhance(item: ItemData, rune: ItemData = null) -> Dictionary:
 	if State.gold < cost.total:
 		return {"can_enhance": false, "reason": "Not enough gold"}
 
+	# Check required scroll
+	var scroll_id = get_required_scroll_id(item.rarity)
+	if State.get_inventory_item_count(scroll_id) <= 0:
+		return {"can_enhance": false, "reason": "Required scroll not found: " + _get_scroll_name(scroll_id)}
+
 	# Check rune availability
 	if rune:
 		if not rune.is_rune():
@@ -153,6 +158,21 @@ func can_enhance(item: ItemData, rune: ItemData = null) -> Dictionary:
 			return {"can_enhance": false, "reason": "Rune not available"}
 
 	return {"can_enhance": true}
+
+func get_required_scroll_id(rarity: ItemData.ItemRarity) -> String:
+	match rarity:
+		ItemData.ItemRarity.COMMON, ItemData.ItemRarity.UNCOMMON:
+			return "scroll_upgrade_low"
+		ItemData.ItemRarity.RARE, ItemData.ItemRarity.EPIC:
+			return "scroll_upgrade_middle"
+		ItemData.ItemRarity.LEGENDARY, ItemData.ItemRarity.MYTHIC:
+			return "scroll_upgrade_high"
+		_:
+			return "scroll_upgrade_low"
+
+func _get_scroll_name(scroll_id: String) -> String:
+	var item = ItemDatabase.get_item(scroll_id)
+	return item.get("name", "Upgrade Scroll")
 
 func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
 	"""Attempt to enhance an item using ItemData"""
@@ -170,13 +190,16 @@ func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
 		# Success
 		item.enhancement_level += 1
 
+		# Consume scroll
+		var scroll_id = get_required_scroll_id(item.rarity)
+		await Inventory.remove_item(scroll_id, 1)
+
 		# Consume rune if used
 		if rune:
-			var inventory_manager = InventoryManager.new()
-			await inventory_manager.remove_item(rune.item_id, 1)
+			await Inventory.remove_item(rune.item_id, 1)
 
-		# Update item in state
-		State.update_inventory_item(item.item_id, item.to_dict())
+		# Update item in state and database
+		await Inventory.update_item_enhancement(item, item.enhancement_level)
 
 		enhancement_success.emit(item.item_id, item.enhancement_level)
 
@@ -203,18 +226,20 @@ func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
 
 		print("[Enhancement] Failed: destroyed=%s, level_loss=%d" % [item_destroyed, level_loss])
 
+		# Consume scroll
+		var scroll_id = get_required_scroll_id(item.rarity)
+		await Inventory.remove_item(scroll_id, 1)
+
 		# Consume rune if used (even on failure)
 		if rune:
-			var inventory_manager = InventoryManager.new()
-			await inventory_manager.remove_item(rune.item_id, 1)
+			await Inventory.remove_item(rune.item_id, 1)
 
 		if item_destroyed:
 			# Remove item from inventory
-			var inventory_manager = InventoryManager.new()
-			await inventory_manager.remove_item(item.item_id, 1)
+			await Inventory.remove_item(item.item_id, 1)
 		else:
 			# Update item with reduced level
-			State.update_inventory_item(item.item_id, item.to_dict())
+			await Inventory.update_item_enhancement(item, item.enhancement_level)
 
 		enhancement_failed.emit(item.item_id, item.enhancement_level, item_destroyed)
 
@@ -283,6 +308,18 @@ func get_enhancement_info(current_level: int, rune_type: String = "none") -> Dic
 			"level_loss": penalty.get("level_loss", 0),
 			"can_destroy": penalty.get("can_destroy", false)
 		}
+	}
+
+func get_upgrade_requirements(item: ItemData) -> Dictionary:
+	"""Get requirements for upgrading a specific item"""
+	var required_scroll = get_required_scroll_id(item.rarity)
+	var scroll_item = ItemDatabase.get_item(required_scroll)
+	
+	return {
+		"scroll_id": required_scroll,
+		"scroll_name": scroll_item.get("name", "Unknown Scroll"),
+		"scroll_icon": scroll_item.get("icon", ""),
+		"owned_scrolls": State.get_inventory_item_count(required_scroll)
 	}
 
 func get_available_runes() -> Array:

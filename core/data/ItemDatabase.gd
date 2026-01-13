@@ -223,6 +223,46 @@ const ITEMS = {
 		"rune_destruction_reduction": 2.0
 	},
 	
+	# Upgrade Scrolls
+	"scroll_upgrade_low": {
+		"id": "scroll_upgrade_low",
+		"name": "Düşük Sınıf Yükseltme Kağıdı",
+		"description": "Common ve Uncommon eşyaları yükseltmek için kullanılır.",
+		"icon": "res://assets/sprites/items/scroll_low.png",
+		"item_type": "SCROLL",
+		"rarity": "UNCOMMON",
+		"base_price": 500,
+		"vendor_sell_price": 250, 
+		"is_stackable": true,
+		"max_stack": 50
+	},
+	
+	"scroll_upgrade_middle": {
+		"id": "scroll_upgrade_middle",
+		"name": "Orta Sınıf Yükseltme Kağıdı",
+		"description": "Rare ve Epic eşyaları yükseltmek için kullanılır.",
+		"icon": "res://assets/sprites/items/scroll_mid.png",
+		"item_type": "SCROLL",
+		"rarity": "RARE",
+		"base_price": 2500,
+		"vendor_sell_price": 1250,
+		"is_stackable": true,
+		"max_stack": 50
+	},
+	
+	"scroll_upgrade_high": {
+		"id": "scroll_upgrade_high",
+		"name": "Yüksek Sınıf Yükseltme Kağıdı",
+		"description": "Legendary ve Mythic eşyaları yükseltmek için kullanılır.",
+		"icon": "res://assets/sprites/items/scroll_high.png",
+		"item_type": "SCROLL",
+		"rarity": "LEGENDARY",
+		"base_price": 10000,
+		"vendor_sell_price": 5000,
+		"is_stackable": true,
+		"max_stack": 50
+	},
+	
 	# Cosmetics
 	"cosmetic_crown_gold": {
 		"id": "cosmetic_crown_gold",
@@ -278,6 +318,10 @@ static func get_runes() -> Array:
 ## Get all cosmetics
 static func get_cosmetics() -> Array:
 	return get_items_by_type("COSMETIC")
+
+## Get all scrolls
+static func get_scrolls() -> Array:
+	return get_items_by_type("SCROLL")
 
 ## Create ItemData instance from database
 static func create_item(item_id: String, quantity: int = 1) -> ItemData:

@@ -1,0 +1,59 @@
+[gd_scene load_steps=2 format=3 uid="uid://compact_item_card_v1"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/ItemCard.gd" id="1_itemcard"]
+
+[node name="CompactItemCard" type="PanelContainer"]
+custom_minimum_size = Vector2(90, 90)
+offset_right = 90.0
+offset_bottom = 90.0
+script = ExtResource("1_itemcard")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="Icon" type="TextureRect" parent="MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EnhancementLabel" type="Label" parent="MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 1
+text = "+0"
+horizontal_alignment = 2
+vertical_alignment = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="NameLabel" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="QuantityLabel" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="PriceLabel" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="PurchaseButton" type="Button" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 2
+mouse_filter = 1
+flat = true

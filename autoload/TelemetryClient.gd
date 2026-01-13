@@ -212,6 +212,15 @@ func track_auth(action: String, method: String = "") -> void:
 		"method": method   # email, guest, social
 	})
 
+## Track enhancement results
+func track_enhancement(result: String, item_id: String, details: Dictionary = {}) -> void:
+	var properties = {
+		"result": result,  # success, failure
+		"item_id": item_id
+	}
+	properties.merge(details)
+	track_event("enhancement", properties)
+
 ## Flush events to server
 func _flush_events() -> void:
 	# Telemetry flush disabled in development to avoid network calls

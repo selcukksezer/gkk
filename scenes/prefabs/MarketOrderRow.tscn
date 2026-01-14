@@ -1,32 +1,32 @@
-[gd_scene load_steps=2 format=3 uid="uid://ceclx1cq81u3m"]
+[gd_scene format=3 uid="uid://6nxwyjk0hs0o"]
 
-[ext_resource type="Script" uid="uid://cefw1sgykqp7x" path="res://scenes/prefabs/MarketOrderRow.gd" id="1"]
+[ext_resource type="Script" path="res://scenes/prefabs/MarketOrderRow.gd" id="1"]
 
-[node name="MarketOrderRow" type="PanelContainer"]
+[node name="MarketOrderRow" type="PanelContainer" unique_id=1215666930]
 custom_minimum_size = Vector2(0, 40)
 script = ExtResource("1")
 
-[node name="HBox" type="HBoxContainer" parent="."]
+[node name="HBox" type="HBoxContainer" parent="." unique_id=178681466]
 layout_mode = 2
 
-[node name="Username" type="Label" parent="HBox"]
+[node name="Username" type="Label" parent="HBox" unique_id=1129385841]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Username"
 
-[node name="Quantity" type="Label" parent="HBox"]
+[node name="Quantity" type="Label" parent="HBox" unique_id=1203789901]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 text = "x10"
 horizontal_alignment = 1
 
-[node name="Price" type="Label" parent="HBox"]
+[node name="Price" type="Label" parent="HBox" unique_id=1093391275]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "100 g"
 horizontal_alignment = 1
 
-[node name="Total" type="Label" parent="HBox"]
+[node name="Total" type="Label" parent="HBox" unique_id=930011866]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "1000 g"

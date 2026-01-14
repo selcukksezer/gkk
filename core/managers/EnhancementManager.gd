@@ -12,16 +12,16 @@ const ItemDatabase = preload("res://core/data/ItemDatabase.gd")
 
 # Enhancement success rates by level
 const BASE_SUCCESS_RATES = {
-	0: 100,
-	1: 95,
-	2: 90,
-	3: 80,
-	4: 70,
-	5: 60,
-	6: 50,
-	7: 40,
-	8: 30,
-	9: 20
+	0: {"min": 100, "max": 100},
+	1: {"min": 85, "max": 90},
+	2: {"min": 75, "max": 82},
+	3: {"min": 60, "max": 68},
+	4: {"min": 45, "max": 52},
+	5: {"min": 30, "max": 38},
+	6: {"min": 15, "max": 20},
+	7: {"min": 6, "max": 10},
+	8: {"min": 3, "max": 6},
+	9: {"min": 1, "max": 3}
 }
 
 # Enhancement costs in gold by level
@@ -80,16 +80,22 @@ const RUNES = {
 
 # Failure penalties by level
 const FAILURE_PENALTIES = {
+	# Levels 0-5: Drop 1 level on fail (as requested: "bir altına düşecek")
+	# Level 0 special case: stays 0 (handled by max(0, ...))
 	0: {"level_loss": 0, "can_destroy": false},
-	1: {"level_loss": 0, "can_destroy": false},
-	2: {"level_loss": 0, "can_destroy": false},
+	1: {"level_loss": 1, "can_destroy": false},
+	2: {"level_loss": 1, "can_destroy": false},
 	3: {"level_loss": 1, "can_destroy": false},
 	4: {"level_loss": 1, "can_destroy": false},
-	5: {"level_loss": 2, "can_destroy": false},
-	6: {"level_loss": 2, "can_destroy": true},
-	7: {"level_loss": 3, "can_destroy": true},
-	8: {"level_loss": 3, "can_destroy": true},
-	9: {"level_loss": 4, "can_destroy": true}
+	5: {"level_loss": 1, "can_destroy": false},
+	# +6 -> Target +7. Fail: Destroy ("Yanar")
+	6: {"level_loss": 0, "can_destroy": true},
+	# +7 -> Target +8. Fail: Destroy ("Yanar")
+	7: {"level_loss": 0, "can_destroy": true},
+	# +8 -> Target +9. Fail: Destroy ("Yanar")
+	8: {"level_loss": 0, "can_destroy": true},
+	# +9 -> Target +10. Fail: Destroy ("Yanar")
+	9: {"level_loss": 0, "can_destroy": true}
 }
 
 func _ready() -> void:
@@ -100,7 +106,11 @@ func calculate_success_rate(current_level: int, rune_type: String = "none") -> f
 	if current_level >= 10:
 		return 0.0
 
-	var base_rate = BASE_SUCCESS_RATES.get(current_level, 0)
+	var data = BASE_SUCCESS_RATES.get(current_level, {"min": 0, "max": 0})
+	var base_rate = randf_range(data.min, data.max)
+	
+	print("[Enhancement] Calcuating success rate for Level +%d: [%d - %d] -> Rolled: %.2f%%" % [current_level, data.min, data.max, base_rate])
+	
 	var rune_bonus = RUNES.get(rune_type, {}).get("success_bonus", 0)
 
 	return clamp(base_rate + rune_bonus, 0, 100)
@@ -110,7 +120,8 @@ func calculate_success_rate_with_rune(item: ItemData, rune: ItemData = null) -> 
 	if item.enhancement_level >= item.max_enhancement:
 		return 0.0
 
-	var base_rate = item.get_enhancement_success_rate() * 100
+	# Use our centralized table instead of ItemData to ensure consistency
+	var base_rate = calculate_success_rate(item.enhancement_level, "none")
 
 	if rune and rune.is_rune() and rune.can_apply_to_item(item):
 		base_rate += rune.rune_success_bonus
@@ -128,7 +139,7 @@ func calculate_enhancement_cost(current_level: int, rune_type: String = "none") 
 		"total": base_cost + rune_cost
 	}
 
-func can_enhance(item: ItemData, rune: ItemData = null) -> Dictionary:
+func can_enhance(item: ItemData, rune: ItemData = null, scroll_item: ItemData = null) -> Dictionary:
 	"""Check if item can be enhanced using ItemData"""
 	# Check if item can be enhanced
 	if not item.can_enhance:
@@ -144,9 +155,16 @@ func can_enhance(item: ItemData, rune: ItemData = null) -> Dictionary:
 		return {"can_enhance": false, "reason": "Not enough gold"}
 
 	# Check required scroll
-	var scroll_id = get_required_scroll_id(item.rarity)
-	if State.get_inventory_item_count(scroll_id) <= 0:
-		return {"can_enhance": false, "reason": "Required scroll not found: " + _get_scroll_name(scroll_id)}
+	var required_scroll_id = get_required_scroll_id(item.rarity)
+	
+	if scroll_item:
+		# Verify explicitly passed scroll
+		if scroll_item.item_id != required_scroll_id:
+			return {"can_enhance": false, "reason": "Wrong scroll type provided. Required: " + _get_scroll_name(required_scroll_id)}
+	else:
+		# Auto-check inventory
+		if State.get_inventory_item_count(required_scroll_id) <= 0:
+			return {"can_enhance": false, "reason": "Required scroll not found: " + _get_scroll_name(required_scroll_id)}
 
 	# Check rune availability
 	if rune:
@@ -159,7 +177,7 @@ func can_enhance(item: ItemData, rune: ItemData = null) -> Dictionary:
 
 	return {"can_enhance": true}
 
-func get_required_scroll_id(rarity: ItemData.ItemRarity) -> String:
+func get_required_scroll_id(rarity: int) -> String:
 	match rarity:
 		ItemData.ItemRarity.COMMON, ItemData.ItemRarity.UNCOMMON:
 			return "scroll_upgrade_low"
@@ -174,7 +192,7 @@ func _get_scroll_name(scroll_id: String) -> String:
 	var item = ItemDatabase.get_item(scroll_id)
 	return item.get("name", "Upgrade Scroll")
 
-func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
+func enhance_item(item: ItemData, scroll_item: ItemData = null, rune: ItemData = null) -> Dictionary:
 	"""Attempt to enhance an item using ItemData"""
 	enhancement_started.emit(item.item_id, item.enhancement_level)
 
@@ -191,8 +209,13 @@ func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
 		item.enhancement_level += 1
 
 		# Consume scroll
-		var scroll_id = get_required_scroll_id(item.rarity)
-		await Inventory.remove_item(scroll_id, 1)
+		if scroll_item:
+			# If we have a specific instance, remove it by row_id (better for drag & drop visual sync)
+			await Inventory.remove_item_by_row_id(scroll_item.row_id, 1)
+		else:
+			# Fallback for generic calls
+			var scroll_id = get_required_scroll_id(item.rarity)
+			await Inventory.remove_item(scroll_id, 1)
 
 		# Consume rune if used
 		if rune:
@@ -212,31 +235,48 @@ func enhance_item(item: ItemData, rune: ItemData = null) -> Dictionary:
 		return {"success": true, "new_level": item.enhancement_level}
 	else:
 		# Failure - calculate penalties
-		var destruction_rate = item.get_enhancement_destruction_rate()
-		var destruction_roll = randf()
+		var penalties = FAILURE_PENALTIES.get(item.enhancement_level, {"level_loss": 0, "can_destroy": false})
+		var item_destroyed = false
+		
+		# Check destruction
+		if penalties.can_destroy:
+			# If penalties say can_destroy, we assume 100% destruction chance on failure
+			# Unless protected by a rune
+			var is_protected = false
+			if rune and rune.rune_destruction_reduction >= 100:
+				is_protected = true
+			
+			if not is_protected:
+				item_destroyed = true
 
-		var item_destroyed = destruction_roll < destruction_rate
 		var level_loss = 0
 
 		if not item_destroyed:
-			# Apply level loss based on current level
-			var penalties = FAILURE_PENALTIES.get(item.enhancement_level, {"level_loss": 1, "can_destroy": false})
+			# Apply level loss based on penalties
 			level_loss = penalties.level_loss
 			item.enhancement_level = max(0, item.enhancement_level - level_loss)
 
 		print("[Enhancement] Failed: destroyed=%s, level_loss=%d" % [item_destroyed, level_loss])
 
 		# Consume scroll
-		var scroll_id = get_required_scroll_id(item.rarity)
-		await Inventory.remove_item(scroll_id, 1)
+		if scroll_item:
+			await Inventory.remove_item_by_row_id(scroll_item.row_id, 1)
+		else:
+			var scroll_id = get_required_scroll_id(item.rarity)
+			await Inventory.remove_item(scroll_id, 1)
 
 		# Consume rune if used (even on failure)
 		if rune:
 			await Inventory.remove_item(rune.item_id, 1)
 
+
 		if item_destroyed:
-			# Remove item from inventory
-			await Inventory.remove_item(item.item_id, 1)
+			# CRITICAL FIX: Remove specific item instance by row_id, not just any item with same ID
+			if item.row_id != "":
+				await Inventory.remove_item_by_row_id(item.row_id, 1)
+			else:
+				# Fallback if for some reason row_id is missing (shouldn't happen for equipment)
+				await Inventory.remove_item(item.item_id, 1)
 		else:
 			# Update item with reduced level
 			await Inventory.update_item_enhancement(item, item.enhancement_level)
@@ -273,10 +313,11 @@ func simulate_enhancement(current_level: int, rune_type: String = "none") -> Dic
 		# Check protection rune
 		var is_protected = RUNES.get(rune_type, {}).get("prevent_destruction", false)
 		
+		
 		var destroyed = false
 		if can_destroy and not is_protected:
-			# 20% chance of destruction on eligible levels
-			destroyed = randf() < 0.2
+			# If penalty says can_destroy, it is destroyed (100%)
+			destroyed = true
 		
 		if destroyed:
 			return {

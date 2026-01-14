@@ -1,0 +1,148 @@
+[gd_scene format=3 uid="uid://c8j6y2k8l5q4"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/PazarFilterPanel.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.12, 0.12, 0.12, 1)
+border_width_right = 1
+border_color = Color(0.25, 0.25, 0.25, 1)
+
+[node name="MarketFilterPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(200, 0)
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 200.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+script = ExtResource("1_script")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+text = "Filtreler"
+horizontal_alignment = 1
+
+[node name="SearchSection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Label" type="Label" parent="VBoxContainer/SearchSection"]
+layout_mode = 2
+text = "   Arama"
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/SearchSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+
+[node name="SearchInput" type="LineEdit" parent="VBoxContainer/SearchSection/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Eşya adı..."
+
+[node name="CategorySection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Label" type="Label" parent="VBoxContainer/CategorySection"]
+layout_mode = 2
+text = "   Kategori"
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/CategorySection"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+
+[node name="CategoryFilter" type="OptionButton" parent="VBoxContainer/CategorySection/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 6
+selected = 0
+popup/item_0/text = "Tümü"
+popup/item_0/id = 0
+popup/item_1/text = "Silahlar"
+popup/item_1/id = 1
+popup/item_2/text = "Zırhlar"
+popup/item_2/id = 2
+popup/item_3/text = "İksirler"
+popup/item_3/id = 3
+popup/item_4/text = "Parşömenler"
+popup/item_4/id = 4
+popup/item_5/text = "Materyaller"
+popup/item_5/id = 5
+
+[node name="RaritySection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Label" type="Label" parent="VBoxContainer/RaritySection"]
+layout_mode = 2
+text = "   Nadirlik"
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/RaritySection"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/RaritySection/MarginContainer"]
+layout_mode = 2
+
+[node name="RarityCommon" type="CheckBox" parent="VBoxContainer/RaritySection/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Sıradan"
+
+[node name="RarityUncommon" type="CheckBox" parent="VBoxContainer/RaritySection/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Yaygın"
+
+[node name="RarityRare" type="CheckBox" parent="VBoxContainer/RaritySection/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Nadir"
+
+[node name="RarityEpic" type="CheckBox" parent="VBoxContainer/RaritySection/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Epik"
+
+[node name="RarityLegendary" type="CheckBox" parent="VBoxContainer/RaritySection/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Efsanevi"
+
+[node name="Spacer" type="Control" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer2" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 20
+
+[node name="ResetButton" type="Button" parent="VBoxContainer/MarginContainer2"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Filtreleri Temizle"

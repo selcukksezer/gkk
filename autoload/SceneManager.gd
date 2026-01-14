@@ -14,7 +14,7 @@ const SCENES = {
 	"home": "res://scenes/main/HomeScreen.tscn",
 	"main": "res://scenes/main/Main.tscn",
 	"inventory": "res://scenes/ui/screens/InventoryScreen.tscn",
-	"market": "res://scenes/ui/screens/MarketScreen.tscn",
+	"market": "res://scenes/ui/screens/PazarScreen.tscn",
 	"quest": "res://scenes/ui/screens/QuestScreen.tscn",
 	"dungeon": "res://scenes/gameplay/DungeonScene.tscn",
 	"pvp": "res://scenes/ui/screens/PvPScreen.tscn",

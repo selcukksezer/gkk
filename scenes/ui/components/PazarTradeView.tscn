@@ -1,0 +1,179 @@
+[gd_scene format=3 uid="uid://d3y8q2k8l5qa"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/PazarTradeView.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
+bg_color = Color(0.15, 0.15, 0.15, 1)
+border_width_bottom = 2
+border_color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="MarketTradeView" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Header" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_header")
+
+[node name="MarginContainer" type="MarginContainer" parent="Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Header/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ItemIcon" type="TextureRect" parent="Header/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Header/MarginContainer/HBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="ItemName" type="Label" parent="Header/MarginContainer/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Item Name"
+
+[node name="ItemRarity" type="Label" parent="Header/MarginContainer/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Rarity"
+
+[node name="Spacer" type="Control" parent="Header/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseButton" type="Button" parent="Header/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kapat X"
+flat = true
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OrderBookPanel" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="Content/OrderBookPanel"]
+layout_mode = 2
+text = "   Emir Defteri"
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Content/OrderBookPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OrderList" type="VBoxContainer" parent="Content/OrderBookPanel/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="Content"]
+layout_mode = 2
+
+[node name="ActionPanel" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="Content/ActionPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Alış" type="MarginContainer" parent="Content/ActionPanel/TabContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Content/ActionPanel/TabContainer/Alış"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="PriceInput" type="SpinBox" parent="Content/ActionPanel/TabContainer/Alış/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+prefix = "Fiyat:"
+suffix = "Altın"
+min_value = 1.0
+max_value = 9.99999e+06
+value = 100.0
+
+[node name="QuantityInput" type="SpinBox" parent="Content/ActionPanel/TabContainer/Alış/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+prefix = "Miktar:"
+min_value = 1.0
+max_value = 9999.0
+value = 1.0
+
+[node name="TotalLabel" type="Label" parent="Content/ActionPanel/TabContainer/Alış/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Toplam: 100 Altın"
+horizontal_alignment = 2
+
+[node name="BuyButton" type="Button" parent="Content/ActionPanel/TabContainer/Alış/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+text = "SATIN ALIM EMRİ GİR"
+
+[node name="Satış" type="MarginContainer" parent="Content/ActionPanel/TabContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Content/ActionPanel/TabContainer/Satış"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="SellPriceInput" type="SpinBox" parent="Content/ActionPanel/TabContainer/Satış/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+prefix = "Fiyat:"
+suffix = "Altın"
+min_value = 1.0
+max_value = 9.99999e+06
+value = 100.0
+
+[node name="SellQuantityInput" type="SpinBox" parent="Content/ActionPanel/TabContainer/Satış/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+prefix = "Miktar:"
+min_value = 1.0
+max_value = 9999.0
+value = 1.0
+
+[node name="SellTotalLabel" type="Label" parent="Content/ActionPanel/TabContainer/Satış/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Toplam: 100 Altın"
+horizontal_alignment = 2
+
+[node name="SellButton" type="Button" parent="Content/ActionPanel/TabContainer/Satış/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+text = "SATIŞ EMRİ GİR"

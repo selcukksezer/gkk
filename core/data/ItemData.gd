@@ -381,9 +381,8 @@ func to_instance_dict() -> Dictionary:
 		"pending_sync": pending_sync
 	}
 
-## Get rarity color
-func get_rarity_color() -> Color:
-	match rarity:
+static func get_rarity_color_static(rarity_enum: int) -> Color:
+	match rarity_enum:
 		ItemRarity.COMMON:
 			return Color.WHITE
 		ItemRarity.UNCOMMON:
@@ -398,6 +397,10 @@ func get_rarity_color() -> Color:
 			return Color.RED
 		_:
 			return Color.WHITE
+
+## Get rarity color
+func get_rarity_color() -> Color:
+	return ItemData.get_rarity_color_static(rarity)
 
 ## Get enhancement bonus
 func get_enhancement_bonus() -> float:

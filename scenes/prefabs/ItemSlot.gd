@@ -179,6 +179,9 @@ func _find_slot_recursive(node: Node, pos: Vector2) -> Control:
 	return null
 
 func set_item(item: ItemData) -> void:
+	if not is_node_ready():
+		await ready
+
 	_item = item
 	_slot_name = ""
 	_is_equipment_slot = false
@@ -235,6 +238,9 @@ func _get_type_text(item: ItemData) -> String:
 	return type_text
 
 func set_equipment_slot(slot_name: String) -> void:
+	if not is_node_ready():
+		await ready
+
 	_slot_name = slot_name
 	_item = null
 	_is_equipment_slot = true
@@ -250,6 +256,9 @@ func set_equipment_slot(slot_name: String) -> void:
 	tooltip_text = slot_name.capitalize() + " (Boş)"
 
 func set_trash_slot() -> void:
+	if not is_node_ready():
+		await ready
+		
 	_is_trash_slot = true
 	_item = null
 	_slot_name = "trash"

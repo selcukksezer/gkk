@@ -37,6 +37,7 @@ Inventory="*res://autoload/InventoryManager.gd"
 ShopManager="*res://core/managers/ShopManager.gd"
 Equipment="*res://core/managers/EquipmentManager.gd"
 EnhancementManager="*res://core/managers/EnhancementManager.gd"
+PazarManager="*res://core/managers/PazarManager.gd"
 
 [display]
 

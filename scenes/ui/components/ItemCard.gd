@@ -43,12 +43,10 @@ func _update_display() -> void:
 		else:
 			icon_rect.texture = null
 	
-	# Name
+	# Name (Shown at bottom as requested)
 	if name_label:
 		name_label.text = item.name
-		if item.pending_sync:
-			name_label.text += " (syncing...)"
-		name_label.add_theme_color_override("font_color", item.get_rarity_color())
+		name_label.visible = true
 	
 	# Quantity
 	if quantity_label and show_quantity:
@@ -68,23 +66,32 @@ func _update_display() -> void:
 		else:
 			enhancement_label.add_theme_color_override("font_color", Color.CYAN)
 	
-	# Rarity indicator
+	# Rarity indicator (Use as border color)
 	if rarity_indicator:
-		rarity_indicator.color = item.get_rarity_color()
+		# Ensure we have a unique stylebox for this instance
+		if not has_theme_stylebox_override("panel"):
+			var current_style = get_theme_stylebox("panel")
+			if current_style:
+				add_theme_stylebox_override("panel", current_style.duplicate())
+		
+		# Now modify the unique stylebox
+		var style = get_theme_stylebox("panel")
+		if style and style is StyleBoxFlat:
+			style.border_color = item.get_rarity_color()
+		else:
+			# Fallback if no stylebox or wrong type
+			rarity_indicator.color = item.get_rarity_color()
+			rarity_indicator.visible = false # Hide fill
 	
 	# Price (shop mode only)
 	if price_label:
 		price_label.visible = shop_mode
 		if shop_mode:
-			price_label.text = "💰 %d" % item.base_price
+			price_label.text = "%s" % MathUtils.format_number(item.base_price) # Just number
 	
-	# Purchase button (shop mode only)
+	# Purchase button (Hidden, click card to buy)
 	if purchase_button:
-		purchase_button.visible = shop_mode
-		if shop_mode:
-			purchase_button.text = "Satın Al"
-			if not purchase_button.pressed.is_connected(_on_purchase_pressed):
-				purchase_button.pressed.connect(_on_purchase_pressed)
+		purchase_button.visible = false
 
 func _on_purchase_pressed() -> void:
 	item_selected.emit(item)

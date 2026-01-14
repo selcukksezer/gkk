@@ -186,6 +186,10 @@ func update_gold(amount: int, is_delta: bool = false) -> void:
 		gold = amount
 	
 	state_changed.emit("gold", gold)
+	
+	# Update player dictionary for consistency
+	player["gold"] = gold
+	_sync_to_supabase_background()
 
 func update_gems(amount: int, is_delta: bool = false) -> void:
 	if is_delta:

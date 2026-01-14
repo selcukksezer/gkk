@@ -1,5 +1,4 @@
-class_name MarketManager
-extends RefCounted
+extends Node
 ## Market System Manager
 ## Handles order book, ticker data, buy/sell operations
 

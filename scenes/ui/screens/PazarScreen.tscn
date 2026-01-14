@@ -1,0 +1,189 @@
+[gd_scene format=3 uid="uid://cr1a10iybw13c"]
+
+[ext_resource type="Script" uid="uid://bq1ryaxqpysd" path="res://scenes/ui/screens/PazarScreen.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c8j6y2k8l5q4" path="res://scenes/ui/components/PazarFilterPanel.tscn" id="2_filterpanel"]
+[ext_resource type="PackedScene" uid="uid://d3y8q2k8l5qa" path="res://scenes/ui/components/PazarTradeView.tscn" id="3_tradeview"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="PazarScreen" type="Control" unique_id=350892083]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="Panel" parent="." unique_id=1656171913]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="MainLayout" type="HBoxContainer" parent="." unique_id=1734974613]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RightPanel" type="VBoxContainer" parent="MainLayout" unique_id=1838274166]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="HeaderContainer" type="VBoxContainer" parent="MainLayout/RightPanel" unique_id=860746488]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TopRow" type="HBoxContainer" parent="MainLayout/RightPanel/HeaderContainer" unique_id=2054133976]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FilterToggleButton" type="Button" parent="MainLayout/RightPanel/HeaderContainer/TopRow" unique_id=1657158388]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+toggle_mode = true
+text = "Filtreler"
+
+[node name="Title" type="Label" parent="MainLayout/RightPanel/HeaderContainer/TopRow" unique_id=569038649]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Pazar Yeri"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MainLayout/RightPanel/HeaderContainer/TopRow" unique_id=1685506268]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "X"
+
+[node name="TabsRow" type="HBoxContainer" parent="MainLayout/RightPanel/HeaderContainer" unique_id=522361438]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="BrowseTab" type="Button" parent="MainLayout/RightPanel/HeaderContainer/TabsRow" unique_id=1692951159]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+text = "Göz At"
+
+[node name="SellTab" type="Button" parent="MainLayout/RightPanel/HeaderContainer/TabsRow" unique_id=1775170464]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Sat"
+
+[node name="MyOrdersTab" type="Button" parent="MainLayout/RightPanel/HeaderContainer/TabsRow" unique_id=454938528]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "İlanlarım"
+
+[node name="ContentArea" type="Control" parent="MainLayout/RightPanel" unique_id=1006404023]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BrowseView" type="ScrollContainer" parent="MainLayout/RightPanel/ContentArea" unique_id=1766336421]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="FlowContainer" type="HFlowContainer" parent="MainLayout/RightPanel/ContentArea/BrowseView" unique_id=1602115683]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+alignment = 1
+
+[node name="SellView" type="ScrollContainer" parent="MainLayout/RightPanel/ContentArea" unique_id=128058290]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="FlowContainer" type="HFlowContainer" parent="MainLayout/RightPanel/ContentArea/SellView" unique_id=252945579]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+alignment = 1
+
+[node name="MyOrdersView" type="ScrollContainer" parent="MainLayout/RightPanel/ContentArea" unique_id=1983981551]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="List" type="VBoxContainer" parent="MainLayout/RightPanel/ContentArea/MyOrdersView" unique_id=614347213]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="List2" type="VBoxContainer" parent="MainLayout/RightPanel/ContentArea/MyOrdersView" unique_id=1236774952]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="FilterDrawer" type="PanelContainer" parent="MainLayout/RightPanel/ContentArea" unique_id=1146811430]
+visible = false
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 300.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="PazarFilterPanel" parent="MainLayout/RightPanel/ContentArea/FilterDrawer" unique_id=124955060 instance=ExtResource("2_filterpanel")]
+layout_mode = 2
+
+[node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=1749453581]
+layer = 10
+visible = false
+
+[node name="TradeOverlay" type="ColorRect" parent="OverlayLayer" unique_id=204806182]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="CenterContainer" type="CenterContainer" parent="OverlayLayer/TradeOverlay" unique_id=315952868]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="OverlayLayer/TradeOverlay/CenterContainer" unique_id=978798212]
+custom_minimum_size = Vector2(360, 500)
+layout_mode = 2
+
+[node name="PazarTradeView" parent="OverlayLayer/TradeOverlay/CenterContainer/Panel" unique_id=1866599133 instance=ExtResource("3_tradeview")]
+layout_mode = 2

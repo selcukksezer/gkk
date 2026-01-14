@@ -28,7 +28,7 @@ const SCREENS = {
 	"login": "res://scenes/ui/screens/LoginScreen.tscn",
 	"home": "res://scenes/ui/screens/HomeScreen.tscn",
 	"inventory": "res://scenes/ui/screens/InventoryScreen.tscn",
-	"market": "res://scenes/ui/screens/MarketScreen.tscn",
+	"market": "res://scenes/ui/screens/PazarScreen.tscn",
 	"season": "res://scenes/ui/screens/SeasonScreen.tscn",
 	"quest": "res://scenes/ui/screens/QuestScreen.tscn",
 	"pvp": "res://scenes/ui/screens/PvPScreen.tscn",

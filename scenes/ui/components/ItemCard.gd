@@ -67,21 +67,24 @@ func _update_display() -> void:
 			enhancement_label.add_theme_color_override("font_color", Color.CYAN)
 	
 	# Rarity indicator (Use as border color)
-	if rarity_indicator:
-		# Ensure we have a unique stylebox for this instance
-		if not has_theme_stylebox_override("panel"):
-			var current_style = get_theme_stylebox("panel")
-			if current_style:
-				add_theme_stylebox_override("panel", current_style.duplicate())
+	# This sets the border of the main PanelContainer
+	var style = get_theme_stylebox("panel")
+	if style:
+		# Make unique if not already
+		if not style.resource_local_to_scene:
+			style = style.duplicate()
+			add_theme_stylebox_override("panel", style)
 		
-		# Now modify the unique stylebox
-		var style = get_theme_stylebox("panel")
-		if style and style is StyleBoxFlat:
+		if style is StyleBoxFlat:
 			style.border_color = item.get_rarity_color()
-		else:
-			# Fallback if no stylebox or wrong type
-			rarity_indicator.color = item.get_rarity_color()
-			rarity_indicator.visible = false # Hide fill
+			style.border_width_left = 2
+			style.border_width_top = 2
+			style.border_width_right = 2
+			style.border_width_bottom = 2
+	
+	# Also update the indicator rectangle just in case, or hide it
+	if rarity_indicator:
+		rarity_indicator.visible = false
 	
 	# Price (shop mode only)
 	if price_label:

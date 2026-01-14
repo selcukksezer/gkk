@@ -23,6 +23,7 @@ signal sell_order_placed(item_id, price, quantity)
 @onready var sell_button: Button = $"Content/ActionPanel/TabContainer/Satış/VBoxContainer/SellButton"
 
 var current_item_id: String = ""
+var current_item_instance: ItemData = null
 var market_manager: Node
 
 func _ready() -> void:
@@ -43,44 +44,68 @@ func _ready() -> void:
 	_update_buy_total(0)
 	_update_sell_total(0)
 
-func setup(item_id: String) -> void:
+func setup(item_id: String, item_instance: ItemData = null) -> void:
 	current_item_id = item_id
+	current_item_instance = item_instance
 	
-	# Load item details from database
+	# Load item details (base definition)
 	var item = ItemDatabase.get_item(item_id)
-	if not item:
-		return
+	if not item: return
 		
 	item_name.text = item.get("name", "Unknown")
 	var rarity = item.get("rarity", 0)
 	
+	# Rarity Visuals
 	var rarity_names = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"]
 	var rarity_int = 0
-	
 	if rarity is String:
-		# If it's a string, try to find index in names, or default to 0
 		var idx = rarity_names.find(rarity)
-		if idx != -1:
-			rarity_int = idx
-			item_rarity.text = rarity
-		else:
-			item_rarity.text = rarity # Fallback
+		rarity_int = idx if idx != -1 else 0
+		item_rarity.text = rarity if idx != -1 else rarity
 	elif rarity is int:
 		rarity_int = rarity
-		if rarity >= 0 and rarity < rarity_names.size():
-			item_rarity.text = rarity_names[rarity]
-		else:
-			item_rarity.text = "UNKNOWN"
-			
+		item_rarity.text = rarity_names[rarity] if rarity >= 0 and rarity < rarity_names.size() else "UNKNOWN"
+	
 	item_rarity.modulate = ItemData.get_rarity_color_static(rarity_int)
 	
 	var icon_path = item.get("icon", "")
 	if ResourceLoader.exists(icon_path):
 		item_icon.texture = load(icon_path)
 		
+	# Setup Sell Tab State
+	_setup_sell_inputs()
+	
 	# Fetch Order Book
 	if market_manager:
 		_fetch_order_book()
+
+func _setup_sell_inputs() -> void:
+	# Default: Enable inputs, max 999
+	sell_quantity_input.editable = true
+	sell_quantity_input.max_value = 9999
+	sell_quantity_input.value = 1
+	sell_button.disabled = false
+	sell_button.text = "SATIŞ EMRİ GİR"
+	
+	if current_item_instance:
+		# We are in SELL mode (opened from inventory)
+		
+		# Set max quantity to owned amt
+		var max_qty = current_item_instance.quantity
+		sell_quantity_input.max_value = max_qty
+		sell_quantity_input.value = 1 # Default to 1
+		
+		if current_item_instance.is_equipment():
+			# Equipment is single item
+			sell_quantity_input.value = 1
+			sell_quantity_input.editable = false # Cannot change qty for unique equip
+			
+	else:
+		# We are in BROWSE mode (no specific item selected to sell)
+		sell_button.disabled = true
+		sell_button.text = "Satış için 'Sat' sekmesinden seçin"
+		sell_quantity_input.value = 0
+		sell_quantity_input.editable = false
 
 func _fetch_order_book() -> void:
 	# Clear list
@@ -148,4 +173,15 @@ func _on_buy_pressed() -> void:
 	buy_order_placed.emit(current_item_id, int(price_input.value), int(quantity_input.value))
 
 func _on_sell_pressed() -> void:
-	sell_order_placed.emit(current_item_id, int(sell_price_input.value), int(sell_quantity_input.value))
+	if not current_item_instance: return
+	
+	var qty = int(sell_quantity_input.value)
+	var price = int(sell_price_input.value)
+	
+	# Validate Quantity again locally
+	if qty > current_item_instance.quantity:
+		# Could show error UI here
+		print("Error: Attempting to sell more than owned")
+		return
+		
+	sell_order_placed.emit(current_item_id, price, qty, current_item_instance.row_id)

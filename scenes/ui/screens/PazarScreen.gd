@@ -103,6 +103,7 @@ func _on_filters_changed(filters: Dictionary) -> void:
 		_populate_catalog()
 
 # --- Browse Logic ---
+# --- Browse Logic ---
 func _populate_catalog() -> void:
 	if not browse_grid: return
 	
@@ -110,35 +111,51 @@ func _populate_catalog() -> void:
 	for child in browse_grid.get_children():
 		child.queue_free()
 		
-	# Fetch Ticker
-	var ticker_data = {}
+	# Fetch Listings (All active orders)
+	var listings = []
 	if market_manager:
-		var result = await market_manager.fetch_ticker(1)
-		if result is Dictionary and result.get("success", false) and result.has("ticker"):
-			ticker_data = result.ticker
+		var result = await market_manager.fetch_active_listings(1)
+		if result is Dictionary and result.get("success", false) and result.has("listings"):
+			listings = result.listings
 			
-	var all_items = ItemDatabase.get_all_items()
-	var active_count = 0
-	
-	for item in all_items:
-		if not _passes_filters(item): continue
-		
-		# P2P Logic: Only show items with active SELL orders (best_ask > 0)
-		var item_ticker = ticker_data.get(item.item_id, {})
-		var best_ask = item_ticker.get("best_ask", 0)
-		
-		if best_ask <= 0: continue # No sellers
-		
-		active_count += 1
-		var card = item_card_scene.instantiate()
-		browse_grid.add_child(card)
-		card.setup(item, false)
-		card.item_selected.connect(func(itm): _open_trade_view(itm.item_id))
-		
-	if active_count == 0:
+	if listings.is_empty():
 		var label = Label.new()
 		label.text = "Aktif ilan bulunamadı."
 		browse_grid.add_child(label)
+		return
+	
+	for order in listings:
+		var item_id = order.get("item_id")
+		var price = order.get("price", 0)
+		var item_data_db = order.get("item_data", {})
+		
+		# Validate Item Exists
+		if not ItemDatabase.get_item(item_id): continue
+		
+		# Create ItemData Object
+		var item_def = ItemDatabase.get_item(item_id).duplicate()
+		var display_item = ItemData.from_dict(item_def)
+		
+		# Updates from Order
+		display_item.base_price = price # Set price for shop mode display
+		
+		# Apply Stats (Enhancement, etc.)
+		if item_data_db is Dictionary:
+			if item_data_db.has("enhancement_level"):
+				display_item.enhancement_level = int(item_data_db.get("enhancement_level", 0))
+		
+		# Check Filters
+		if not _passes_filters(display_item): continue
+		
+		var card = item_card_scene.instantiate()
+		browse_grid.add_child(card)
+		
+		# Setup in Shop Mode (Show Price)
+		card.setup(display_item, true)
+		
+		# When clicking, open generic trade view for now (matches cheapest)
+		# TODO: Pass order_id if we want to buy usage specific listing
+		card.item_selected.connect(func(itm): _open_trade_view(itm.item_id))
 
 func _passes_filters(item: ItemData) -> bool:
 	if not item.is_tradeable: return false
@@ -164,6 +181,7 @@ func _passes_filters(item: ItemData) -> bool:
 	return true
 
 # --- Sell Logic ---
+# --- Sell Logic ---
 func _load_sell_inventory() -> void:
 	if not sell_grid: return
 	for child in sell_grid.get_children(): child.queue_free()
@@ -177,12 +195,18 @@ func _load_sell_inventory() -> void:
 		
 	for item_dict in inventory:
 		var item = ItemData.from_dict(item_dict)
+		
+		# P2P Sell Logic:
+		# 1. Must be tradeable
+		# 2. Must NOT be equipped
 		if not item.is_tradeable: continue
+		if item.is_equipped: continue 
 		
 		var card = item_card_scene.instantiate()
 		sell_grid.add_child(card)
 		card.setup(item, false)
-		card.item_selected.connect(func(itm): _open_trade_view(itm.item_id))
+		# Pass the full item object so we have the row_id for selling
+		card.item_selected.connect(func(itm): _open_trade_view(itm.item_id, itm))
 
 # --- Orders Logic ---
 func _load_my_orders() -> void:
@@ -190,20 +214,52 @@ func _load_my_orders() -> void:
 	for child in my_orders_list.get_children(): child.queue_free()
 	
 	if market_manager:
+		# Use Server-Side Filtering (Efficient for 50k+ items)
 		var result = await market_manager.fetch_my_orders()
-		if result is Dictionary and result.has("orders"):
-			for order in result.orders:
+		
+		# Debug for user
+		var user_id = State.player.get("id")
+		print("[Performance] Fetching My Orders from Server for ID: ", user_id)
+		
+		if result is Dictionary and result.get("success", false) and result.has("orders"):
+			var my_listings = result.orders
+			
+			if my_listings.is_empty():
 				var label = Label.new()
-				label.text = "%s - %d x %d G" % [order.type.to_upper(), order.quantity, order.price]
+				label.text = "Aktif satış ilanınız yok."
 				my_orders_list.add_child(label)
+				return
+				
+			for order in my_listings:
+				# ... Same Display Logic ...
+				var item_id = order.get("item_id")
+				var price = order.get("price", 0)
+				var item_data_db = order.get("item_data", {})
+				
+				if not ItemDatabase.get_item(item_id): continue
+				
+				var item_def = ItemDatabase.get_item(item_id).duplicate()
+				var display_item = ItemData.from_dict(item_def)
+				display_item.base_price = price
+				
+				if item_data_db is Dictionary:
+					if item_data_db.has("enhancement_level"):
+						display_item.enhancement_level = int(item_data_db.get("enhancement_level", 0))
+						
+				var card = item_card_scene.instantiate()
+				my_orders_list.add_child(card)
+				card.setup(display_item, true) # Shop mode shows price
+			# TODO: Click to Cancel?
+			# card.item_selected.connect(...)
 
 # --- Trade View Logic ---
-func _open_trade_view(item_id: String) -> void:
+# Updated signature to accept optional item_instance (for selling specific inventory items)
+func _open_trade_view(item_id: String, item_instance: ItemData = null) -> void:
 	print("PazarScreen: Opening Trade View for ", item_id)
 	if overlay_layer:
 		overlay_layer.visible = true
 	if trade_view:
-		trade_view.setup(item_id)
+		trade_view.setup(item_id, item_instance)
 
 func _on_close_trade_view() -> void:
 	if overlay_layer:
@@ -211,8 +267,29 @@ func _on_close_trade_view() -> void:
 
 func _on_buy_order(item_id, price, quantity) -> void:
 	if market_manager:
+		# Buying is generic by item_id
 		market_manager.place_buy_order(item_id, quantity, price, 1)
 
-func _on_sell_order(item_id, price, quantity) -> void:
-	if market_manager:
-		market_manager.place_sell_order(item_id, quantity, price, 1)
+func _on_sell_order(item_id, price, quantity, item_row_id) -> void:
+	print("PazarScreen: _on_sell_order called with ID:", item_id, " Qty:", quantity, " Price:", price, " RowID:", item_row_id)
+	if market_manager and item_row_id:
+		# Selling requires specific row_id
+		print("PazarScreen: Calling market_manager.place_sell_order...")
+		var result = await market_manager.place_sell_order(item_row_id, quantity, price)
+		
+		print("PazarScreen: Sell result -> ", result)
+		
+		if result.success:
+			print("PazarScreen: Order placed successfully!")
+			_on_close_trade_view()
+			# Switch to orders to show the new listing
+			_switch_tab("orders")
+			
+			# Refresh sell view if we go back to it
+			_load_sell_inventory()
+		else:
+			printerr("PazarScreen: Failed to place order: ", result.get("error", "Unknown"))
+			# TODO: Show error dialog
+			
+	else:
+		printerr("PazarScreen: Cannot sell - Missing MarketManager or RowID!")

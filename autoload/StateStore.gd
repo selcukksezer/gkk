@@ -46,6 +46,18 @@ func load_player_data(data: Dictionary) -> void:
 		in_hospital = false
 		hospital_release_time = 0
 	
+	# Prison durumu
+	if data.has("prison_until") and data.prison_until:
+		var prison_time = Time.get_datetime_dict_from_datetime_string(data.prison_until, false)
+		prison_release_time = Time.get_unix_time_from_datetime_dict(prison_time)
+		var current_time = Time.get_unix_time_from_system()
+		in_prison = current_time < prison_release_time
+		prison_reason = data.get("prison_reason", "")
+	else:
+		in_prison = false
+		prison_release_time = 0
+		prison_reason = ""
+	
 	# Guild bilgisi
 	if data.has("guild") and data.guild:
 		guild_info = data.guild
@@ -114,6 +126,11 @@ var in_hospital: bool = false
 var hospital_release_time: int = 0
 var hospital_reason: String = ""
 
+## Prison
+var in_prison: bool = false
+var prison_release_time: int = 0
+var prison_reason: String = ""
+
 ## Settings
 var settings: Dictionary = {
 	"music_volume": 0.8,
@@ -139,6 +156,15 @@ func _ready() -> void:
 			return
 	# No Session or not authenticated: load local cache
 	_load_player_data()
+
+## Force refresh player data from server
+func refresh_data() -> void:
+	if not Session or not Session.is_authenticated:
+		print("[StateStore] Cannot refresh data: Not authenticated")
+		return
+		
+	print("[StateStore] Force refreshing player data...")
+	_on_session_status_checked(true)
 
 ## Player Methods
 func get_player_data() -> Dictionary:
@@ -413,6 +439,37 @@ func check_hospital_status() -> void:
 		state_changed.emit("hospital", {"in_hospital": false, "release_time": 0})
 		print("[StateStore] Hospital time expired, player released")
 
+## Prison Methods
+func set_prison_status(in_prison_flag: bool, release_time: int = 0, reason: String = "") -> void:
+	in_prison = in_prison_flag
+	prison_release_time = release_time
+	prison_reason = reason
+	state_changed.emit("prison", {"in_prison": in_prison, "release_time": release_time, "reason": reason})
+
+func get_prison_remaining_minutes() -> int:
+	if not in_prison:
+		return 0
+	
+	var current_time = Time.get_unix_time_from_system()
+	var remaining = prison_release_time - current_time
+	return max(0, int(remaining / 60.0))
+
+func get_prison_remaining_seconds() -> int:
+	if not in_prison:
+		return 0
+	
+	var current_time = Time.get_unix_time_from_system()
+	var remaining = prison_release_time - current_time
+	return max(0, int(remaining))
+
+func check_prison_status() -> void:
+	if in_prison and get_prison_remaining_seconds() <= 0:
+		in_prison = false
+		prison_release_time = 0
+		prison_reason = ""
+		state_changed.emit("prison", {"in_prison": false, "release_time": 0, "reason": ""})
+		print("[StateStore] Prison time expired, player released")
+
 ## Settings
 func set_setting(key: String, value: Variant) -> void:
 	settings[key] = value
@@ -605,6 +662,9 @@ func clear_state() -> void:
 	state_changed.emit("inventory", inventory)
 	in_hospital = false
 	hospital_release_time = 0
+	in_prison = false
+	prison_release_time = 0
+	prison_reason = ""
 	
 	print("[State] State cleared")
 

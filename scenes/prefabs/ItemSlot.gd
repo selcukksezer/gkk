@@ -198,7 +198,13 @@ func set_item(item: ItemData) -> void:
 	# Icon
 	if item.icon and ResourceLoader.exists(item.icon):
 		icon_rect.texture = load(item.icon)
+	elif item.icon and typeof(item.icon) == TYPE_STRING and item.icon.begins_with("http"):
+		# TODO: support HTTP icons via HTTPRequest asynchronously in the future
+		print("[ItemSlot] Icon is an external URL (not yet supported): ", item.icon)
+		icon_rect.texture = null
 	else:
+		if item.icon and item.icon != null:
+			print("[ItemSlot] Icon path not found: ", item.icon, " for item: ", item.item_id)
 		icon_rect.texture = null
 	
 	# Enhancement

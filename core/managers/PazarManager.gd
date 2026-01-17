@@ -26,10 +26,10 @@ func fetch_ticker(region_id: int, use_cache: bool = true) -> Dictionary:
 	return {"success": false, "error": "Use fetch_active_listings"}
 
 ## Get all active market listings
-# Returns individual orders for populating the catalog
+# Returns individual orders from market_listings_view (joined with seller profile)
 func fetch_active_listings(region_id: int) -> Dictionary:
-	# Fetch all active orders with item data
-	var result = await Network.http_get("/rest/v1/market_orders?select=*,item_data&status=eq.active&order=price.asc")
+	# Query the View instead of the Table
+	var result = await Network.http_get("/rest/v1/market_listings_view?order=price.asc")
 	
 	if result.success:
 		var orders = result.data
@@ -40,63 +40,61 @@ func fetch_active_listings(region_id: int) -> Dictionary:
 	
 	return {"success": false, "error": result.get("error", "Failed to fetch listings")}
 
-## Get order book for item
-func fetch_order_book(item_id: String, region_id: int) -> Dictionary:
-	# Fetch from DB: all orders for this item, sorted by price ASC (Best Sell Request first)
-	var endpoint = "/rest/v1/market_orders?select=*&item_id=eq.%s&order=price.asc" % item_id
-	var result = await Network.http_get(endpoint)
-	
-	if result.success:
-		var orders = result.data
-		if typeof(orders) == TYPE_DICTIONARY and orders.has("data"): orders = orders.data
-		
-		# Convert to OrderBook format: { asks: [], bids: [] }
-		if typeof(orders) == TYPE_ARRAY:
-			var asks = []
-			for o in orders:
-				asks.append({
-					"price": o.get("price"),
-					"quantity": o.get("quantity"),
-					"seller_id": o.get("seller_id"),
-					"order_id": o.get("id")
-				})
-			return {"success": true, "orderbook": {"asks": asks, "bids": []}}
-	
-	return {"success": false, "error": result.get("error", "Failed to fetch order book")}
+# Old order book logic removed as per refactor plan
+# Old buy order logic removed as per refactor plan
 
-## Place buy order
-func place_buy_order(item_id: String, quantity: int, price_per_unit: int, region_id: int) -> Dictionary:
-	var total_cost = quantity * price_per_unit
+
+## Purchase Listing (RPC)
+## Directly buy a specific listing
+func purchase_listing(order_id: String, quantity: int = 1, price_hint: int = -1, is_stackable: bool = false) -> Dictionary:
+	var payload = { 
+		"p_order_id": order_id,
+		"p_quantity": quantity,
+		"p_is_stackable": is_stackable
+	}
 	
-	# Check if player has enough gold
-	if State.gold < total_cost:
-		return {"success": false, "error": "Not enough gold"}
+	print("PazarManager: Purchasing Listing ", order_id, " Qty: ", quantity, " Stackable: ", is_stackable)
 	
-	var result = await Network.http_post(MARKET_ENDPOINT + "/buy", {
-		"item_id": item_id,
-		"quantity": quantity,
-		"price_per_unit": price_per_unit,
-		"region_id": region_id
-	})
+	var result = await Network.http_post("/rest/v1/rpc/purchase_market_listing", payload)
+	
+	print("PazarManager: Raw RPC Result -> ", result)
 	
 	if result.success:
-		var order = result.data.order
-		order_placed.emit(order)
+		var data = result.data
+		print("PazarManager: RPC Data Raw -> ", data)
+		if typeof(data) == TYPE_STRING: # Handle stringified JSON
+			var json = JSON.new()
+			if json.parse(data) == OK: data = json.data
+			
+		if data is Dictionary and data.get("success") == true:
+			order_filled.emit(data)
+			
+			# Refresh inventory as we bought something
+			var inv_manager = get_node_or_null("/root/Inventory")
+			if inv_manager:
+				await inv_manager.fetch_inventory()
+				
+			# Optimistic / Authoritative Gold Sync
+			if data.has("new_buyer_gold"):
+				# Server returned new balance (Best)
+				State.update_gold(int(data.new_buyer_gold))
+				print("PazarManager: Updated gold authoritative to ", data.new_buyer_gold)
+			elif price_hint >= 0:
+				# Optimistic update (Fallback)
+				var new_gold = max(0, State.gold - price_hint)
+				State.update_gold(new_gold)
+				print("PazarManager: Updated gold optimistically to ", new_gold)
+				# Still trigger refresh to ensure consistency later
+				if Session: Session.refresh_profile()
+			elif Session:
+				# No hint, no return -> Full fetch
+				await Session.refresh_profile()
+				
+			return {"success": true}
+			
+		return {"success": false, "error": data.get("error", "Purchase failed")}
 		
-		# Update gold
-		State.update_gold(-total_cost, true)
-		
-		Audio.play_coin()
-		
-		Telemetry.track_market("buy_order", item_id, {
-			"quantity": quantity,
-			"price": price_per_unit,
-			"total": total_cost
-		})
-		
-		return {"success": true, "order": order}
-	
-	return {"success": false, "error": result.get("error", "Failed to place order")}
+	return {"success": false, "error": result.get("error", "Network Error")}
 
 ## Place sell order (RPC)
 func place_sell_order(item_row_id: String, quantity: int, price_per_unit: int) -> Dictionary:
@@ -122,7 +120,7 @@ func place_sell_order(item_row_id: String, quantity: int, price_per_unit: int) -
 		if data is Dictionary and data.get("success") == true:
 			order_placed.emit(data)
 			# Refresh inventory locally since it changed
-			var inv_manager = get_node_or_null("/root/InventoryManager")
+			var inv_manager = get_node_or_null("/root/Inventory")
 			if inv_manager:
 				await inv_manager.fetch_inventory()
 			return {"success": true, "data": data}
@@ -133,9 +131,10 @@ func place_sell_order(item_row_id: String, quantity: int, price_per_unit: int) -
 	return {"success": false, "error": result.get("error", "Network/DB Error")}
 
 ## Cancel order (RPC)
-func cancel_order(order_id: String) -> Dictionary:
+func cancel_order(order_id: String, is_stackable: bool = false) -> Dictionary:
 	var payload = {
-		"p_order_id": order_id
+		"p_order_id": order_id,
+		"p_is_stackable": is_stackable
 	}
 	
 	var result = await Network.http_post("/rest/v1/rpc/cancel_sell_order", payload)
@@ -148,9 +147,13 @@ func cancel_order(order_id: String) -> Dictionary:
 			
 		if data is Dictionary and data.get("success") == true:
 			order_cancelled.emit(order_id)
-			var inv_manager = get_node_or_null("/root/InventoryManager")
+			order_cancelled.emit(order_id)
+			var inv_manager = get_node_or_null("/root/Inventory")
 			if inv_manager:
+				print("[PazarManager] Fetching inventory after cancel...")
 				await inv_manager.fetch_inventory()
+			else:
+				print("[PazarManager] Inventory manager not found at /root/Inventory")
 			return {"success": true}
 			
 		return {"success": false, "error": data.get("error", "Failed to cancel")}

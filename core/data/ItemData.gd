@@ -190,6 +190,29 @@ static func from_dict(data: Dictionary) -> ItemData:
 		for key in instance_only_keys:
 			if data.has(key):
 				parse_data[key] = data[key]
+		# If server provided a custom icon path, prefer it when valid (supports res:// paths)
+		if data.has("icon") and data.icon != null and typeof(data.icon) == TYPE_STRING:
+			var server_icon = str(data.icon)
+			# If the DB stores a raw path (no res://), try to resolve it to res://
+			var candidate_paths = [server_icon]
+			if not server_icon.begins_with("res://"):
+				# Strip leading slash if present and try res://<path>
+				var stripped = server_icon.strip_prefix("/")
+				candidate_paths.append("res://" + stripped)
+				# Also try res://assets/<path> if it was uploaded without the top folder
+				candidate_paths.append("res://" + "assets/" + stripped)
+			
+			var used_path = null
+			for p in candidate_paths:
+				if ResourceLoader.exists(p):
+					used_path = p
+					break
+			
+			if used_path:
+				parse_data["icon"] = used_path
+				print("[ItemData] Using server-provided icon for item ", item_id, ": ", used_path)
+			else:
+				print("[ItemData] Server-provided icon not usable for item ", item_id, ": ", server_icon, " tried: ", candidate_paths)
 		# Verbose log disabled: Using ItemDatabase definition with instance overrides
 	else:
 		# No database definition, use all data from server

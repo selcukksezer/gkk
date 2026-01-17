@@ -342,6 +342,19 @@ func _on_refresh_response(result: Dictionary) -> void:
 		logout()
 		session_status_checked.emit(false)
 
+func refresh_profile() -> void:
+	print("[Session] Manually refreshing profile...")
+	var profile_result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
+	if profile_result.success and profile_result.data:
+		State.load_player_data(profile_result.data)
+		print("[Session] Player profile refreshed manually")
+		# We can optionally emit logged_in to force UI refresh, or just rely on State updates
+		# logged_in.emit(profile_result.data) 
+		session_status_checked.emit(true)
+	else:
+		print("[Session] Failed to refresh profile manually")
+
+
 func _check_token_expiry() -> void:
 	# Auto-refresh disabled by default per user preference; no action taken
 	if not AUTO_REFRESH_TOKENS:

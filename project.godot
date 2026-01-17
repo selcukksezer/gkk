@@ -38,6 +38,8 @@ ShopManager="*res://core/managers/ShopManager.gd"
 Equipment="*res://core/managers/EquipmentManager.gd"
 EnhancementManager="*res://core/managers/EnhancementManager.gd"
 PazarManager="*res://core/managers/PazarManager.gd"
+FacilityManager="*res://core/managers/FacilityManager.gd"
+PrisonManager="*res://core/managers/PrisonManager.gd"
 
 [display]
 

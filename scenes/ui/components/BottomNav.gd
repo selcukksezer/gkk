@@ -80,6 +80,7 @@ func _show_menu() -> void:
 	popup.add_item("⭐ İtibar", 20)
 	popup.add_item("🎪 Etkinlikler", 21)
 	popup.add_item("⚙️ Ayarlar", 22)
+	popup.add_item("👮 Hapishane", 23)
 	
 	popup.id_pressed.connect(_on_menu_item_selected)
 	
@@ -99,7 +100,7 @@ func _on_menu_item_selected(id: int) -> void:
 		6: navigation_changed.emit("guild")
 		7: navigation_changed.emit("profile")
 		8: navigation_changed.emit("building")
-		9: navigation_changed.emit("mining")
+		9: navigation_changed.emit("facilities")
 		10: navigation_changed.emit("production")
 		11: navigation_changed.emit("warehouse")
 		12: navigation_changed.emit("anvil")
@@ -113,3 +114,4 @@ func _on_menu_item_selected(id: int) -> void:
 		20: navigation_changed.emit("reputation")
 		21: navigation_changed.emit("event")
 		22: navigation_changed.emit("settings")
+		23: navigation_changed.emit("prison")

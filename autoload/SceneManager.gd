@@ -10,8 +10,8 @@ signal scene_transition_finished()
 ## Scene paths
 const SCENES = {
 	"splash": "res://scenes/main/SplashScreen.tscn",
-	"login": "res://scenes/main/LoginScreen.tscn",
-	"home": "res://scenes/main/HomeScreen.tscn",
+	"login": "res://scenes/ui/screens/LoginScreen.tscn",
+	"home": "res://scenes/ui/screens/HomeScreen.tscn",
 	"main": "res://scenes/main/Main.tscn",
 	"inventory": "res://scenes/ui/screens/InventoryScreen.tscn",
 	"market": "res://scenes/ui/screens/PazarScreen.tscn",
@@ -21,7 +21,10 @@ const SCENES = {
 	"guild": "res://scenes/ui/screens/GuildScreen.tscn",
 	"profile": "res://scenes/ui/screens/ProfileScreen.tscn",
 	"settings": "res://scenes/ui/screens/SettingsScreen.tscn",
-	"hospital": "res://scenes/ui/screens/HospitalScreen.tscn"
+	"hospital": "res://scenes/ui/screens/HospitalScreen.tscn",
+	"prison": "res://scenes/ui/screens/PrisonScreen.tscn",
+	"facilities": "res://scenes/ui/screens/FacilitiesScreen.tscn",
+	"facility_detail": "res://scenes/ui/screens/FacilityDetailScreen.tscn"
 }
 
 var current_scene: Node = Node.new()
@@ -32,6 +35,20 @@ func _ready() -> void:
 	print("[Scenes] Initializing...")
 	var root = get_tree().root
 	current_scene = root.get_child(root.get_child_count() - 1)
+	
+	# Listen for Global State changes (e.g. Prison)
+	if State:
+		State.state_changed.connect(_on_state_changed)
+
+func _on_state_changed(key: String, value: Variant) -> void:
+	if key == "prison":
+		var in_prison = value.get("in_prison", false)
+		if in_prison and current_scene_name != "prison":
+			print("[Scenes] Player imprisoned! Redirecting to Prison Screen.")
+			change_scene("prison", 0.5)
+		elif not in_prison and current_scene_name == "prison":
+			print("[Scenes] Player released! Redirecting to Home.")
+			change_scene("home", 0.5)
 
 ## Change scene with fade transition
 func change_scene(scene_name: String, transition_duration: float = 0.3) -> void:
@@ -44,6 +61,12 @@ func change_scene(scene_name: String, transition_duration: float = 0.3) -> void:
 		return
 	
 	_loading = true
+	
+	# Prison Enforcer
+	if State and State.in_prison and scene_name != "prison":
+		print("[Scenes] Cannot leave prison! Redirecting back.")
+		scene_name = "prison"
+		
 	scene_transition_started.emit()
 	scene_loading.emit(scene_name)
 	
@@ -59,7 +82,14 @@ func change_scene(scene_name: String, transition_duration: float = 0.3) -> void:
 	
 	# Load new scene
 	var scene_path = SCENES[scene_name]
-	var new_scene = load(scene_path).instantiate()
+	var packed_scene = load(scene_path)
+	
+	if not packed_scene:
+		print("[Scenes] Failed to load scene: %s (path: %s)" % [scene_name, scene_path])
+		_loading = false
+		return
+		
+	var new_scene = packed_scene.instantiate()
 	
 	# Add to tree
 	get_tree().root.add_child(new_scene)

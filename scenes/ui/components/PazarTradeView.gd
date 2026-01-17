@@ -29,10 +29,10 @@ var market_manager: Node
 func _ready() -> void:
 	close_button.pressed.connect(func(): close_requested.emit())
 	
-	# Buy Logic
-	price_input.value_changed.connect(_update_buy_total)
-	quantity_input.value_changed.connect(_update_buy_total)
-	buy_button.pressed.connect(_on_buy_pressed)
+	# Buy Logic Removed
+	# price_input.value_changed.connect(_update_buy_total)
+	# quantity_input.value_changed.connect(_update_buy_total)
+	# buy_button.pressed.connect(_on_buy_pressed)
 	
 	# Sell Logic
 	sell_price_input.value_changed.connect(_update_sell_total)
@@ -73,11 +73,34 @@ func setup(item_id: String, item_instance: ItemData = null) -> void:
 		item_icon.texture = load(icon_path)
 		
 	# Setup Sell Tab State
+	# Setup Sell Tab State
 	_setup_sell_inputs()
 	
-	# Fetch Order Book
-	if market_manager:
-		_fetch_order_book()
+	# Hide Buy Tab and Ensure Sell Tab
+	var tab_container = $"Content/ActionPanel/TabContainer"
+	if tab_container:
+		var buy_tab = tab_container.get_node_or_null("Alış")
+		if buy_tab:
+			# In Godot 4, use set_tab_hidden to hide the tab selector
+			var idx = buy_tab.get_index()
+			tab_container.set_tab_hidden(idx, true)
+			
+		var sell_tab = tab_container.get_node_or_null("Satış")
+		if sell_tab:
+			tab_container.current_tab = sell_tab.get_index()
+			
+	# Update "Order Book" Label to "Stats"
+	if order_list and order_list.get_parent() and order_list.get_parent().get_parent():
+		var panel = order_list.get_parent().get_parent()
+		var label = panel.get_node_or_null("Label")
+		if label:
+			label.text = "   Özellikler" # Update existing label
+		
+	# Display Stats
+	_display_stats(item_id, item, item_instance)
+
+var sell_commission_label: Label
+var sell_earnings_label: Label
 
 func _setup_sell_inputs() -> void:
 	# Default: Enable inputs, max 999
@@ -86,6 +109,21 @@ func _setup_sell_inputs() -> void:
 	sell_quantity_input.value = 1
 	sell_button.disabled = false
 	sell_button.text = "SATIŞ EMRİ GİR"
+	
+	# Create Tax Labels dynamically if missing
+	if not sell_commission_label:
+		sell_commission_label = Label.new()
+		sell_commission_label.modulate = Color(1, 0.5, 0.5) # reddish
+		var p = sell_total_label.get_parent()
+		p.add_child(sell_commission_label)
+		p.move_child(sell_commission_label, sell_total_label.get_index() + 1)
+		
+	if not sell_earnings_label:
+		sell_earnings_label = Label.new()
+		sell_earnings_label.modulate = Color(0.5, 1, 0.5) # greenish
+		var p2 = sell_total_label.get_parent()
+		p2.add_child(sell_earnings_label)
+		p2.move_child(sell_earnings_label, sell_commission_label.get_index() + 1)
 	
 	if current_item_instance:
 		# We are in SELL mode (opened from inventory)
@@ -107,58 +145,49 @@ func _setup_sell_inputs() -> void:
 		sell_quantity_input.value = 0
 		sell_quantity_input.editable = false
 
-func _fetch_order_book() -> void:
-	# Clear list
+func _display_stats(item_id: String, base_def: Dictionary, instance: ItemData) -> void:
+	# Use OrderList container for stats
 	for child in order_list.get_children():
 		child.queue_free()
 		
-	if not market_manager: return
+	# Ensure parent is visible
+	if order_list.get_parent() and order_list.get_parent().get_parent():
+		order_list.get_parent().get_parent().visible = true
+		
+	# Header is already updated in setup ("Label" node)
+	# But just in case we are reusing this func, we won't add a new header here.
 	
-	# In a real implementation this would be async
-	# For now we simulate or assume sync if cached, or handle the callback
-	# In Godot 4, await works for both immediate values and coroutines
-	var result = await market_manager.fetch_order_book(current_item_id, 1) # Region 1 default
+	var item_obj = instance
+	if not item_obj:
+		item_obj = ItemData.from_dict(base_def)
+		
+	if item_obj.attack > 0: _add_stat_row("Saldırı Gücü", item_obj.get_total_attack())
+	if item_obj.defense > 0: _add_stat_row("Defans", item_obj.get_total_defense())
+	if item_obj.health > 0: _add_stat_row("Can", item_obj.get_total_health())
+	if item_obj.power > 0: _add_stat_row("Güç", item_obj.get_total_power())
 	
-	if result is Dictionary and result.get("success", false):
-		if result.has("orderbook"):
-			_display_orders(result.orderbook)
+	if not item_obj.description.is_empty():
+		var desc = Label.new()
+		desc.text = item_obj.description
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc.modulate = Color(0.7, 0.7, 0.7)
+		order_list.add_child(HSeparator.new())
+		order_list.add_child(desc)
 
-func _display_orders(book: Dictionary) -> void:
-	# Bids (Buy Orders) - Green
-	var bids = book.get("bids", [])
-	if bids.size() > 0:
-		var header = Label.new()
-		header.text = "ALIŞ EMİRLERİ"
-		header.modulate = Color.GREEN
-		order_list.add_child(header)
-		for bid in bids:
-			_add_order_row(bid, Color.GREEN)
-			
-	var sep = HSeparator.new()
-	order_list.add_child(sep)
-	
-	# Asks (Sell Orders) - Red
-	var asks = book.get("asks", [])
-	if asks.size() > 0:
-		var header = Label.new()
-		header.text = "SATIŞ EMİRLERİ"
-		header.modulate = Color.RED
-		order_list.add_child(header)
-		for ask in asks:
-			_add_order_row(ask, Color.RED)
-
-func _add_order_row(order: Dictionary, color: Color) -> void:
+func _add_stat_row(label: String, value: int) -> void:
 	var hbox = HBoxContainer.new()
-	var price_lbl = Label.new()
-	price_lbl.text = "%d G" % order.get("price", 0)
-	price_lbl.modulate = color
-	price_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(price_lbl)
+	var l_lbl = Label.new()
+	l_lbl.text = label
+	l_lbl.modulate = Color(0.8, 0.8, 0.8)
+	l_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
-	var qty_lbl = Label.new()
-	qty_lbl.text = "x%d" % order.get("quantity", 0)
-	hbox.add_child(qty_lbl)
+	var v_lbl = Label.new()
+	v_lbl.text = str(value)
+	v_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	v_lbl.modulate = Color(0.5, 1, 0.5) # Greenish for stats
 	
+	hbox.add_child(l_lbl)
+	hbox.add_child(v_lbl)
 	order_list.add_child(hbox)
 
 func _update_buy_total(_val) -> void:
@@ -166,8 +195,18 @@ func _update_buy_total(_val) -> void:
 	total_label.text = "Toplam: %d Altın" % total
 
 func _update_sell_total(_val) -> void:
-	var total = sell_price_input.value * sell_quantity_input.value
-	sell_total_label.text = "Toplam: %d Altın" % total
+	var qty = int(sell_quantity_input.value)
+	var price = int(sell_price_input.value)
+	var total = price * qty
+	
+	var tax = int(total * 0.05)
+	var earnings = total - tax
+	
+	sell_total_label.text = "Satış Tutarı: %d Altın" % total
+	if sell_commission_label:
+		sell_commission_label.text = "Pazar Komisyonu (%%5): -%d Altın" % tax
+	if sell_earnings_label:
+		sell_earnings_label.text = "Net Kazanç: %d Altın" % earnings
 
 func _on_buy_pressed() -> void:
 	buy_order_placed.emit(current_item_id, int(price_input.value), int(quantity_input.value))

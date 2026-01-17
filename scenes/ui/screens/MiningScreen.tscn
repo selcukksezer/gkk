@@ -1,17 +1,324 @@
-[gd_scene load_steps=2 format=3 uid="uid://d2mining8aa"]
+[gd_scene format=3 uid="uid://crnggrrwlx303"]
 
-[ext_resource type="Script" path="res://scenes/ui/screens/MiningScreen.gd" id="1_mining"]
+[sub_resource type="GDScript" id="GDScript_anbbi"]
+script/source = "extends Control
+## Mining Screen - Resource Gathering
+## Kaynak toplama (Demir cevheri, Kereste, Deri)
 
-[node name="MiningScreen" type="Control"]
+@onready var resource_list: VBoxContainer = %ResourceList
+@onready var energy_label: Label = %EnergyLabel
+@onready var back_button: Button = $MarginContainer/VBox/Header/BackButton
+@onready var progress_overlay: ColorRect = null
+@onready var progress_bar: ProgressBar = null
+@onready var progress_label: Label = null
+
+var gathering_in_progress: bool = false
+var current_timer: float = 0.0
+var total_time: float = 0.0
+var current_resource: Dictionary = {}
+
+const RESOURCES = [
+	{\"id\": \"iron_ore\", \"name\": \"Demir Cevheri\", \"icon\": \"⛏️\", \"energy\": 5, \"time\": 30, \"amount\": \"5-10\", \"color\": Color(0.7, 0.7, 0.8)},
+	{\"id\": \"lumber\", \"name\": \"Kereste\", \"icon\": \"🪵\", \"energy\": 7, \"time\": 45, \"amount\": \"3-8\", \"color\": Color(0.6, 0.4, 0.2)},
+	{\"id\": \"leather\", \"name\": \"Deri\", \"icon\": \"🦌\", \"energy\": 8, \"time\": 60, \"amount\": \"2-5\", \"color\": Color(0.6, 0.5, 0.4)},
+	{\"id\": \"stone\", \"name\": \"Taş\", \"icon\": \"🪨\", \"energy\": 6, \"time\": 40, \"amount\": \"4-9\", \"color\": Color(0.5, 0.5, 0.5)},
+	{\"id\": \"herb\", \"name\": \"Şifalı Ot\", \"icon\": \"🌿\", \"energy\": 10, \"time\": 90, \"amount\": \"1-3\", \"color\": Color(0.3, 0.8, 0.4)}
+]
+
+func _ready() -> void:
+	back_button.pressed.connect(_on_back_button_pressed)
+	_create_progress_overlay()
+	_update_energy()
+	_populate_list()
+	
+	# Listen for energy updates
+	if State:
+		State.energy_updated.connect(_update_energy)
+	
+	print(\"[MiningScreen] Ready\")
+
+func _process(delta: float) -> void:
+	if gathering_in_progress:
+		current_timer += delta
+		var progress = min(current_timer / total_time, 1.0)
+		if progress_bar:
+			progress_bar.value = progress * 100
+		if progress_label:
+			var remaining = max(0, total_time - current_timer)
+			progress_label.text = \"%s toplamıyor... (%d sn)\" % [current_resource.get(\"name\", \"Kaynak\"), int(remaining)]
+		
+		if progress >= 1.0:
+			_finish_gathering()
+
+func _create_progress_overlay() -> void:
+	# Overlay panel
+	progress_overlay = ColorRect.new()
+	progress_overlay.color = Color(0, 0, 0, 0.8)
+	progress_overlay.anchor_right = 1.0
+	progress_overlay.anchor_bottom = 1.0
+	progress_overlay.visible = false
+	add_child(progress_overlay)
+	
+	# Center container
+	var center = CenterContainer.new()
+	center.anchor_right = 1.0
+	center.anchor_bottom = 1.0
+	progress_overlay.add_child(center)
+	
+	# Panel
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(600, 300)
+	center.add_child(panel)
+	
+	# VBox
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override(\"separation\", 20)
+	panel.add_child(vbox)
+	
+	# Icon and title
+	var title = Label.new()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override(\"font_size\", 32)
+	vbox.add_child(title)
+	progress_label = title
+	
+	# Progress bar
+	progress_bar = ProgressBar.new()
+	progress_bar.custom_minimum_size = Vector2(500, 40)
+	progress_bar.max_value = 100
+	progress_bar.value = 0
+	progress_bar.show_percentage = false
+	vbox.add_child(progress_bar)
+	
+	# Cancel button
+	var cancel_btn = Button.new()
+	cancel_btn.text = \"İptal Et\"
+	cancel_btn.custom_minimum_size = Vector2(200, 60)
+	cancel_btn.add_theme_font_size_override(\"font_size\", 24)
+	cancel_btn.pressed.connect(_cancel_gathering)
+	vbox.add_child(cancel_btn)
+
+func _update_energy() -> void:
+	var current = State.get_player_energy()
+	var max_energy = State.get_max_energy()
+	energy_label.text = \"%d/%d\" % [current, max_energy]
+
+func _populate_list() -> void:
+	for child in resource_list.get_children():
+		child.queue_free()
+	
+	for resource in RESOURCES:
+		var panel = PanelContainer.new()
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.15, 0.15, 0.2, 1)
+		style.border_width_left = 5
+		style.border_width_right = 5
+		style.border_color = resource.get(\"color\", Color.WHITE)
+		style.corner_radius_bottom_left = 10
+		style.corner_radius_bottom_right = 10
+		style.corner_radius_top_left = 10
+		style.corner_radius_top_right = 10
+		panel.add_theme_stylebox_override(\"panel\", style)
+		
+		var margin = MarginContainer.new()
+		margin.add_theme_constant_override(\"margin_left\", 15)
+		margin.add_theme_constant_override(\"margin_right\", 15)
+		margin.add_theme_constant_override(\"margin_top\", 15)
+		margin.add_theme_constant_override(\"margin_bottom\", 15)
+		panel.add_child(margin)
+		
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override(\"separation\", 20)
+		margin.add_child(hbox)
+		
+		# Icon with background
+		var icon_panel = PanelContainer.new()
+		var icon_style = StyleBoxFlat.new()
+		icon_style.bg_color = resource.get(\"color\", Color.WHITE)
+		icon_style.bg_color.a = 0.3
+		icon_style.corner_radius_bottom_left = 8
+		icon_style.corner_radius_bottom_right = 8
+		icon_style.corner_radius_top_left = 8
+		icon_style.corner_radius_top_right = 8
+		icon_panel.add_theme_stylebox_override(\"panel\", icon_style)
+		icon_panel.custom_minimum_size = Vector2(100, 100)
+		hbox.add_child(icon_panel)
+		
+		var icon_center = CenterContainer.new()
+		icon_panel.add_child(icon_center)
+		
+		var icon_label = Label.new()
+		icon_label.text = resource.get(\"icon\", \"⛏️\")
+		icon_label.add_theme_font_size_override(\"font_size\", 56)
+		icon_center.add_child(icon_label)
+		
+		# Info
+		var info_vbox = VBoxContainer.new()
+		info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_vbox.add_theme_constant_override(\"separation\", 8)
+		hbox.add_child(info_vbox)
+		
+		var name_label = Label.new()
+		name_label.text = resource.get(\"name\", \"Kaynak\")
+		name_label.add_theme_font_size_override(\"font_size\", 32)
+		name_label.add_theme_color_override(\"font_color\", resource.get(\"color\", Color.WHITE))
+		info_vbox.add_child(name_label)
+		
+		var amount_label = Label.new()
+		amount_label.text = \"📦 Miktar: %s\" % resource.get(\"amount\", \"1\")
+		amount_label.add_theme_font_size_override(\"font_size\", 22)
+		info_vbox.add_child(amount_label)
+		
+		var time_label = Label.new()
+		time_label.text = \"⏱️ Süre: %d saniye\" % resource.get(\"time\", 30)
+		time_label.add_theme_font_size_override(\"font_size\", 22)
+		info_vbox.add_child(time_label)
+		
+		var energy_label_item = Label.new()
+		energy_label_item.text = \"⚡ Enerji: %d\" % resource.get(\"energy\", 5)
+		energy_label_item.add_theme_font_size_override(\"font_size\", 22)
+		var current_energy = State.get_player_energy()
+		var required_energy = resource.get(\"energy\", 5)
+		if current_energy < required_energy:
+			energy_label_item.add_theme_color_override(\"font_color\", Color(1, 0.3, 0.3))
+		else:
+			energy_label_item.add_theme_color_override(\"font_color\", Color(0.5, 1, 0.5))
+		info_vbox.add_child(energy_label_item)
+		
+		# Gather button
+		var gather_button = Button.new()
+		gather_button.custom_minimum_size = Vector2(180, 100)
+		gather_button.text = \"TOPLA\"
+		gather_button.add_theme_font_size_override(\"font_size\", 28)
+		
+		var btn_style = StyleBoxFlat.new()
+		btn_style.bg_color = resource.get(\"color\", Color.WHITE)
+		btn_style.corner_radius_bottom_left = 8
+		btn_style.corner_radius_bottom_right = 8
+		btn_style.corner_radius_top_left = 8
+		btn_style.corner_radius_top_right = 8
+		gather_button.add_theme_stylebox_override(\"normal\", btn_style)
+		
+		gather_button.disabled = current_energy < required_energy or gathering_in_progress
+		
+		gather_button.pressed.connect(func(): _gather_resource(resource))
+		hbox.add_child(gather_button)
+		
+		resource_list.add_child(panel)
+
+func _gather_resource(resource: Dictionary) -> void:
+	if gathering_in_progress:
+		return
+	
+	# Start gathering animation
+	gathering_in_progress = true
+	current_resource = resource
+	total_time = resource.get(\"time\", 30)
+	current_timer = 0.0
+	
+	if progress_overlay:
+		progress_overlay.visible = true
+	if progress_bar:
+		progress_bar.value = 0
+	
+	_populate_list()  # Update buttons to be disabled
+
+func _finish_gathering() -> void:
+	gathering_in_progress = false
+	if progress_overlay:
+		progress_overlay.visible = false
+	
+	# Make API call
+	var data = {
+		\"resource_id\": current_resource.get(\"id\")
+	}
+	
+	var result = await Network.http_post(\"/v1/mining/gather\", data)
+	if result.success:
+		var amount = result.data.get(\"amount\", 0)
+		var resource_name = current_resource.get(\"name\", \"Kaynak\")
+		
+		# Add to inventory
+		await _add_to_inventory(current_resource.get(\"id\"), amount)
+		
+		_show_success(\"✅ Toplandı: %d %s\\n📦 Envantere eklendi!\" % [amount, resource_name])
+		_update_energy()
+		_populate_list()
+		
+		# Refresh inventory if on that screen
+		if Inventory:
+			await Inventory.fetch_inventory()
+	else:
+		_show_error(result.get(\"error\", \"Toplama başarısız\"))
+		_populate_list()
+
+func _cancel_gathering() -> void:
+	gathering_in_progress = false
+	if progress_overlay:
+		progress_overlay.visible = false
+	current_timer = 0.0
+	_populate_list()
+
+func _add_to_inventory(resource_id: String, amount: int) -> void:
+	# Create item data for the gathered resource
+	var item_data = {
+		\"item_id\": resource_id,
+		\"name\": _get_resource_name(resource_id),
+		\"type\": \"resource\",
+		\"rarity\": \"common\",
+		\"quantity\": amount,
+		\"icon\": _get_resource_icon(resource_id),
+		\"description\": \"Ham kaynak\"
+	}
+	
+	if Inventory:
+		var item = ItemData.new()
+		item.from_dict(item_data)
+		await Inventory.add_item(item)
+		print(\"[MiningScreen] Added %d %s to inventory\" % [amount, item_data.name])
+
+func _get_resource_name(resource_id: String) -> String:
+	for res in RESOURCES:
+		if res.get(\"id\") == resource_id:
+			return res.get(\"name\", \"Kaynak\")
+	return \"Kaynak\"
+
+func _get_resource_icon(resource_id: String) -> String:
+	for res in RESOURCES:
+		if res.get(\"id\") == resource_id:
+			return res.get(\"icon\", \"⛏️\")
+	return \"⛏️\"
+
+func _on_back_button_pressed() -> void:
+	get_tree().root.get_node(\"Main\").go_back()
+
+func _show_error(message: String) -> void:
+	var dialog_scene = load(\"res://scenes/ui/dialogs/ErrorDialog.tscn\")
+	if dialog_scene:
+		get_tree().root.get_node(\"Main\").show_dialog(dialog_scene, {
+			\"title\": \"Hata\",
+			\"message\": message
+		})
+
+func _show_success(message: String) -> void:
+	var dialog_scene = load(\"res://scenes/ui/dialogs/InfoDialog.tscn\")
+	if dialog_scene:
+		get_tree().root.get_node(\"Main\").show_dialog(dialog_scene, {
+			\"title\": \"Başarılı\",
+			\"message\": message
+		})
+"
+
+[node name="MiningScreen" type="Control" unique_id=958362283]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_mining")
+script = SubResource("GDScript_anbbi")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1053986223]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +327,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.08, 0.12, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1279465766]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -32,51 +339,51 @@ theme_override_constants/margin_top = 30
 theme_override_constants/margin_right = 30
 theme_override_constants/margin_bottom = 30
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBox" type="VBoxContainer" parent="MarginContainer" unique_id=315427875]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox"]
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBox" unique_id=941553963]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="MarginContainer/VBox/Header"]
+[node name="Title" type="Label" parent="MarginContainer/VBox/Header" unique_id=1938595847]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "⛏️ Kaynak Toplama"
-theme_override_font_sizes/font_size = 40
 theme_override_colors/font_color = Color(0.8, 0.6, 0.4, 1)
+theme_override_font_sizes/font_size = 40
+text = "⛏️ Kaynak Toplama"
 
-[node name="BackButton" type="Button" parent="MarginContainer/VBox/Header"]
+[node name="BackButton" type="Button" parent="MarginContainer/VBox/Header" unique_id=2128303475]
 custom_minimum_size = Vector2(120, 60)
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Geri"
+
+[node name="EnergyPanel" type="PanelContainer" parent="MarginContainer/VBox" unique_id=666522120]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="MarginContainer/VBox/EnergyPanel" unique_id=1178109606]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBox/EnergyPanel/HBox" unique_id=721047658]
+layout_mode = 2
 theme_override_font_sizes/font_size = 24
-
-[node name="EnergyPanel" type="PanelContainer" parent="MarginContainer/VBox"]
-layout_mode = 2
-
-[node name="HBox" type="HBoxContainer" parent="MarginContainer/VBox/EnergyPanel"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/VBox/EnergyPanel/HBox"]
-layout_mode = 2
 text = "Mevcut Enerji:"
-theme_override_font_sizes/font_size = 24
 
-[node name="EnergyLabel" type="Label" parent="MarginContainer/VBox/EnergyPanel/HBox"]
+[node name="EnergyLabel" type="Label" parent="MarginContainer/VBox/EnergyPanel/HBox" unique_id=969332151]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "100/100"
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 28
+text = "100/100"
 horizontal_alignment = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox" unique_id=1270671158]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ResourceList" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
+[node name="ResourceList" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer" unique_id=321852687]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

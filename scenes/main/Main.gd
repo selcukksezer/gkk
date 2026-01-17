@@ -53,8 +53,12 @@ const SCREENS = {
 	"profile": "res://scenes/ui/screens/ProfileScreen.tscn",
 	"event": "res://scenes/ui/screens/EventScreen.tscn",
 	"warehouse": "res://scenes/ui/screens/WarehouseScreen.tscn",
-	"reputation": "res://scenes/ui/screens/ReputationScreen.tscn"
+	"reputation": "res://scenes/ui/screens/ReputationScreen.tscn",
+	"facilities": "res://scenes/ui/screens/FacilitiesScreen.tscn",
+	"facility_detail": "res://scenes/ui/screens/FacilityDetailScreen.tscn",
+	"prison": "res://scenes/ui/screens/PrisonScreen.tscn"
 }
+
 
 func _ready() -> void:
 	print("[Main] Game starting...")

@@ -244,12 +244,21 @@ func _on_request_completed(
 				_parsed_body = j.data
 			print("[Network] 401 response body: %s" % safe_body)
 
+		# Prevent infinite retry loop - only retry once after token refresh
+		if retry_count >= 1:
+			print("[Network] Already retried once after token refresh, failing request")
+			if callback.is_valid():
+				callback.call({"success": false, "code": 401, "error": "Unauthorized after token refresh"})
+			return
+
 		# If we have a refresh token, try to refresh and retry
 		if Session and not Session.refresh_token.is_empty():
 			print("[Network] Refresh token found, attempting token refresh")
 			Session.refresh_access_token()
 			await Session.token_refreshed
-			_send_request(endpoint, method, body, callback, 0)
+			print("[Network] Token refresh complete, new access_token: %s..." % Session.access_token.substr(0, 20))
+			await get_tree().process_frame  # Allow headers to be rebuilt with new token
+			_send_request(endpoint, method, body, callback, retry_count + 1)
 			return
 
 		# No refresh token: do not force session expiration on arbitrary 401s

@@ -58,41 +58,147 @@ func setup_ui() -> void:
 		render_dashboard()
 
 func render_dashboard() -> void:
-	# 1. Status Section (Suspicion & Bribe)
+	# 1. Create Tab Container
+	var tabs = TabContainer.new()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content_container.add_child(tabs)
+	
+	# === TAB 1: ÜRETİM (Existing Dashboard) ===
+	var tab_production = VBoxContainer.new()
+	tab_production.name = "Üretim"
+	tabs.add_child(tab_production)
+	
+	# 1.1 Status Section (Suspicion & Bribe)
 	var status_panel = PanelContainer.new()
-	var vbox = VBoxContainer.new()
-	status_panel.add_child(vbox)
+	var vbox_status = VBoxContainer.new()
+	status_panel.add_child(vbox_status)
 	
 	var sus_label = Label.new()
 	sus_label.text = "Şüphe Seviyesi: %" + str(data.get("suspicion", 0))
 	if data.get("suspicion", 0) > 80:
 		sus_label.modulate = Color.RED
-	vbox.add_child(sus_label)
+	vbox_status.add_child(sus_label)
 	
 	var bribe_btn = Button.new()
 	bribe_btn.text = "Rüşvet Ver (5 Elmas -> -10 Şüphe)"
 	bribe_btn.pressed.connect(_on_bribe_pressed)
-	vbox.add_child(bribe_btn)
+	vbox_status.add_child(bribe_btn)
 	
-	content_container.add_child(status_panel)
+	tab_production.add_child(status_panel)
 	
-	# 2. Production Queue Section
+	# 1.2 Production Queue Section
 	var queue_label = Label.new()
 	queue_label.text = "\nAKTİF ÜRETİM:"
-	content_container.add_child(queue_label)
+	tab_production.add_child(queue_label)
 	
 	var queue_container = VBoxContainer.new()
 	queue_container.name = "QueueContainer"
-	content_container.add_child(queue_container)
+	tab_production.add_child(queue_container)
 	
 	render_queue_items(queue_container)
 	
-	# 3. Recipes / Production List
+	# 1.3 Recipes / Production List
 	var recipe_label = Label.new()
 	recipe_label.text = "\nÜRETİM SEÇENEKLERİ:"
-	content_container.add_child(recipe_label)
+	tab_production.add_child(recipe_label)
 	
-	fetch_and_render_recipes()
+	fetch_and_render_recipes_to_container(tab_production)
+	
+	# === TAB 2: KAYNAKLAR & ORANLAR ===
+	var tab_resources = ScrollContainer.new()
+	tab_resources.name = "Kaynaklar"
+	tabs.add_child(tab_resources)
+	
+	render_resources_tab(tab_resources)
+
+func fetch_and_render_recipes_to_container(container) -> void:
+	var result = await FacilityManager.fetch_recipes()
+	if result.get("success", false):
+		var recipes = result.get("data", [])
+		
+		# Sort recipes for consistency (Fixes UI shuffling)
+		recipes.sort_custom(func(a, b): return a.output_item_id < b.output_item_id)
+		
+		for r in recipes:
+			if r.facility_type == type:
+				var card = create_recipe_card_node(r) # Helper to return node
+				container.add_child(card)
+
+func render_resources_tab(parent_scroll) -> void:
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent_scroll.add_child(vbox)
+	
+	var info_lbl = Label.new()
+	info_lbl.text = "Bu tesisten düşebilecek kaynakların oranları tesis seviyesine göre artar.\n"
+	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_lbl.modulate = Color(0.7, 0.7, 0.7)
+	vbox.add_child(info_lbl)
+	
+	# Table Header
+	var header_hbox = HBoxContainer.new()
+	header_hbox.add_theme_constant_override("separation", 10)
+	vbox.add_child(header_hbox)
+	
+	var headers = ["Sv", "Common", "Uncommon", "Rare", "Epic", "Leg."]
+	for h in headers:
+		var l = Label.new()
+		l.text = h
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.add_theme_color_override("font_color", Color.ORANGE)
+		header_hbox.add_child(l)
+		
+	# Separator
+	var sep = HSeparator.new()
+	vbox.add_child(sep)
+	
+	# Table Rows (1-20)
+	var current_lvl = data.get("level", 1)
+	
+	for lvl in range(1, 21):
+		var row = HBoxContainer.new()
+		vbox.add_child(row)
+		
+		# Calculate dynamic rates (Same math as FacilityManager)
+		# Base Weights
+		var w = {"C": 700.0, "U": 200.0, "R": 80.0, "E": 15.0, "L": 5.0}
+		if lvl > 1:
+			w["U"] += (lvl - 1) * 15.0
+			w["R"] += (lvl - 1) * 8.0
+			w["E"] += (lvl - 1) * 3.0
+			w["L"] += (lvl - 1) * 1.5
+			
+		var total = w["C"] + w["U"] + w["R"] + w["E"] + w["L"]
+		
+		var cols = [
+			str(lvl),
+			"%.1f%%" % ((w["C"] / total) * 100),
+			"%.1f%%" % ((w["U"] / total) * 100),
+			"%.1f%%" % ((w["R"] / total) * 100),
+			"%.1f%%" % ((w["E"] / total) * 100),
+			"%.1f%%" % ((w["L"] / total) * 100)
+		]
+		
+		for i in range(cols.size()):
+			var txt = cols[i]
+			var l = Label.new()
+			l.text = txt
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			
+			# Highlight Current Level
+			if lvl == current_lvl:
+				l.add_theme_color_override("font_color", Color.GREEN)
+				# l.add_theme_font_size_override("font_size", 18) # Slightly bigger?
+			elif lvl < current_lvl:
+				l.modulate = Color(0.5, 0.5, 0.5) # Dim past levels
+			
+			row.add_child(l)
+			
+		if lvl == current_lvl:
+			var bg = Panel.new()
+			# bg logic tricky inside HBox, skip complex styling for now, color text is enough
 
 func render_queue_items(container: VBoxContainer) -> void:
 	var queue = data.get("facility_queue", [])
@@ -226,13 +332,15 @@ func _update_queue_ui() -> void:
 					btn.add_theme_stylebox_override("normal", btn_style)
 
 func fetch_and_render_recipes() -> void:
+    # Not used anymore in tabbed view
 	var result = await FacilityManager.fetch_recipes()
 	if result.get("success", false):
 		for r in result.get("data", []):
 			if r.facility_type == type:
 				create_recipe_card(r)
 
-func create_recipe_card(recipe) -> void:
+# Helper to return node instead of adding to specific container immediately
+func create_recipe_card_node(recipe) -> PanelContainer:
 	var panel = PanelContainer.new()
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.15, 0.15, 0.2, 1)
@@ -315,7 +423,12 @@ func create_recipe_card(recipe) -> void:
 	btn.pressed.connect(func(): _on_produce_pressed_enhanced(recipe, btn))
 	hbox.add_child(btn)
 	
-	content_container.add_child(panel)
+	return panel
+
+# Legacy wrapper kept if needed but not used in new flow
+func create_recipe_card(recipe) -> void:
+	var card = create_recipe_card_node(recipe)
+	content_container.add_child(card)
 
 func _get_recipe_color(recipe) -> Color:
 	var risk = recipe.get("base_suspicion_increase", 0)
@@ -379,11 +492,17 @@ func _on_produce_pressed_enhanced(recipe, btn: Button) -> void:
 	
 	if res.get("success", false):
 		message_label.text = "✅ Üretim başladı! Tamamlanınca toplayabilirsiniz."
+		
+		# --- DEBUG ADDED ---
+		print("[FacilityDetail] Production started! Requesting refresh...")
 		# Immediately refresh to show in queue
 		await refresh_data_from_server()
+		print("[FacilityDetail] Refresh complete. Data valid? ", data != null)
 		if data:
+			print("[FacilityDetail] Queue size after refresh: ", data.get("facility_queue", []).size())
 			setup_ui()
 		else:
+			print("[FacilityDetail] Refresh failed, data is null")
 			message_label.text = "⚠️ Üretim başladı ama liste güncellenemedi."
 			btn.disabled = false
 			btn.text = original_text
@@ -433,7 +552,11 @@ func refresh_data_from_server() -> void:
 				data = f
 				FacilityManager.selected_facility_data = f
 				found = true
-				print("[FacilityDetail] Data updated, queue size: ", f.get("facility_queue", []).size())
+				print("[FacilityDetail] Data updated for ", type)
+				var q = f.get("facility_queue", [])
+				print("[FacilityDetail] New queue size: ", q.size(), " Queue content: ", q)
+				# Re-render UI with new data
+				setup_ui()
 				break
 		if not found:
 			print("[FacilityDetail] WARNING: Facility type '", type, "' not found in response")

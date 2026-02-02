@@ -1,0 +1,152 @@
+[gd_scene load_steps=6 format=3 uid="uid://dfj5bcchmh0q0"]
+
+[ext_resource type="Script" path="res://scenes/components/FacilityCard.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Card"]
+bg_color = Color(0.13, 0.15, 0.19, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.3, 0.4, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_IconFrame"]
+bg_color = Color(0.08, 0.1, 0.12, 0.5)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Badge_Level"]
+bg_color = Color(0.2, 0.4, 0.6, 0.3)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Badge_Suspicion"]
+bg_color = Color(0.6, 0.2, 0.2, 0.3)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="FacilityCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 80)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 100.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_Card")
+script = ExtResource("1_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="HBox" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="IconContainer" type="PanelContainer" parent="Margin/HBox"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_IconFrame")
+
+[node name="IconTexture" type="TextureRect" parent="Margin/HBox/IconContainer"]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="Margin/HBox/IconContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InfoBox" type="VBoxContainer" parent="Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="TopStats" type="HBoxContainer" parent="Margin/HBox/InfoBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameLabel" type="Label" parent="Margin/HBox/InfoBox/TopStats"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
+theme_override_font_sizes/font_size = 16
+text = "Facility Name"
+
+[node name="StatusLabel" type="Label" parent="Margin/HBox/InfoBox/TopStats"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "ACTIVE"
+
+[node name="DescriptionLabel" type="Label" parent="Margin/HBox/InfoBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Produces resources over time."
+autowrap_mode = 2
+max_lines_visible = 2
+
+[node name="StatsRow" type="HBoxContainer" parent="Margin/HBox/InfoBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LevelBadge" type="PanelContainer" parent="Margin/HBox/InfoBox/StatsRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Badge_Level")
+
+[node name="Margin" type="MarginContainer" parent="Margin/HBox/InfoBox/StatsRow/LevelBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_right = 6
+
+[node name="LevelLabel" type="Label" parent="Margin/HBox/InfoBox/StatsRow/LevelBadge/Margin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "LVL 5"
+
+[node name="SuspicionBadge" type="PanelContainer" parent="Margin/HBox/InfoBox/StatsRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Badge_Suspicion")
+
+[node name="Margin" type="MarginContainer" parent="Margin/HBox/InfoBox/StatsRow/SuspicionBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_right = 6
+
+[node name="SuspicionLabel" type="Label" parent="Margin/HBox/InfoBox/StatsRow/SuspicionBadge/Margin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "SUS: 10%"
+
+[node name="ActionsBox" type="VBoxContainer" parent="Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="MainButton" type="Button" parent="Margin/HBox/ActionsBox"]
+custom_minimum_size = Vector2(80, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Yönet"

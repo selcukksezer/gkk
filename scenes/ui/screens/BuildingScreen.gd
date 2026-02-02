@@ -45,7 +45,7 @@ func _populate_list() -> void:
 		
 		var icon_label = Label.new()
 		icon_label.text = info.get("icon", "🏗️")
-		icon_label.theme_override_font_sizes["font_size"] = 48
+		icon_label.add_theme_font_size_override("font_size", 48)
 		header_hbox.add_child(icon_label)
 		
 		var name_vbox = VBoxContainer.new()
@@ -54,13 +54,13 @@ func _populate_list() -> void:
 		
 		var name_label = Label.new()
 		name_label.text = info.get("name", "Bilinmeyen")
-		name_label.theme_override_font_sizes["font_size"] = 28
+		name_label.add_theme_font_size_override("font_size", 28)
 		name_vbox.add_child(name_label)
 		
 		var level_label = Label.new()
 		var level = building.get("level", 1)
 		level_label.text = "Seviye %d" % level
-		level_label.theme_override_font_sizes["font_size"] = 20
+		level_label.add_theme_font_size_override("font_size", 20)
 		level_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 		name_vbox.add_child(level_label)
 		

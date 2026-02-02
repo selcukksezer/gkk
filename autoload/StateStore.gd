@@ -200,6 +200,16 @@ func update_energy(current: int, max_value: int = -1) -> void:
 	energy_updated.emit()
 	state_changed.emit("energy", {"current": current_energy, "max": max_energy})
 
+## Consume energy (for facility production, etc)
+func consume_energy(amount: int) -> bool:
+	if current_energy < amount:
+		print("[State] Not enough energy. Required: %d, Current: %d" % [amount, current_energy])
+		return false
+	
+	update_energy(current_energy - amount)
+	print("[State] Consumed %d energy. Remaining: %d" % [amount, current_energy])
+	return true
+
 func update_tolerance(value: int) -> void:
 	tolerance = value
 	tolerance_updated.emit(value)

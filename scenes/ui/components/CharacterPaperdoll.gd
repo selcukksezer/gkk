@@ -129,32 +129,36 @@ func _setup_animation() -> void:
 				# Add 'Dance' or 'Idle' from external lib to our player
 				var found_anim = false
 				
-				# List to check priority
-				var target_anims = ["Dance", "Dance_A", "Idle"]
-				
-				for target in target_anims:
-					if lib.has_animation(target):
-						var anim = lib.get_animation(target)
-						anim.loop_mode = Animation.LOOP_LINEAR
-						
-						var library = AnimationLibrary.new()
-						library.add_animation(target, anim)
-						
-						if not animation_player.has_animation_library(""):
-							animation_player.add_animation_library("", library)
-						else:
-							animation_player.get_animation_library("").add_animation(target, anim)
+				# Check if lib is valid
+				if lib and lib is AnimationLibrary:
+					# List to check priority
+					var target_anims = ["Dance", "Dance_A", "Idle"]
+					
+					for target in target_anims:
+						if lib.has_animation(target):
+							var anim = lib.get_animation(target)
+							anim.loop_mode = Animation.LOOP_LINEAR
 							
-						print("[CharacterPaperdoll] Added external animation: ", target)
-						animation_player.play(target)
-						found_anim = true
-						break # Play the first one found (Priority: Dance -> Idle)
-				
-				if not found_anim:
-					# Fallback to copy all just in case
-					for anim_name in lib.get_animation_list():
-						print("[CharacterPaperdoll] Found other animation: ", anim_name)
-						# Could add logic here to grab whatever is available
+							var library = AnimationLibrary.new()
+							library.add_animation(target, anim)
+							
+							if not animation_player.has_animation_library(""):
+								animation_player.add_animation_library("", library)
+							else:
+								animation_player.get_animation_library("").add_animation(target, anim)
+								
+							print("[CharacterPaperdoll] Added external animation: ", target)
+							animation_player.play(target)
+							found_anim = true
+							break # Play the first one found (Priority: Dance -> Idle)
+					
+					if not found_anim:
+						# Fallback to copy all just in case
+						for anim_name in lib.get_animation_list():
+							print("[CharacterPaperdoll] Found other animation: ", anim_name)
+							# Could add logic here to grab whatever is available
+				else:
+					print("[CharacterPaperdoll] Warning: Animation library is null or invalid")
 				
 			anim_instance.queue_free() # Cleanup
 	

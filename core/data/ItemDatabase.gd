@@ -170,7 +170,23 @@ const ITEMS = {
 		"production_rate_per_hour": 10,
 		"production_required_level": 1,
 		"is_stackable": true,
-		"max_stack": 50
+		"max_stack": 500
+	},
+	
+	"material_copper_ore": {
+		"id": "material_copper_ore",
+		"name": "Bakır Cevheri",
+		"description": "Bakır ve tunç eşyalar üretmek için kullanılır.",
+		"icon": "res://assets/sprites/items/ore_copper.png",
+		"item_type": "MATERIAL",
+		"material_type": "ORE",
+		"rarity": "COMMON",
+		"base_price": 8,
+		"vendor_sell_price": 3,
+		"production_building_type": "mine",
+		"production_required_level": 1,
+		"is_stackable": true,
+		"max_stack": 500
 	},
 	
 	"material_wood": {
@@ -187,7 +203,7 @@ const ITEMS = {
 		"production_rate_per_hour": 15,
 		"production_required_level": 1,
 		"is_stackable": true,
-		"max_stack": 50
+		"max_stack": 500
 	},
 	
 	# Recipes
@@ -209,21 +225,7 @@ const ITEMS = {
 		"recipe_required_level": 1
 	},
 	
-	# Runes
-	"rune_attack_minor": {
-		"id": "rune_attack_minor",
-		"name": "Küçük Saldırı Rünü",
-		"description": "Geliştirme başarı oranını %5 artırır.",
-		"icon": "res://assets/sprites/items/rune_attack.png",
-		"item_type": "RUNE",
-		"rarity": "UNCOMMON",
-		"base_price": 200,
-		"rune_enhancement_type": "attack",
-		"rune_success_bonus": 5.0,
-		"rune_destruction_reduction": 2.0
-	},
-	
-	# Upgrade Scrolls
+	# ======================= RUNES =======================
 	"scroll_upgrade_low": {
 		"id": "scroll_upgrade_low",
 		"name": "Düşük Sınıf Yükseltme Kağıdı",
@@ -256,11 +258,481 @@ const ITEMS = {
 		"description": "Legendary ve Mythic eşyaları yükseltmek için kullanılır.",
 		"icon": "res://assets/sprites/items/highclassscroll.png",
 		"item_type": "SCROLL",
-		"rarity": "LEGENDARY",
+		"rarity": "EPIC",
 		"base_price": 10000,
 		"vendor_sell_price": 5000,
 		"is_stackable": true,
+		"max_stack": 30
+	},
+	
+	# ======================= RAW MATERIALS (MINE) =======================
+	"material_gold_ore": {
+		"id": "material_gold_ore",
+		"name": "Altın Cevheri",
+		"description": "Altın ve değerli eşyalar üretmek için kullanılır.",
+		"icon": "res://assets/sprites/items/ore_gold.png",
+		"item_type": "MATERIAL",
+		"material_type": "ORE",
+		"rarity": "UNCOMMON",
+		"base_price": 20,
+		"vendor_sell_price": 10,
+		"production_building_type": "mine",
+		"production_required_level": 5,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_silver_ore": {
+		"id": "material_silver_ore",
+		"name": "Gümüş Cevheri",
+		"description": "Gümüş ve aksesuarlar üretmek için kullanılır.",
+		"icon": "res://assets/sprites/items/ore_silver.png",
+		"item_type": "MATERIAL",
+		"material_type": "ORE",
+		"rarity": "UNCOMMON",
+		"base_price": 15,
+		"vendor_sell_price": 7,
+		"production_building_type": "mine",
+		"production_required_level": 3,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_crystal": {
+		"id": "material_crystal",
+		"name": "Kristal",
+		"description": "Büyü ve rün yapımında kullanılan değerli taş.",
+		"icon": "res://assets/sprites/items/crystal.png",
+		"item_type": "MATERIAL",
+		"material_type": "CRYSTAL",
+		"rarity": "RARE",
+		"base_price": 50,
+		"vendor_sell_price": 25,
+		"production_building_type": "mine",
+		"production_required_level": 7,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_diamond": {
+		"id": "material_diamond",
+		"name": "Elmas",
+		"description": "En değerli efsanevi eşyalar yapılırken gerekli olan taş.",
+		"icon": "res://assets/sprites/items/diamond.png",
+		"item_type": "MATERIAL",
+		"material_type": "GEM",
+		"rarity": "LEGENDARY",
+		"base_price": 500,
+		"vendor_sell_price": 250,
+		"production_building_type": "mine",
+		"production_required_level": 10,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	# ======================= RAW MATERIALS (SAWMILL) =======================
+	"material_hardwood": {
+		"id": "material_hardwood",
+		"name": "Sert Kereste",
+		"description": "Dayanıklı kaliteli kereste. Güçlü eşyalar yapmak için gerekli.",
+		"icon": "res://assets/sprites/items/hardwood.png",
+		"item_type": "MATERIAL",
+		"material_type": "WOOD",
+		"rarity": "UNCOMMON",
+		"base_price": 10,
+		"vendor_sell_price": 5,
+		"production_building_type": "sawmill",
+		"production_required_level": 4,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_bamboo": {
+		"id": "material_bamboo",
+		"name": "Bambu",
+		"description": "Hafif ve esnek. Yaylar ve çubuklardan yapılır.",
+		"icon": "res://assets/sprites/items/bamboo.png",
+		"item_type": "MATERIAL",
+		"material_type": "WOOD",
+		"rarity": "COMMON",
+		"base_price": 5,
+		"vendor_sell_price": 2,
+		"production_building_type": "sawmill",
+		"production_required_level": 3,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	# ======================= RAW MATERIALS (FARM) =======================
+	"material_leather": {
+		"id": "material_leather",
+		"name": "Deri",
+		"description": "Hayvan derisi. Zırh ve aksesuarlar yapımında kullanılır.",
+		"icon": "res://assets/sprites/items/leather.png",
+		"item_type": "MATERIAL",
+		"material_type": "LEATHER",
+		"rarity": "COMMON",
+		"base_price": 8,
+		"vendor_sell_price": 4,
+		"production_building_type": "farm",
+		"production_required_level": 1,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_quality_leather": {
+		"id": "material_quality_leather",
+		"name": "Kaliteli Deri",
+		"description": "Işlenmiş yüksek kaliteli deri. Ince zırh yapımında kullanılır.",
+		"icon": "res://assets/sprites/items/quality_leather.png",
+		"item_type": "MATERIAL",
+		"material_type": "LEATHER",
+		"rarity": "RARE",
+		"base_price": 40,
+		"vendor_sell_price": 20,
+		"production_building_type": "farm",
+		"production_required_level": 5,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_wool": {
+		"id": "material_wool",
+		"name": "Yün",
+		"description": "Dönerden alınan yün. Kumaş eşyalar yapımında kullanılır.",
+		"icon": "res://assets/sprites/items/wool.png",
+		"item_type": "MATERIAL",
+		"material_type": "LEATHER",
+		"rarity": "COMMON",
+		"base_price": 6,
+		"vendor_sell_price": 3,
+		"production_building_type": "farm",
+		"production_required_level": 2,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	# ======================= RAW MATERIALS (HERB GARDEN) =======================
+	"material_herb": {
+		"id": "material_herb",
+		"name": "Tıbbi Ot",
+		"description": "İksir yapımında temel malzeme. Şifa ve buff potionları için gerekli.",
+		"icon": "res://assets/sprites/items/herb.png",
+		"item_type": "MATERIAL",
+		"material_type": "HERB",
+		"rarity": "COMMON",
+		"base_price": 5,
+		"vendor_sell_price": 2,
+		"production_building_type": "herb_garden",
+		"production_required_level": 1,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_rare_herb": {
+		"id": "material_rare_herb",
+		"name": "Nadir Ot",
+		"description": "Nadir ve kuvvetli bitki. Güçlü potion yapımında gereklidir.",
+		"icon": "res://assets/sprites/items/rare_herb.png",
+		"item_type": "MATERIAL",
+		"material_type": "HERB",
+		"rarity": "EPIC",
+		"base_price": 100,
+		"vendor_sell_price": 50,
+		"production_building_type": "herb_garden",
+		"production_required_level": 5,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	"material_dragon_blood": {
+		"id": "material_dragon_blood",
+		"name": "Ejderhain Kanı",
+		"description": "Efsanevi gücü olan sıvı. En güçlü potion ve runeler gereklidir.",
+		"icon": "res://assets/sprites/items/dragon_blood.png",
+		"item_type": "MATERIAL",
+		"material_type": "HERB",
+		"rarity": "LEGENDARY",
+		"base_price": 300,
+		"vendor_sell_price": 150,
+		"production_building_type": "herb_garden",
+		"production_required_level": 10,
+		"is_stackable": true,
+		"max_stack": 500
+	},
+	
+	# ======================= CRAFTED WEAPONS =======================
+	"weapon_iron_sword": {
+		"id": "weapon_iron_sword",
+		"name": "Demir Kılıç",
+		"description": "Temel demir kılıç. İyi bir başlangıç silahı.",
+		"icon": "res://assets/sprites/items/iron_sword.png",
+		"item_type": "WEAPON",
+		"weapon_type": "SWORD",
+		"rarity": "COMMON",
+		"equip_slot": "WEAPON",
+		"base_price": 100,
+		"vendor_sell_price": 50,
+		"attack": 12,
+		"can_enhance": true,
+		"max_enhancement": 10,
+		"is_stackable": false
+	},
+	
+	"weapon_steel_sword": {
+		"id": "weapon_steel_sword",
+		"name": "Çelik Kılıç",
+		"description": "Çelikten yapılmış güçlü kılıç. Daha yüksek saldırı gücü.",
+		"icon": "res://assets/sprites/items/steel_sword.png",
+		"item_type": "WEAPON",
+		"weapon_type": "SWORD",
+		"rarity": "RARE",
+		"equip_slot": "WEAPON",
+		"base_price": 400,
+		"vendor_sell_price": 200,
+		"attack": 25,
+		"can_enhance": true,
+		"max_enhancement": 10,
+		"is_stackable": false
+	},
+	
+	"weapon_legendary_sword": {
+		"id": "weapon_legendary_sword",
+		"name": "Efsanevi Kılıç",
+		"description": "Eski zamanlardan kalma efsanevi kılıç. Muazzam gücü vardır.",
+		"icon": "res://assets/sprites/items/legendary_sword.png",
+		"item_type": "WEAPON",
+		"weapon_type": "SWORD",
+		"rarity": "LEGENDARY",
+		"equip_slot": "WEAPON",
+		"base_price": 2000,
+		"vendor_sell_price": 1000,
+		"attack": 50,
+		"can_enhance": true,
+		"max_enhancement": 10,
+		"is_stackable": false
+	},
+	
+	# ======================= CRAFTED ARMOR =======================
+	"armor_leather_armor": {
+		"id": "armor_leather_armor",
+		"name": "Deri Zırh",
+		"description": "Hafif deri zırh. İyi hareket kabiliyeti sağlar.",
+		"icon": "res://assets/sprites/items/leather_armor.png",
+		"item_type": "ARMOR",
+		"armor_type": "LEATHER",
+		"rarity": "COMMON",
+		"equip_slot": "CHEST",
+		"base_price": 150,
+		"vendor_sell_price": 75,
+		"defense": 15,
+		"can_enhance": true,
+		"max_enhancement": 10,
+		"is_stackable": false
+	},
+	
+	"armor_chain_mail": {
+		"id": "armor_chain_mail",
+		"name": "Zincir Zırh",
+		"description": "Zincir halkalarından yapılmış zırh. Orta derecede koruma sağlar.",
+		"icon": "res://assets/sprites/items/chain_mail.png",
+		"item_type": "ARMOR",
+		"armor_type": "CHAIN",
+		"rarity": "UNCOMMON",
+		"equip_slot": "CHEST",
+		"base_price": 400,
+		"vendor_sell_price": 200,
+		"defense": 25,
+		"health": 20,
+		"can_enhance": true,
+		"max_enhancement": 10,
+		"is_stackable": false
+	},
+	
+	"armor_plate_armor": {
+		"id": "armor_plate_armor",
+		"name": "Plaka Zırh",
+		"description": "Ağır plaka zırh. Maksimum koruma sağlar ama hareket yavaşlatır.",
+		"icon": "res://assets/sprites/items/plate_armor.png",
+		"item_type": "ARMOR",
+		"armor_type": "PLATE",
+		"rarity": "RARE",
+		"equip_slot": "CHEST",
+		"base_price": 1000,
+		"vendor_sell_price": 500,
+		"defense": 40,
+		"health": 50,
+		"can_enhance": true,
+		"max_enhancement": 10,
+		"is_stackable": false
+	},
+	
+	# ======================= CRAFTED POTIONS =======================
+	"potion_health": {
+		"id": "potion_health",
+		"name": "Sağlık İksiri",
+		"description": "Can sağlığını geri yükler. 50 HP'yi tamamen iyileştirir.",
+		"icon": "res://assets/sprites/items/potion_health.png",
+		"item_type": "POTION",
+		"potion_type": "HEALING",
+		"rarity": "COMMON",
+		"base_price": 50,
+		"vendor_sell_price": 25,
+		"health_restore": 50,
+		"is_stackable": true,
 		"max_stack": 50
+	},
+	
+	"potion_mana": {
+		"id": "potion_mana",
+		"name": "Mana İksiri",
+		"description": "Mana reservini geri yükler. Büyüler açmada yardımcı.",
+		"icon": "res://assets/sprites/items/potion_mana.png",
+		"item_type": "POTION",
+		"potion_type": "HEALING",
+		"rarity": "UNCOMMON",
+		"base_price": 75,
+		"vendor_sell_price": 37,
+		"mana_restore": 50,
+		"is_stackable": true,
+		"max_stack": 50
+	},
+	
+	"potion_stamina": {
+		"id": "potion_stamina",
+		"name": "Dayanıklılık İksiri",
+		"description": "Çabukluk ve dayanıklılık arttırır. 1 saat etkili.",
+		"icon": "res://assets/sprites/items/potion_stamina.png",
+		"item_type": "POTION",
+		"potion_type": "BUFF",
+		"rarity": "UNCOMMON",
+		"base_price": 100,
+		"vendor_sell_price": 50,
+		"buff_duration": 3600,
+		"is_stackable": true,
+		"max_stack": 30
+	},
+	
+	# ======================= RUNES =======================
+	"rune_attack_minor": {
+		"id": "rune_attack_minor",
+		"name": "Küçük Saldırı Rünü",
+		"description": "Geliştirme başarı oranını %5 artırır.",
+		"icon": "res://assets/sprites/items/rune_attack_minor.png",
+		"item_type": "RUNE",
+		"rarity": "UNCOMMON",
+		"base_price": 200,
+		"vendor_sell_price": 100,
+		"rune_enhancement_type": "attack",
+		"rune_success_bonus": 5.0,
+		"rune_destruction_reduction": 2.0,
+		"is_stackable": false
+	},
+	
+	"rune_defense_minor": {
+		"id": "rune_defense_minor",
+		"name": "Küçük Savunma Rünü",
+		"description": "Zırh geliştirme başarı oranını %5 artırır.",
+		"icon": "res://assets/sprites/items/rune_defense_minor.png",
+		"item_type": "RUNE",
+		"rarity": "UNCOMMON",
+		"base_price": 200,
+		"vendor_sell_price": 100,
+		"rune_enhancement_type": "defense",
+		"rune_success_bonus": 5.0,
+		"rune_destruction_reduction": 3.0,
+		"is_stackable": false
+	},
+	
+	"rune_attack_major": {
+		"id": "rune_attack_major",
+		"name": "Büyük Saldırı Rünü",
+		"description": "Geliştirme başarı oranını %10 artırır.",
+		"icon": "res://assets/sprites/items/rune_attack_major.png",
+		"item_type": "RUNE",
+		"rarity": "RARE",
+		"base_price": 800,
+		"vendor_sell_price": 400,
+		"rune_enhancement_type": "attack",
+		"rune_success_bonus": 10.0,
+		"rune_destruction_reduction": 5.0,
+		"is_stackable": false
+	},
+	
+	"rune_defense_major": {
+		"id": "rune_defense_major",
+		"name": "Büyük Savunma Rünü",
+		"description": "Zırh geliştirme başarı oranını %10 artırır.",
+		"icon": "res://assets/sprites/items/rune_defense_major.png",
+		"item_type": "RUNE",
+		"rarity": "RARE",
+		"base_price": 800,
+		"vendor_sell_price": 400,
+		"rune_enhancement_type": "defense",
+		"rune_success_bonus": 10.0,
+		"rune_destruction_reduction": 7.0,
+		"is_stackable": false
+	},
+	
+	"rune_legendary": {
+		"id": "rune_legendary",
+		"name": "Efsanevi Rüne",
+		"description": "Tüm geliştirme işlemlerine %15 başarı ve %5 hasar azaltma bonus verir.",
+		"icon": "res://assets/sprites/items/rune_legendary.png",
+		"item_type": "RUNE",
+		"rarity": "LEGENDARY",
+		"base_price": 5000,
+		"vendor_sell_price": 2500,
+		"rune_enhancement_type": "all",
+		"rune_success_bonus": 15.0,
+		"rune_destruction_reduction": 10.0,
+		"is_stackable": false
+	},
+	
+	# ======================= GEMS =======================
+	"gem_ruby": {
+		"id": "gem_ruby",
+		"name": "Yakut",
+		"description": "Kırmızı taş. Saldırı gücü +10 verir.",
+		"icon": "res://assets/sprites/items/gem_ruby.png",
+		"item_type": "MATERIAL",
+		"material_type": "GEM",
+		"rarity": "RARE",
+		"equip_slot": "ACCESSORY",
+		"base_price": 300,
+		"vendor_sell_price": 150,
+		"attack": 10,
+		"is_stackable": false
+	},
+	
+	"gem_sapphire": {
+		"id": "gem_sapphire",
+		"name": "Safir",
+		"description": "Mavi taş. Savunma +15 verir.",
+		"icon": "res://assets/sprites/items/gem_sapphire.png",
+		"item_type": "MATERIAL",
+		"material_type": "GEM",
+		"rarity": "EPIC",
+		"equip_slot": "ACCESSORY",
+		"base_price": 600,
+		"vendor_sell_price": 300,
+		"defense": 15,
+		"is_stackable": false
+	},
+	
+	"gem_emerald": {
+		"id": "gem_emerald",
+		"name": "Zümrüt",
+		"description": "Yeşil taş. Can sağlığı +50 verir.",
+		"icon": "res://assets/sprites/items/gem_emerald.png",
+		"item_type": "MATERIAL",
+		"material_type": "GEM",
+		"rarity": "LEGENDARY",
+		"equip_slot": "ACCESSORY",
+		"base_price": 1500,
+		"vendor_sell_price": 750,
+		"health": 50,
+		"is_stackable": false
 	},
 	
 	# Cosmetics

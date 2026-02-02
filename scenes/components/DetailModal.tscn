@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://d3fykm82v1gme"]
+
+[ext_resource type="Script" path="res://scenes/components/DetailModal.gd" id="Script_1"]
+
+[node name="DetailModal" type="Control"]
+layout_mode = 3
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
+script = ExtResource("Script_1")
+mouse_filter = 1
+
+[node name="BackgroundDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_left = 0.25
+anchors_top = 0.1
+anchors_right = 0.75
+anchors_bottom = 0.9
+custom_minimum_size = Vector2(600, 500)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Tesis Detayları"
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+
+[node name="TabContainer" type="TabContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="QueueTab" type="ScrollContainer" parent="PanelContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 300)
+
+[node name="QueueTabContent" type="VBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer/QueueTab"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RecipesTab" type="ScrollContainer" parent="PanelContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="RecipesTabContent" type="VBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer/RecipesTab"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="SuspicionTab" type="ScrollContainer" parent="PanelContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="SuspicionTabContent" type="VBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer/SuspicionTab"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="UpgradeTab" type="ScrollContainer" parent="PanelContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="UpgradeTabContent" type="VBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer/UpgradeTab"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CloseButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Kapat (ESC)"
+

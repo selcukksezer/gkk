@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://bbppbi5a2u8fa"]
+
+[ext_resource type="Texture2D" uid="uid://dqemnbke25qwe" path="res://assets/charac/layer_19.png" id="1_qi5as"]
+[ext_resource type="Texture2D" uid="uid://bbajqwmdgjj16" path="res://assets/charac/layer_18.png" id="2_jb3kq"]
+[ext_resource type="Texture2D" uid="uid://d3iwmjjectllp" path="res://assets/charac/layer_17.png" id="3_c1b4b"]
+[ext_resource type="Texture2D" uid="uid://dgg6d8kvwm73r" path="res://assets/charac/layer_10.png" id="4_7tnxx"]
+[ext_resource type="Texture2D" uid="uid://dqu5yvtbjlmgc" path="res://assets/charac/layer_06.png" id="5_bwfjh"]
+[ext_resource type="Texture2D" uid="uid://b11kn8s0mmm26" path="res://assets/charac/layer_07.png" id="6_x1sy7"]
+[ext_resource type="Texture2D" uid="uid://cpskjjnt3dg6w" path="res://assets/charac/layer_13.png" id="7_sm1rv"]
+[ext_resource type="Texture2D" uid="uid://dlnj2k6a83fxo" path="res://assets/charac/layer_14.png" id="8_jx0ln"]
+[ext_resource type="Texture2D" uid="uid://domjecl4hdcek" path="res://assets/charac/layer_01.png" id="9_lpiy1"]
+[ext_resource type="Script" uid="uid://cuj5eqk56oc0w" path="res://assets/charac/character.gd" id="10_char_script"]
+
+[node name="character" type="Node2D" unique_id=1757519208]
+position = Vector2(323, 271)
+script = ExtResource("10_char_script")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=311905835]
+
+[node name="Skeleton2D" type="Skeleton2D" parent="." unique_id=1752897193]
+
+[node name="sağkanat" type="Bone2D" parent="Skeleton2D" unique_id=336751485]
+position = Vector2(-62, -56)
+rotation = 1.8029251
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/sağkanat" unique_id=1167734676]
+position = Vector2(144, 57.999992)
+texture = ExtResource("1_qi5as")
+
+[node name="solkanat" type="Bone2D" parent="Skeleton2D" unique_id=338673241]
+position = Vector2(27, -54)
+rotation = 1.2217305
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/solkanat" unique_id=1791675924]
+position = Vector2(168, -73)
+texture = ExtResource("2_jb3kq")
+
+[node name="pelerin" type="Bone2D" parent="Skeleton2D" unique_id=1996073332]
+position = Vector2(1, 13)
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/pelerin" unique_id=2041143111]
+position = Vector2(0, 205)
+texture = ExtResource("3_c1b4b")
+
+[node name="gövde" type="Bone2D" parent="Skeleton2D" unique_id=490056554]
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/gövde" unique_id=1512197349]
+position = Vector2(3, 244)
+texture = ExtResource("4_7tnxx")
+
+[node name="sağomuz" type="Bone2D" parent="Skeleton2D" unique_id=1262110932]
+position = Vector2(-88, -25)
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/sağomuz" unique_id=502275116]
+position = Vector2(-3, -2)
+texture = ExtResource("5_bwfjh")
+
+[node name="solomuz" type="Bone2D" parent="Skeleton2D" unique_id=307399974]
+position = Vector2(67, -32)
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/solomuz" unique_id=616054011]
+position = Vector2(21, -1)
+texture = ExtResource("6_x1sy7")
+
+[node name="sağkol" type="Bone2D" parent="Skeleton2D" unique_id=1937053618]
+position = Vector2(-109, 29)
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/sağkol" unique_id=1763475779]
+position = Vector2(7, 59)
+texture = ExtResource("7_sm1rv")
+
+[node name="solkol" type="Bone2D" parent="Skeleton2D" unique_id=1232863872]
+position = Vector2(96, 12)
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/solkol" unique_id=988332997]
+position = Vector2(3, 66)
+texture = ExtResource("8_jx0ln")
+
+[node name="kafa" type="Bone2D" parent="Skeleton2D" unique_id=2136956841]
+position = Vector2(-1, -31)
+
+[node name="Sprite2D" type="Sprite2D" parent="Skeleton2D/kafa" unique_id=1968591553]
+position = Vector2(4, -63)
+texture = ExtResource("9_lpiy1")

@@ -323,37 +323,19 @@ func refresh_access_token() -> void:
 func _on_refresh_response(result: Dictionary) -> void:
 	if result.success:
 		var data = result.data
+		print("[Session] Token refresh response data: ", data)
 		set_tokens(data.access_token, data.refresh_token)
-		# After refreshing tokens, fetch player profile to initialize State
-		var profile_result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
-		if profile_result.success and profile_result.data:
-			State.load_player_data(profile_result.data)
-			print("[Session] Player profile loaded from server after refresh")
-			token_refreshed.emit()
-			session_status_checked.emit(true)
-		else:
-			print("[Session] Failed to load player profile after refresh")
-			session_expired.emit()
-			logout()
-			session_status_checked.emit(false)
+		# Token refresh succeeded - emit success and continue
+		# Don't require profile fetch as it may fail with missing endpoint
+		print("[Session] Token refreshed successfully with new access token: %s" % access_token.substr(0, 20))
+		is_authenticated = true
+		token_refreshed.emit()
+		session_status_checked.emit(true)
 	else:
-		print("[Session] Token refresh failed")
+		print("[Session] Token refresh failed: ", result)
 		session_expired.emit()
 		logout()
 		session_status_checked.emit(false)
-
-func refresh_profile() -> void:
-	print("[Session] Manually refreshing profile...")
-	var profile_result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
-	if profile_result.success and profile_result.data:
-		State.load_player_data(profile_result.data)
-		print("[Session] Player profile refreshed manually")
-		# We can optionally emit logged_in to force UI refresh, or just rely on State updates
-		# logged_in.emit(profile_result.data) 
-		session_status_checked.emit(true)
-	else:
-		print("[Session] Failed to refresh profile manually")
-
 
 func _check_token_expiry() -> void:
 	# Auto-refresh disabled by default per user preference; no action taken

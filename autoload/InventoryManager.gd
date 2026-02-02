@@ -15,7 +15,7 @@ func fetch_inventory() -> Dictionary:
 	# Note: Supabase RPC functions without parameters should be called with empty dict
 	var rpc_result = await Network.http_post("/rest/v1/rpc/get_inventory", {})
 	
-	print("[InventoryManager] Fetch inventory RPC result: ", rpc_result)
+	# print("[InventoryManager] Fetch inventory RPC result: ", rpc_result)
 	
 	if rpc_result.success and rpc_result.data:
 		var response_data = rpc_result.data
@@ -23,24 +23,30 @@ func fetch_inventory() -> Dictionary:
 		# Handle nested response structure
 		if typeof(response_data) == TYPE_DICTIONARY:
 			if response_data.has("items"):
-				print("[InventoryManager] Found items in response: %d items" % response_data.items.size())
-				State.set_inventory(response_data.items)
-				return {"success": true, "items": response_data.items}
+				# print("[InventoryManager] Found items in response: %d items" % response_data.items.size())
+				var items = response_data.items
+				_ensure_slot_positions(items)
+				State.set_inventory(items)
+				return {"success": true, "items": items}
 			elif response_data.has("data"):
 				# Sometimes Supabase wraps the response
 				var data = response_data.data
 				if typeof(data) == TYPE_DICTIONARY and data.has("items"):
-					print("[InventoryManager] Found items in data.items: %d items" % data.items.size())
-					State.set_inventory(data.items)
-					return {"success": true, "items": data.items}
+					# print("[InventoryManager] Found items in data.items: %d items" % data.items.size())
+					var items = data.items
+					_ensure_slot_positions(items)
+					State.set_inventory(items)
+					return {"success": true, "items": items}
 				elif typeof(data) == TYPE_ARRAY:
-					print("[InventoryManager] Found items as array in data: %d items" % data.size())
+					# print("[InventoryManager] Found items as array in data: %d items" % data.size())
+					_ensure_slot_positions(data)
 					State.set_inventory(data)
 					return {"success": true, "items": data}
 		
 		# Fallback: try direct array
 		if typeof(response_data) == TYPE_ARRAY:
-			print("[InventoryManager] Found items as direct array: %d items" % response_data.size())
+			# print("[InventoryManager] Found items as direct array: %d items" % response_data.size())
+			_ensure_slot_positions(response_data)
 			State.set_inventory(response_data)
 			return {"success": true, "items": response_data}
 		
@@ -90,13 +96,13 @@ func add_item(item: ItemData) -> Dictionary:
 			for k in returned_data:
 				final_item[k] = returned_data[k]
 			
-			print("[InventoryManager] Merged server data: row_id=%s slot=%s" % [final_item.get("row_id"), final_item.get("slot_position")])
+			# print("[InventoryManager] Merged server data: row_id=%s slot=%s" % [final_item.get("row_id"), final_item.get("slot_position")])
 		
 		# CRITICAL: Ensure slot_position is valid (0-19) for UI display
 		if not final_item.has("slot_position") or final_item.slot_position == null or int(final_item.slot_position) < 0:
-			print("[InventoryManager] Item missing slot_position from server, finding local slot...")
+			# print("[InventoryManager] Item missing slot_position from server, finding local slot...")
 			final_item["slot_position"] = _find_first_empty_slot()
-			print("[InventoryManager] Assigned local slot: ", final_item.slot_position)
+			# print("[InventoryManager] Assigned local slot: ", final_item.slot_position)
 		
 		State.add_item(final_item)
 		var item_obj = ItemData.from_dict(final_item)
@@ -321,8 +327,10 @@ func unequip_item(slot: String) -> Dictionary:
 func _get_item_quantity(item_id: String) -> int:
 	var all_items = State.get_all_items_data()
 	for item in all_items:
-		if item.item_id == item_id:
-			return item.quantity
+		var current_id = item.get("item_id") if item is Dictionary else item.item_id
+		if current_id == item_id:
+			var qty = item.get("quantity") if item is Dictionary else item.quantity
+			return int(qty) if qty != null else 0
 	return 0
 
 ## Update item quantity
@@ -501,3 +509,27 @@ func update_item_enhancement(item: ItemData, new_level: int) -> Dictionary:
 	
 	print("[InventoryManager] Failed to sync enhancement! Full Result: ", result)
 	return {"success": false, "error": result.get("error", "Failed to sync")}
+
+## Ensure all items have valid slot positions
+func _ensure_slot_positions(items: Array) -> void:
+	var occupied_slots = {}
+	for item in items:
+		var pos = item.get("slot_position")
+		if pos != null and (typeof(pos) == TYPE_INT or typeof(pos) == TYPE_FLOAT) and int(pos) >= 0:
+			occupied_slots[int(pos)] = true
+	
+	for item in items:
+		var pos = item.get("slot_position")
+		# If invalid or missing, assign new
+		if pos == null or ((typeof(pos) == TYPE_INT or typeof(pos) == TYPE_FLOAT) and int(pos) < 0):
+			# Find first free slot
+			var new_slot = -1
+			for i in range(20):
+				if not occupied_slots.has(i):
+					new_slot = i
+					occupied_slots[i] = true
+					break
+			
+			if new_slot != -1:
+				item["slot_position"] = new_slot
+				print("[InventoryManager] Auto-assigned slot locally: ", new_slot)

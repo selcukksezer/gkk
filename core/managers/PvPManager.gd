@@ -101,14 +101,7 @@ func calculate_win_chance(attacker_power: int = -1, defender_power: int = -1) ->
 ## Get total player power including equipment
 func get_player_power() -> int:
 	var base_power = State.player.get("level", 1) * 10  # Base from level
-	
-	# Add equipment power via EquipmentManager
-	var equipment_manager = get_node_or_null("/root/Equipment")
-	if equipment_manager:
-		var total_stats = equipment_manager.get_total_stats()
-		var equipment_power = total_stats.get("attack", 0) + total_stats.get("power", 0)
-		return base_power + equipment_power
-	
+	# TODO: Add equipment power calculation
 	return base_power
 
 ## Get outcome description

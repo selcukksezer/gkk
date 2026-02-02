@@ -54,7 +54,7 @@ const SCREENS = {
 	"event": "res://scenes/ui/screens/EventScreen.tscn",
 	"warehouse": "res://scenes/ui/screens/WarehouseScreen.tscn",
 	"reputation": "res://scenes/ui/screens/ReputationScreen.tscn",
-	"facilities": "res://scenes/ui/screens/FacilitiesScreen.tscn",
+	"facilities": "res://scenes/FacilitiesScreen.tscn",
 	"facility_detail": "res://scenes/ui/screens/FacilityDetailScreen.tscn",
 	"prison": "res://scenes/ui/screens/PrisonScreen.tscn"
 }
@@ -62,6 +62,11 @@ const SCREENS = {
 
 func _ready() -> void:
 	print("[Main] Game starting...")
+	
+	# Debug build: window always on top
+	if OS.is_debug_build():
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
+		print("[Main] Debug build - window set to always on top")
 	
 	# Initialize systems
 	_initialize_systems()

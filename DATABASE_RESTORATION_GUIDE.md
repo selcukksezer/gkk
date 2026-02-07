@@ -127,11 +127,21 @@ The following SQL scripts are provided in `database/migrations/`:
 
 ### Option 1: Complete Restoration (Recommended)
 ```bash
-# Run the master restoration script
-psql -U postgres -d your_database -f database/migrations/00_COMPLETE_RESTORE.sql
+# Run all three scripts in order
+cd /path/to/gkk
+
+# Step 1: Ensure table structure
+psql -U postgres -d your_database -f database/migrations/ensure_items_table_columns.sql
+
+# Step 2: Restore items
+psql -U postgres -d your_database -f database/migrations/restore_itemdatabase_items.sql
+
+# Step 3: Restore facility recipes
+psql -U postgres -d your_database -f database/migrations/restore_facility_recipes.sql
 ```
 
-### Option 2: Step-by-Step Restoration
+### Option 2: Individual Scripts
+Run each script separately if you need more control or if one step fails.
 ```bash
 # Step 1: Ensure table structure
 psql -U postgres -d your_database -f database/migrations/ensure_items_table_columns.sql

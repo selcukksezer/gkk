@@ -184,7 +184,7 @@ INSERT INTO public.items (
 VALUES 
 ('material_leather', 'Deri', 'MATERIAL', 'Hayvan derisi. Zırh ve aksesuarlar yapımında kullanılır.', 'COMMON', 'res://assets/sprites/items/leather.png', 'LEATHER', 8, 4, true, 500, 'farm', 1),
 ('material_quality_leather', 'Kaliteli Deri', 'MATERIAL', 'Işlenmiş yüksek kaliteli deri. Ince zırh yapımında kullanılır.', 'RARE', 'res://assets/sprites/items/quality_leather.png', 'LEATHER', 40, 20, true, 500, 'farm', 5),
-('material_wool', 'Yün', 'MATERIAL', 'Dönerden alınan yün. Kumaş eşyalar yapımında kullanılır.', 'COMMON', 'res://assets/sprites/items/wool.png', 'LEATHER', 6, 3, true, 500, 'farm', 2)
+('material_wool', 'Yün', 'MATERIAL', 'Koyundan alınan yün. Kumaş eşyalar yapımında kullanılır.', 'COMMON', 'res://assets/sprites/items/wool.png', 'LEATHER', 6, 3, true, 500, 'farm', 2)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     type = EXCLUDED.type,
@@ -211,7 +211,7 @@ INSERT INTO public.items (
 VALUES 
 ('material_herb', 'Tıbbi Ot', 'MATERIAL', 'İksir yapımında temel malzeme. Şifa ve buff potionları için gerekli.', 'COMMON', 'res://assets/sprites/items/herb.png', 'HERB', 5, 2, true, 500, 'herb_garden', 1),
 ('material_rare_herb', 'Nadir Ot', 'MATERIAL', 'Nadir ve kuvvetli bitki. Güçlü potion yapımında gereklidir.', 'EPIC', 'res://assets/sprites/items/rare_herb.png', 'HERB', 100, 50, true, 500, 'herb_garden', 5),
-('material_dragon_blood', 'Ejderhain Kanı', 'MATERIAL', 'Efsanevi gücü olan sıvı. En güçlü potion ve runeler gereklidir.', 'LEGENDARY', 'res://assets/sprites/items/dragon_blood.png', 'HERB', 300, 150, true, 500, 'herb_garden', 10)
+('material_dragon_blood', 'Ejderha Kanı', 'MATERIAL', 'Efsanevi gücü olan sıvı. En güçlü potion ve runeler için gereklidir.', 'LEGENDARY', 'res://assets/sprites/items/dragon_blood.png', 'HERB', 300, 150, true, 500, 'herb_garden', 10)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     type = EXCLUDED.type,

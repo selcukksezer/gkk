@@ -4,10 +4,21 @@
 
 Veritabanınız silindi ve 5 temel SQL dosyasını çalıştırdınız. Şimdi oyundaki tüm eşyaları ve üretim sistemlerini geri yüklemek için aşağıdaki adımları takip edin.
 
-## Tek Komut ile Geri Yükleme (ÖNERİLEN)
+## Tek Komutla Geri Yükleme (ÖNERİLEN)
+
+Her bir scripti sırayla çalıştırın:
 
 ```bash
-psql -U postgres -d veritabani_adi -f database/migrations/00_COMPLETE_RESTORE.sql
+cd /path/to/gkk
+
+# Adım 1: Tablo yapısını hazırla
+psql -U postgres -d veritabani_adi -f database/migrations/ensure_items_table_columns.sql
+
+# Adım 2: Eşyaları ekle
+psql -U postgres -d veritabani_adi -f database/migrations/restore_itemdatabase_items.sql
+
+# Adım 3: Tarifleri ekle
+psql -U postgres -d veritabani_adi -f database/migrations/restore_facility_recipes.sql
 ```
 
 **veya Supabase kullanıyorsanız:**

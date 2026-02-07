@@ -5,8 +5,9 @@
 -- It is safe to run multiple times (uses IF NOT EXISTS)
 
 -- Add missing columns for all item types
-ALTER TABLE public.items ADD COLUMN IF NOT EXISTS id text PRIMARY KEY;
-ALTER TABLE public.items ADD COLUMN IF NOT EXISTS name text NOT NULL;
+-- Note: id is the PRIMARY KEY defined at table creation
+ALTER TABLE public.items ADD COLUMN IF NOT EXISTS id text;
+ALTER TABLE public.items ADD COLUMN IF NOT EXISTS name text;
 ALTER TABLE public.items ADD COLUMN IF NOT EXISTS type text NOT NULL;
 ALTER TABLE public.items ADD COLUMN IF NOT EXISTS description text;
 ALTER TABLE public.items ADD COLUMN IF NOT EXISTS rarity text NOT NULL DEFAULT 'COMMON';

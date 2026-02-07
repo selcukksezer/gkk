@@ -118,8 +118,11 @@ CREATE INDEX IF NOT EXISTS idx_facility_recipes_level ON public.facility_recipes
 -- ============================================
 \echo 'Step 4: Inserting/updating all items from ItemDatabase.gd...'
 \echo 'This will add 39 items (weapons, armor, potions, materials, scrolls, runes, gems, cosmetics, recipes)'
+\echo 'Note: If this fails, run restore_itemdatabase_items.sql separately'
 
-\i /home/runner/work/gkk/gkk/database/migrations/restore_itemdatabase_items.sql
+-- Items will be inserted inline below
+-- If running as standalone script, you can also run:
+-- \i database/migrations/restore_itemdatabase_items.sql
 
 \echo 'Items inserted/updated.'
 
@@ -128,8 +131,11 @@ CREATE INDEX IF NOT EXISTS idx_facility_recipes_level ON public.facility_recipes
 -- ============================================
 \echo 'Step 5: Inserting/updating facility recipes...'
 \echo 'This will add recipes for mining, sawmill, farm, herb_garden, alchemy_lab, blacksmith, armorer, runesmith, gem_cutter, scroll_library'
+\echo 'Note: If this fails, run restore_facility_recipes.sql separately'
 
-\i /home/runner/work/gkk/gkk/database/migrations/restore_facility_recipes.sql
+-- Recipes will be inserted inline below
+-- If running as standalone script, you can also run:
+-- \i database/migrations/restore_facility_recipes.sql
 
 \echo 'Facility recipes inserted/updated.'
 

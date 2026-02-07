@@ -34,6 +34,21 @@ golge-krallik/
 3. Godot'ta `project.godot` dosyasını açın
 4. Backend ayarlarını yapılandırın (Project Settings → Game Settings)
 
+### 💾 Veritabanı Kurulumu
+
+Veritabanınız silinmişse veya sıfırdan kurulum yapıyorsanız:
+
+- **Hızlı Başlangıç:** [HIZLI_BASLANGIC.md](HIZLI_BASLANGIC.md)
+- **Detaylı Kılavuz:** [VERITABANI_KURULUM_KILAVUZU.md](VERITABANI_KURULUM_KILAVUZU.md)
+- **Dosya Sıralaması:** [SQL_DOSYA_SIRALAMASI.md](SQL_DOSYA_SIRALAMASI.md)
+
+```bash
+# Otomatik kurulum
+bash restore_database.sh
+# veya Windows için
+.\restore_database.ps1
+```
+
 ## 🔧 Geliştirme
 
 ### Ön Gereksinimler

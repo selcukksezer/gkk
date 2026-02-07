@@ -74,7 +74,7 @@ func _on_register_completed(success: bool, message: String) -> void:
     _show_status(message, success)
     if success:
         await get_tree().create_timer(1.0).timeout
-        close_dialog(true)
+        close_dialog({"success": true, "message": message})
 
 func _on_cancel_pressed() -> void:
-    close_dialog(false)
+    close_dialog({"success": false, "cancelled": true})

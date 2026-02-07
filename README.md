@@ -38,16 +38,22 @@ golge-krallik/
 
 Veritabanınız silinmişse veya sıfırdan kurulum yapıyorsanız:
 
+#### 🎯 Supabase SQL Editor İçin (Önerilen)
+- **Hazır SQL Dosyaları:** [supabase_editor_restore/](supabase_editor_restore/) klasörü
+- 5 dosyayı sırayla kopyala-yapıştır, çalıştır (~2 dakika)
+
+#### 🤖 Otomatik Script İçin
+```bash
+# Linux/Mac
+bash restore_database.sh
+# Windows
+.\restore_database.ps1
+```
+
+#### 📚 Detaylı Kılavuzlar
 - **Hızlı Başlangıç:** [HIZLI_BASLANGIC.md](HIZLI_BASLANGIC.md)
 - **Detaylı Kılavuz:** [VERITABANI_KURULUM_KILAVUZU.md](VERITABANI_KURULUM_KILAVUZU.md)
 - **Dosya Sıralaması:** [SQL_DOSYA_SIRALAMASI.md](SQL_DOSYA_SIRALAMASI.md)
-
-```bash
-# Otomatik kurulum
-bash restore_database.sh
-# veya Windows için
-.\restore_database.ps1
-```
 
 ## 🔧 Geliştirme
 

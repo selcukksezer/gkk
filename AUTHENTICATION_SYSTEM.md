@@ -301,7 +301,7 @@ SELECT * FROM public.users WHERE username = 'testuser';
 
 ## Troubleshooting
 
-### "No game.users row found"
+### "No public.users row found"
 
 **Problem:** Auth user created but no game profile.
 

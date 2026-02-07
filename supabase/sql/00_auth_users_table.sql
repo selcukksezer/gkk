@@ -145,14 +145,22 @@ SET search_path = public
 AS $$
 BEGIN
     -- Create user profile in public.users
+    -- Use ON CONFLICT to handle cases where profile might already exist
     INSERT INTO public.users (auth_id, email, username, display_name)
     VALUES (
         NEW.id,
         NEW.email,
         COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
         COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1))
-    );
+    )
+    ON CONFLICT (auth_id) DO NOTHING;
+    
     RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log error but don't fail the auth user creation
+        RAISE WARNING 'Failed to create game profile for user %: %', NEW.id, SQLERRM;
+        RETURN NEW;
 END;
 $$;
 

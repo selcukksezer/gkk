@@ -32,6 +32,10 @@ func _ready() -> void:
 	if State.has_signal("energy_updated"):
 		State.energy_updated.connect(_on_energy_updated)
 	
+	# Connect to State changes (prison status updates)
+	if State.has_signal("state_changed"):
+		State.state_changed.connect(_on_state_changed)
+	
 	# Rename tabs
 	tabs.set_tab_title(0, "Üretim")
 	tabs.set_tab_title(1, "Kaynaklar") # Rename Recipes tab
@@ -66,10 +70,21 @@ func _on_facilities_updated() -> void:
 func _populate_recipes_tab() -> void:
 	# "Recipes" is now "Resources" / "Management" tab
 	
-	# Clear existing children
+	# Clear existing children immediately
 	for child in recipes_tab.get_children():
+		recipes_tab.remove_child(child)
 		child.queue_free()
-	
+
+	# If player is in prison, show prison notice and block actions
+	if State.in_prison:
+		var prison_notice = Label.new()
+		prison_notice.text = "⚠️  HAPİSTESİNİZ!\nİşlem yapamazsınız."
+		prison_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		prison_notice.add_theme_font_size_override("font_size", 14)
+		prison_notice.add_theme_color_override("font_color", Color.RED)
+		recipes_tab.add_child(prison_notice)
+		return
+
 	await get_tree().process_frame
 	
 	var current_level = current_facility_data.get("level", 1)
@@ -340,11 +355,26 @@ func _process(_delta: float) -> void:
 				# Nothing changed - just update timer text if active
 				_update_timer_label_only()
 
-func _on_production_started(facility_id: String, recipe_name: String, quantity: int, rarity: String) -> void:
+func _on_production_started(facility_id: String, _recipe_name: String, _quantity: int, _rarity: String) -> void:
 	# If this modal is showing the facility that just started production, refresh the queue
 	if current_facility_data.get("id", "") == facility_id:
 		print("[DetailModal] Production started for current facility, refreshing queue")
 		_populate_queue_tab()
+
+func _on_state_changed(key: String, value: Variant) -> void:
+	# React to prison status changes
+	if key == "prison":
+		print("[DetailModal] Prison state changed, refreshing all tabs if visible")
+		if visible:
+			# Refresh all tabs so they show the prison notice or normal content immediately
+			_populate_queue_tab()
+			_populate_recipes_tab()
+			_populate_suspicion_tab()
+			_populate_upgrade_tab()
+			
+			# If imprisoned, disable all buttons
+			if State.in_prison:
+				disable_all_buttons()
 
 func _update_timer_label_only() -> void:
 	"""Updates ONLY the timer label text without touching buttons or other UI."""
@@ -397,7 +427,27 @@ func set_facility_data(facility_type: String, config: Dictionary, facility_data:
 	_populate_recipes_tab()
 	_populate_suspicion_tab()
 	_populate_upgrade_tab()
+	
+	# If player is already imprisoned, disable all buttons
+	if State.in_prison:
+		disable_all_buttons()
 	# _update_risk_header()
+
+## Disable all action buttons in the modal (used when player is imprisoned)
+func disable_all_buttons() -> void:
+	print("[DetailModal] Disabling all buttons due to prison status")
+	_disable_buttons_recursive(queue_tab)
+	_disable_buttons_recursive(recipes_tab)
+	_disable_buttons_recursive(suspicion_tab)
+	_disable_buttons_recursive(upgrade_tab)
+
+## Recursively disable all Button nodes in a container
+func _disable_buttons_recursive(node: Node) -> void:
+	if node is Button:
+		node.disabled = true
+	
+	for child in node.get_children():
+		_disable_buttons_recursive(child)
 	
 	# Start real-time update with _process()
 
@@ -413,7 +463,17 @@ func _populate_queue_tab() -> void:
 	for child in queue_tab.get_children():
 		queue_tab.remove_child(child)
 		child.queue_free()
-	
+
+	# Check if player is in prison (use State.in_prison for real-time updates)
+	if State.in_prison:
+		var prison_notice = Label.new()
+		prison_notice.text = "⚠️  HAPİSTESİNİZ!\nİşlem yapamazsınız."
+		prison_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		prison_notice.add_theme_font_size_override("font_size", 14)
+		prison_notice.add_theme_color_override("font_color", Color.RED)
+		queue_tab.add_child(prison_notice)
+		return
+
 	var facility_id = current_facility_data.get("id", "")
 	if facility_id.is_empty():
 		var empty_label = Label.new()
@@ -575,6 +635,15 @@ func _populate_queue_tab() -> void:
 			cost_lbl.add_theme_color_override("font_color", Color.GRAY)
 		cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		queue_tab.add_child(cost_lbl)
+		
+		# TEST BUTTON: Reset production
+		var reset_btn = Button.new()
+		reset_btn.text = "🔧 TEST: Üretimi Sıfırla"
+		reset_btn.custom_minimum_size = Vector2(0, 40)
+		reset_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		reset_btn.add_theme_color_override("font_color", Color(1, 0.5, 0.5))  # Red tint for testing
+		reset_btn.pressed.connect(_on_reset_production_pressed)
+		queue_tab.add_child(reset_btn)
 
 func _create_resource_queue_card(item_id: String, quantity: int, rarity: String) -> PanelContainer:
 	var panel = PanelContainer.new()
@@ -609,12 +678,21 @@ func _create_resource_queue_card(item_id: String, quantity: int, rarity: String)
 	return panel
 
 func _on_collect_resources_pressed() -> void:
+	# Check if player is in prison (use State.in_prison for real-time updates)
+	if State.in_prison:
+		_show_toast("❌ Hapse düştünüz! Kaynakları toplayamazsınız.")
+		return
+
 	var facility_id = current_facility_data.get("id", "")
 	if facility_id.is_empty(): return
 	
 	var result = await FacilityManager.collect_facility_resources(facility_id)
 	if result.get("success", false):
-		_show_toast("✅ Toplandı: %d kaynak" % result.get("total_count", 0))
+		var count = result.get("total_count", 0)
+		if result.get("admission_occurred", false):
+			_show_toast("⚠️  Hapse Düştünüz! %d kaynak kaybedildi" % count)
+		else:
+			_show_toast("✅ Toplandı: %d kaynak" % count)
 		_populate_queue_tab() # Refresh UI
 	else:
 		if result.get("error", "") == "Inventory is full":
@@ -640,6 +718,19 @@ func _on_start_production_pressed() -> void:
 			State.energy_updated.emit()
 	else:
 		_show_toast("❌ Başlatılamadı: %s" % result.error)
+
+func _on_reset_production_pressed() -> void:
+	var facility_id = current_facility_data.get("id", "")
+	if facility_id.is_empty(): return
+	
+	_show_toast("🔧 Üretim sıfırlanıyor...")
+	
+	var result = await FacilityManager.reset_facility_production(facility_id)
+	if result.success:
+		_show_toast("✅ Üretim sıfırlandı! (%d queue item silindi)" % result.get("queue_items_deleted", 0))
+		_populate_queue_tab()
+	else:
+		_show_toast("❌ Sıfırlanamadı: %s" % result.error)
 
 func _on_energy_updated() -> void:
 	# Refresh UI to check button state
@@ -737,10 +828,21 @@ func _on_collect_production_pressed() -> void:
 # ==================== SUSPICION TAB ====================
 
 func _populate_suspicion_tab() -> void:
-	# Clear existing
+	# Clear existing immediately
 	for child in suspicion_tab.get_children():
+		suspicion_tab.remove_child(child)
 		child.queue_free()
-	
+
+	# Prison check: block suspicion tab when jailed
+	if State.in_prison:
+		var prison_notice = Label.new()
+		prison_notice.text = "⚠️  HAPİSTESİNİZ!\nİşlem yapamazsınız."
+		prison_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		prison_notice.add_theme_font_size_override("font_size", 14)
+		prison_notice.add_theme_color_override("font_color", Color.RED)
+		suspicion_tab.add_child(prison_notice)
+		return
+
 	await get_tree().process_frame
 	
 	var suspicion = current_facility_data.get("suspicion_level", 0)
@@ -824,10 +926,21 @@ func _on_bribe_pressed() -> void:
 
 
 func _populate_upgrade_tab() -> void:
-	# Clear existing
+	# Clear existing immediately
 	for child in upgrade_tab.get_children():
+		upgrade_tab.remove_child(child)
 		child.queue_free()
-	
+
+	# Prison check: block upgrade tab when jailed
+	if State.in_prison:
+		var prison_notice = Label.new()
+		prison_notice.text = "⚠️  HAPİSTESİNİZ!\nİşlem yapamazsınız."
+		prison_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		prison_notice.add_theme_font_size_override("font_size", 14)
+		prison_notice.add_theme_color_override("font_color", Color.RED)
+		upgrade_tab.add_child(prison_notice)
+		return
+
 	await get_tree().process_frame
 	
 	var level_raw = current_facility_data.get("level", 1)

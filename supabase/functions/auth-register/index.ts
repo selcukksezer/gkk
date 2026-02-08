@@ -16,11 +16,11 @@ serve(async (req) => {
     const { email, username, password, referral_code } = await req.json()
 
     // Validation
-    if (!email || !username || !password) {
+    if (!email || !password) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Email, kullanıcı adı ve şifre gerekli' }
+          error: 'Email and password are required' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -35,7 +35,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Geçersiz e-posta formatı' }
+          error: 'Invalid email format' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -44,12 +44,15 @@ serve(async (req) => {
       )
     }
 
-    // Validate username
-    if (username.length < 3 || username.length > 20) {
+    // Generate username from email if not provided
+    const finalUsername = username || email.split('@')[0]
+
+    // Validate username if provided
+    if (username && (username.length < 3 || username.length > 20)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Kullanıcı adı 3-20 karakter olmalı' }
+          error: 'Username must be 3-20 characters' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -86,16 +89,16 @@ serve(async (req) => {
 
     // Check if username already exists
     const { data: existingUsername } = await supabaseAdmin
-      .from('users')
+      .from('public.users')
       .select('id')
-      .eq('username', username)
+      .eq('username', finalUsername)
       .single()
 
     if (existingUsername) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Bu kullanıcı adı zaten kullanılıyor' }
+          error: 'Username already taken' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -106,7 +109,7 @@ serve(async (req) => {
 
     // Check if email already exists
     const { data: existingEmail } = await supabaseAdmin
-      .from('users')
+      .from('game.users')
       .select('id')
       .eq('email', email)
       .single()
@@ -128,7 +131,7 @@ serve(async (req) => {
     let referrer_id = null
     if (referral_code && referral_code.trim() !== '') {
       const { data: referrer } = await supabaseAdmin
-        .from('users')
+        .from('public.users')
         .select('id')
         .eq('referral_code', referral_code.toUpperCase())
         .single()
@@ -154,8 +157,8 @@ serve(async (req) => {
       password,
       email_confirm: true, // Auto-confirm email for simplicity
       user_metadata: {
-        username,
-        display_name: username
+        username: finalUsername,
+        display_name: finalUsername
       }
     })
 
@@ -173,10 +176,29 @@ serve(async (req) => {
       )
     }
 
-    // The trigger will auto-create the user profile, but we can also update it with referral
+    // Ensure profile exists (idempotent) and update referral if provided
+    await supabaseAdmin
+      .from('public.users')
+      .upsert([
+        {
+          auth_id: authData.user.id,
+          email: authData.user.email,
+          username: finalUsername,
+          display_name: finalUsername,
+          level: 1,
+          gold: 1000,
+          gems: 100,
+          energy: 100,
+          max_energy: 100,
+          created_at: new Date().toISOString(),
+          last_login_at: new Date().toISOString(),
+          is_online: false
+        }
+      ], { onConflict: 'auth_id' })
+
     if (referrer_id) {
       await supabaseAdmin
-        .from('users')
+        .from('public.users')
         .update({ referred_by: referrer_id })
         .eq('auth_id', authData.user.id)
     }
@@ -205,12 +227,50 @@ serve(async (req) => {
       )
     }
 
-    // Get the full user profile
-    const { data: userProfile } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('auth_id', authData.user.id)
-      .single()
+    // Wait a moment for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Get the full user profile (with retries if trigger hasn't completed)
+    let userProfile = null
+    let retries = 3
+    while (retries > 0 && !userProfile) {
+      const { data } = await supabaseAdmin
+        .from('public.users')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single()
+
+      if (data) {
+        userProfile = data
+        break
+      }
+
+      // Wait before retry
+      if (retries > 1) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      retries--
+    }
+
+    // If profile creation failed, still return success but log the issue
+    if (!userProfile) {
+      console.warn('Profile not found after trigger, using auth data')
+      userProfile = {
+        auth_id: authData.user.id,
+        email: authData.user.email,
+        username: finalUsername,
+        display_name: finalUsername,
+        id: authData.user.id,
+        level: 1,
+        gold: 1000,
+        gems: 100,
+        energy: 100,
+        max_energy: 100,
+        created_at: new Date().toISOString(),
+        last_login_at: new Date().toISOString(),
+        is_online: false
+      }
+    }
 
     return new Response(
       JSON.stringify({ 

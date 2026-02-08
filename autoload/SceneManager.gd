@@ -43,10 +43,8 @@ func _ready() -> void:
 func _on_state_changed(key: String, value: Variant) -> void:
 	if key == "prison":
 		var in_prison = value.get("in_prison", false)
-		if in_prison and current_scene_name != "prison":
-			print("[Scenes] Player imprisoned! Redirecting to Prison Screen.")
-			change_scene("prison", 0.5)
-		elif not in_prison and current_scene_name == "prison":
+		# Removed automatic prison screen opening on imprisonment
+		if not in_prison and current_scene_name == "prison":
 			print("[Scenes] Player released! Redirecting to Home.")
 			change_scene("home", 0.5)
 

@@ -77,33 +77,33 @@ func _ready() -> void:
 	# Decide initial screen based on current session state (no server validation)
 	print("[Main] Checking session state")
 	if Session and Session.is_logged_in():
-		print("[Main] Session found; showing home")
-		show_screen("home", false)
+		print("[Main] Session found; waiting for session validation to complete...")
+		_show_loading_overlay(true)
 		
-		# If player data is empty, fetch it from API with timeout protection
-		if State.get_player_data().is_empty() and Network:
-			print("[Main] Player data empty, fetching from API...")
-			_show_loading_overlay(true)
-			
-			# Start a timeout in case profile fetch stalls (15 seconds timeout)
-			var timeout_timer = get_tree().create_timer(15.0)
-			timeout_timer.timeout.connect(func():
-				print("[Main] Startup profile fetch timed out; hiding overlay")
-				_show_loading_overlay(false)
-			)
-			
-			var result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
-			
-			if result and result.success and result.data:
-				State.load_player_data(result.data)
-				print("[Main] Player profile loaded at startup")
-			else:
-				print("[Main] Failed to load player profile at startup (non-fatal)")
-			# Hide overlay regardless
-			_show_loading_overlay(false)
+		# Wait for session validation to complete (with timeout)
+		var session_ready: bool = false
+		var timeout_timer = Timer.new()
+		timeout_timer.wait_time = SESSION_CHECK_TIMEOUT
+		timeout_timer.one_shot = true
+		add_child(timeout_timer)
+		timeout_timer.start()
+		
+		# Wait for either session_status_checked signal or timeout
+		while not session_ready and not timeout_timer.is_stopped():
+			await get_tree().process_frame
+			if not State.get_player_data().is_empty():
+				session_ready = true
+				break
+		
+		timeout_timer.queue_free()
+		_show_loading_overlay(false)
+		
+		if session_ready:
+			print("[Main] Player data available from session check")
+			show_screen("home", false)
 		else:
-			print("[Main] Player data available, no API fetch needed")
-
+			print("[Main] Session validation timeout or failed; showing login")
+			show_screen("login", false)
 	else:
 		print("[Main] No session; showing login")
 		show_screen("login", false)
@@ -452,7 +452,7 @@ func _on_profile_check_timeout() -> void:
 	print("[Main] Profile check timeout - verifying profile presence and session")
 	# If the user is expected to be logged in but we have no player data, try fetching profile once, otherwise do nothing (do not force logout)
 	if Session and Session.is_logged_in() and State.get_player_data().is_empty() and Network:
-		var result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
+		var result = await State.fetch_player_profile()
 		if result.success and result.data:
 			State.load_player_data(result.data)
 			print("[Main] Profile loaded during background check")

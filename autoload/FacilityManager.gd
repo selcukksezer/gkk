@@ -261,7 +261,7 @@ func fetch_my_facilities(force_refresh: bool = false) -> Dictionary:
 						continue
 						
 					cached_facilities[facility.id] = facility
-					var queue = facility.get("facility_queue", [])
+					var _queue = facility.get("facility_queue", [])
 					
 					# --- DEBUG REMOVED ---
 					# print("[FacilityManager] Facility %s (%s): level=%s, queue_size=%s" % [facility.get("type"), facility.get("id"), facility.get("level"), queue.size()])
@@ -310,9 +310,8 @@ func unlock_facility(facility_type: String) -> Dictionary:
 			facility_unlocked.emit("", FACILITY_TYPES.get(facility_type, facility_type))
 			facility_unlocked.emit("", FACILITY_TYPES.get(facility_type, facility_type))
 			await fetch_my_facilities(true)
-			# Also refresh user profile to update gold
-			if State.has_method("refresh_profile"):
-				State.refresh_profile()
+			# Refresh all player data from database (gold after unlock_cost deducted)
+			await State.refresh_data()
 				
 			result = {"success": true}
 			print("[FacilityManager] Facility unlocked successfully via RPC: %s" % facility_type)
@@ -328,31 +327,61 @@ func unlock_facility(facility_type: String) -> Dictionary:
 
 # ==================== GLOBAL SUSPICION / RISK HELPER ====================
 func get_global_suspicion_risk() -> int:
+	# Calculate risk from facilities with ACTIVE production
+	# Formula: (Facility Count * 5) + (Sum of Facility Levels * 0.5)
+	# 
+	# Risk INCREASES when production starts
+	# Risk STAYS SAME while production runs (even if expired/ready for collection)
+	# Risk DECREASES only when production is collected and cleared
+	
 	var active_count = 0
 	var level_sum = 0
-	var now = Time.get_unix_time_from_system()
 	
+	# Count all facilities with active production (production_started_at != null)
+	# Don't check duration — keep counting until collection clears production_started_at
 	for facility in cached_facilities.values():
 		var production_started_at = facility.get("production_started_at")
+		# If production was ever started and not yet collected, count it
 		if production_started_at != null:
-			var start_time = 0
-			if production_started_at is String:
-				var dt = Time.get_datetime_dict_from_datetime_string(production_started_at, false)
-				start_time = Time.get_unix_time_from_datetime_dict(dt)
-			elif production_started_at is int or production_started_at is float:
-				start_time = production_started_at
-				
-			# Check if still active (within 1 hour)
-			if now < start_time + 3600:
-				active_count += 1
-				level_sum += facility.get("level", 1)
-				
-	# FORMULA: Base Risk (Active Facilities * 5) + (Level Sum * 0.5)
-	# User Request: "4 tesis çalışıyorsa %25"
-	# 4 Facilities * 5 = 20. Plus levels (say 4 * 1 = 4) * 0.5 = 2. Total 22%. Close enough.
+			active_count += 1
+			level_sum += facility.get("level", 1)
 	
-	var risk = (active_count * 5.0) + (level_sum * 0.5)
-	return int(clamp(risk, 0.0, 100.0))
+	# Formula: (Active Count * 5) + (Level Sum * 0.5)
+	var risk = (active_count * 5) + (level_sum * 0.5)
+	return int(clamp(risk, 0, 100))
+
+# ==================== SYNC GLOBAL RISK TO DATABASE ====================
+func sync_global_risk_to_database() -> Dictionary:
+	# Calculate current risk and save to database
+	# Server will subtract risk_baseline from this to get displayed risk
+	var calculated_risk = get_global_suspicion_risk()
+	print("[FacilityManager] [SYNC] Calculating risk to sync: %d%%" % calculated_risk)
+	
+	var response = await Network.http_post("/rest/v1/rpc/update_global_suspicion_level", {
+		"p_global_suspicion": calculated_risk
+	})
+	
+	print("[FacilityManager] [SYNC] Full RPC response: %s" % response)
+	
+	if response is Dictionary and response.get("success", false):
+		var rpc_result = response.get("data", {})
+		print("[FacilityManager] [SYNC] RPC data: %s" % rpc_result)
+		if rpc_result is Dictionary and rpc_result.get("success", false):
+			# Use the server-adjusted risk (new_level) which already subtracts baseline
+			var adjusted_risk = rpc_result.get("new_level", 0)
+			var baseline = rpc_result.get("baseline", 0)
+			print("[FacilityManager] ✓ Global risk synced to DB | Calculated: %d%%, Baseline: %d%%, Displayed: %d%%" % [calculated_risk, int(baseline), adjusted_risk])
+			# Update State's player data with DISPLAYED risk (after baseline subtraction)
+			State.player["global_suspicion_level"] = adjusted_risk
+			return {"success": true, "new_risk": adjusted_risk, "calculated_risk": calculated_risk, "baseline": baseline}
+		else:
+			var err_msg = rpc_result.get("error", "Unknown RPC Error") if rpc_result is Dictionary else str(rpc_result)
+			print("[FacilityManager] ✗ Failed to sync global risk: %s" % err_msg)
+			return {"success": false, "error": err_msg}
+	else:
+		var err_msg = response.get("error", "Unknown") if response is Dictionary else str(response)
+		print("[FacilityManager] ✗ Failed to sync global risk (HTTP): %s" % err_msg)
+		return {"success": false, "error": err_msg}
 
 # ==================== RPC WRAPPER: COLLECT FACILITY PRODUCTION ====================
 func collect_facility_production(facility_id: String) -> Dictionary:
@@ -375,6 +404,8 @@ func collect_facility_production(facility_id: String) -> Dictionary:
 			var items = rpc_result.get("collected_items", [])
 			collection_triggered.emit(facility_id, items.size())
 			await fetch_my_facilities(true)
+			# Refresh all player data from database (including gold from production)
+			await State.refresh_data()
 			# Refresh inventory to show collected items
 			if Inventory:
 				Inventory.fetch_inventory()
@@ -382,6 +413,8 @@ func collect_facility_production(facility_id: String) -> Dictionary:
 		elif rpc_result is Array: # Maybe it returns just the items array?
 			collection_triggered.emit(facility_id, rpc_result.size())
 			await fetch_my_facilities(true)
+			# Refresh all player data from database (including gold from production)
+			await State.refresh_data()
 			# Refresh inventory to show collected items
 			if Inventory:
 				Inventory.fetch_inventory()
@@ -437,8 +470,9 @@ func upgrade_facility(facility_type: String) -> Dictionary:
 			# Emit generic update so UI refreshes without waiting for fetch
 			facilities_updated.emit()
 			
-			# Still fetch to be sure, but UI is already happy
-			fetch_my_facilities.call_deferred(true)
+			# Fetch facilities and refresh player data from database
+			await fetch_my_facilities(true)
+			await State.refresh_data()
 			
 			result = {"success": true, "new_level": new_level, "new_cost": rpc_result.get("next_upgrade_cost", 0)}
 		else:
@@ -488,14 +522,8 @@ func increment_facility_suspicion(facility_id: String) -> Dictionary:
 
 # ==================== RPC WRAPPER: BRIBE OFFICIALS ====================
 func bribe_officials(facility_type: String, gems_spent: int) -> Dictionary:
-	# Get the actual facility data to find the UUID
-	var facility = get_facility_by_type(facility_type)
-	if facility.is_empty():
-		return {"success": false, "new_suspicion": 0, "gems_remaining": 0, "error": "Facility not found"}
-	
-	var facility_id = facility.get("id", "")
 	var response = await Network.http_post("/rest/v1/rpc/bribe_officials", {
-		"p_facility_id": facility_id,
+		"p_facility_type": facility_type,
 		"p_amount_gems": gems_spent
 	})
 	var result = {}
@@ -504,15 +532,19 @@ func bribe_officials(facility_type: String, gems_spent: int) -> Dictionary:
 		var rpc_result = response.get("data", {})
 		if rpc_result is Dictionary and rpc_result.get("success", false):
 			var new_suspicion = rpc_result.get("new_suspicion", 0)
-			suspicion_changed.emit(facility_id, new_suspicion)
-			bribe_completed.emit(facility_id, gems_spent)
+			var baseline_set = rpc_result.get("baseline_set", 0)
+			print("[FacilityManager] ✓ Bribe successful | Baseline set to: %d%%", baseline_set)
+			suspicion_changed.emit(facility_type, new_suspicion)
+			bribe_completed.emit(facility_type, gems_spent)
 			
-			# Refresh profile for gems update
-			if State.has_method("refresh_profile"):
-				State.refresh_profile()
-				
+			# Refresh facilities and player data from database (gems after bribe deducted, baseline set)
 			await fetch_my_facilities(true)
-			result = {"success": true, "new_suspicion": new_suspicion}
+			await State.refresh_data()
+			
+			# Sync global risk to database (calculated risk - baseline = 0 immediately after bribe)
+			await sync_global_risk_to_database()
+			
+			result = {"success": true, "new_suspicion": new_suspicion, "baseline_set": baseline_set}
 		else:
 			result = {"success": false, "error": rpc_result.get("error", "RPC Error")}
 	else:
@@ -631,7 +663,7 @@ func get_facility_level(facility_id: String) -> int:
 	return cached_facilities.get(facility_id, {}).get("level", 0)
 
 func get_facility_suspicion(facility_id: String) -> int:
-	return cached_facilities.get(facility_id, {}).get("suspicion", 0)
+	return cached_facilities.get(facility_id, {}).get("suspicion_level", 0)
 
 func get_production_queue(facility_id: String) -> Array:
 	# Support both 'facility_queue' (from RPC) and 'production_queue' (legacy)
@@ -648,7 +680,7 @@ func is_queue_full(facility_id: String) -> bool:
 	return get_production_queue_count(facility_id) >= 10
 
 func get_upgrade_cost(facility_type: String) -> int:
-	var config = FACILITIES_CONFIG.get(facility_type, {})
+	var _config = FACILITIES_CONFIG.get(facility_type, {})
 	var facility = get_facility_by_type(facility_type)
 	if facility.is_empty():
 		return 0
@@ -664,9 +696,8 @@ func get_upgrade_cost(facility_type: String) -> int:
 
 func _ready() -> void:
 	print("[FacilityManager] Initializing...")
-	var result = await fetch_my_facilities(true)
-	print("[FacilityManager] Initial fetch result: %s" % result)
-	
+
+	# Set up refresh timer for periodic cache invalidation
 	var refresh_timer = Timer.new()
 	add_child(refresh_timer)
 	refresh_timer.timeout.connect(func():
@@ -674,6 +705,25 @@ func _ready() -> void:
 			fetch_my_facilities()
 	)
 	refresh_timer.start(30.0)
+
+	# Wait a frame to ensure Session is initialized
+	await get_tree().process_frame
+
+	# Only fetch facilities when user logs in
+	Session.logged_in.connect(func(_player_data):
+		print("[FacilityManager] User logged in, fetching facilities...")
+		var result = await fetch_my_facilities(true)
+		print("[FacilityManager] Initial fetch result: %s" % result)
+	)
+
+	# Check if already authenticated - must have both flag and token
+	if Session.is_authenticated and not Session.access_token.is_empty():
+		print("[FacilityManager] User already authenticated with token, fetching facilities...")
+		var result = await fetch_my_facilities(true)
+		print("[FacilityManager] Initial fetch result: %s" % result)
+	else:
+		print("[FacilityManager] User not authenticated yet, will fetch when logged in")
+
 	print("[FacilityManager] Ready!")
 
 # ==================== DEBUG ====================
@@ -841,9 +891,9 @@ func calculate_idle_resources(facility: Dictionary) -> Dictionary:
 	var production_rate = base_rate * facility_level * 10  # 10x multiplier for testing
 	var total_resources = int(hours_elapsed * production_rate)
 	
-	# Cap by offline production cap
-	if total_resources > offline_cap:
-		total_resources = offline_cap
+	# Cap at 100 — must match server collect_facility_resources_v2
+	if total_resources > 100:
+		total_resources = 100
 	
 	if total_resources <= 0:
 		return {"resources": [], "total_count": 0, "status": current_status, "remaining_seconds": remaining_seconds}
@@ -859,20 +909,39 @@ func calculate_idle_resources(facility: Dictionary) -> Dictionary:
 			unlocked_rarities.append(rarity)
 	
 	var collected_resources = []
-	var rng = RandomNumberGenerator.new()
-	rng.seed = start_time  # Deterministic seed
 	
-	for i in range(total_resources):
-		# Pick rarity based on weights
-		var roll = rng.randf() * total_weight
-		var cumulative = 0.0
-		var selected_rarity = "COMMON"
+	# ====== DETERMINISTIC SEED — must match server exactly ======
+	# Server uses: hash(production_started_at_string) % 2147483647
+	var production_started_at_str = ""
+	if production_started_at is String:
+		production_started_at_str = production_started_at
+	else:
+		production_started_at_str = str(production_started_at)
+	var det_seed = hash(production_started_at_str) % 2147483647
+	if det_seed < 0:
+		det_seed = -det_seed
+	
+	# ====== SERVER-MATCHING ITEM GENERATION (LCG RNG) ======
+	# Server loop: FOR v_i IN 1..v_total_qty  (1-indexed!)
+	# RNG formula: ((seed + v_i) * 16807.0 % 2147483647.0) / 2147483647.0
+	for i in range(1, total_resources + 1):
+		# LCG RNG matching server exactly
+		var rng_val = fmod(float(det_seed + i) * 16807.0, 2147483647.0) / 2147483647.0
 		
-		for rarity in ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"]:
-			cumulative += weights.get(rarity, 0)
-			if roll <= cumulative:
-				selected_rarity = rarity
-				break
+		# Pick rarity based on weights (same logic as server)
+		var selected_rarity = "COMMON"
+		var common_pct = weights.get("COMMON", 700.0) / total_weight
+		if common_pct <= rng_val:
+			# Not COMMON → find which rarity
+			var cum = common_pct
+			if cum + weights.get("UNCOMMON", 0.0) / total_weight > rng_val:
+				selected_rarity = "UNCOMMON"
+			elif cum + weights.get("UNCOMMON", 0.0) / total_weight + weights.get("RARE", 0.0) / total_weight > rng_val:
+				selected_rarity = "RARE"
+			elif cum + weights.get("UNCOMMON", 0.0) / total_weight + weights.get("RARE", 0.0) / total_weight + weights.get("EPIC", 0.0) / total_weight > rng_val:
+				selected_rarity = "EPIC"
+			else:
+				selected_rarity = "LEGENDARY"
 		
 		# Downgrade if not unlocked
 		if selected_rarity not in unlocked_rarities:
@@ -885,17 +954,17 @@ func calculate_idle_resources(facility: Dictionary) -> Dictionary:
 			else:
 				selected_rarity = "COMMON"
 		
-		# Pick specific resource based on rarity
+		# Pick resource index — same as server
 		var resource_index = 0
 		match selected_rarity:
 			"COMMON":
-				resource_index = rng.randi() % 2
+				resource_index = (det_seed + i) % 2  # matches server: ((p_seed + v_i) % 2)
 			"UNCOMMON":
 				resource_index = 2
 			"RARE":
 				resource_index = 3
 			"EPIC":
-				resource_index = 4
+				resource_index = 3  # server uses 3 for EPIC
 			"LEGENDARY":
 				resource_index = 4
 		
@@ -956,7 +1025,16 @@ func start_facility_production(facility_id: String) -> Dictionary:
 			facility["production_started_at"] = Time.get_datetime_string_from_system(true, true)
 			print("[FacilityManager] Set local production_started_at: ", facility["production_started_at"])
 			facility["is_active"] = true
-			
+		
+		# Refetch facilities from server to ensure production_started_at is correct
+		await fetch_my_facilities(true)
+		
+		# Sync global risk to database after production started
+		await sync_global_risk_to_database()
+		
+		# Refresh player data from database (gets updated global_suspicion_level)
+		await State.refresh_data()
+		
 		facilities_updated.emit()
 		final_result = {"success": true, "new_energy": State.current_energy}
 	else:
@@ -967,7 +1045,7 @@ func start_facility_production(facility_id: String) -> Dictionary:
 		
 	return final_result
 
-## Collect resources from a facility (RPC)
+## Collect resources from a facility (RPC V2 - Advanced)
 func collect_facility_resources(facility_id: String) -> Dictionary:
 	print("[FacilityManager] Collecting resources from facility: %s" % facility_id)
 	
@@ -977,28 +1055,44 @@ func collect_facility_resources(facility_id: String) -> Dictionary:
 		print("[FacilityManager] Facility not found in cache: %s" % facility_id)
 		return {"success": false, "error": "Facility not found"}
 	
-	# Calculate resources
+	# Calculate resources for preview (same algorithm as server)
 	var result = calculate_idle_resources(facility)
-	
-	print("[FacilityManager] Idle resources calculated: total_count=%d, status=%s" % [result.total_count, result.get("status", "unknown")])
+	print("[FacilityManager] Resources to show: total_count=%d, status=%s" % [result.total_count, result.get("status", "unknown")])
 	
 	if result.total_count == 0:
 		return {"success": false, "error": "No resources to collect"}
 	
-	# Call RPC to add resources to inventory and update timestamp
+	# Generate deterministic seed — same as calculate_idle_resources uses
+	var started_at = facility.get("production_started_at")
+	var started_at_str = ""
+	if started_at is String:
+		started_at_str = started_at
+	else:
+		started_at_str = str(started_at)
+	var seed = hash(started_at_str) % 2147483647
+	if seed < 0:
+		seed = -seed
+	
+	print("[FacilityManager] Using seed: %d for deterministic RNG" % seed)
+	
+	# Call RPC V2 with seed and total_count for deterministic generation
 	var rpc_payload = {
 		"p_facility_id": facility_id,
-		"p_resources": result.resources
+		"p_seed": seed,
+		"p_total_count": result.total_count
 	}
 	
-	var response = await Network.http_post("/rest/v1/rpc/collect_facility_resources", rpc_payload)
+	var response = await Network.http_post("/rest/v1/rpc/collect_facility_resources_v2", rpc_payload)
 	
 	# Check if HTTP request succeeded
 	if not response.get("success", false):
-		print("[FacilityManager] HTTP request failed: %s" % response.get("error", "Unknown"))
+		print("[FacilityManager] HTTP request failed!")
+		print("[FacilityManager] Response code: %s" % response.get("code", "?"))
+		print("[FacilityManager] Response data: %s" % response.get("data", null))
+		print("[FacilityManager] Response error: %s" % response.get("error", null))
 		return {"success": false, "error": response.get("error", "Network error")}
 	
-	# Check if RPC itself succeeded (wrapped in response.data)
+	# Check if RPC itself succeeded
 	var rpc_result = response.get("data", {})
 	if not (rpc_result is Dictionary and rpc_result.get("success", false)):
 		var err = rpc_result.get("error", "Unknown RPC error") if rpc_result is Dictionary else "Invalid RPC response"
@@ -1007,54 +1101,115 @@ func collect_facility_resources(facility_id: String) -> Dictionary:
 			"success": false,
 			"error": err,
 			"required_slots": rpc_result.get("required_slots", null) if rpc_result is Dictionary else null,
-			"available_slots": rpc_result.get("available_slots", null) if rpc_result is Dictionary else null,
-			"count": rpc_result.get("count", 0) if rpc_result is Dictionary else 0
+			"available_slots": rpc_result.get("available_slots", null) if rpc_result is Dictionary else null
 		}
 	
-	# Log RPC result details
-	print("[FacilityManager] RPC returned: count=%s, items_inserted=%s, items_updated=%s" % [
-		rpc_result.get("count", 0),
-		rpc_result.get("items_inserted", 0),
-		rpc_result.get("items_updated", 0)
-	])
+	# ===== VALIDATION =====
+	var shown_count = result.total_count
+	var added_count = rpc_result.get("count", 0)
+	var items_generated = rpc_result.get("items_generated", [])
+	var items_breakdown = rpc_result.get("items_breakdown", {})
 	
-	# Full RPC response for debugging
-	print("[FacilityManager] Full RPC response: %s" % rpc_result)
+	# ===== PRISON CHECK DEBUG =====
+	var prison_check = rpc_result.get("prison_check", {})
+	if prison_check:
+		print("\n[FacilityManager] ===== PRISON CHECK DEBUG =====")
+		print("[FacilityManager] Global Suspicion: %d" % prison_check.get("global_suspicion", 0))
+		print("[FacilityManager] Prison Chance: %d%%" % prison_check.get("prison_chance", 0))
+		print("[FacilityManager] Prison Roll: %.2f" % prison_check.get("prison_roll", 0.0))
+		print("[FacilityManager] Admission Occurred: %s" % str(prison_check.get("admission_occurred", false)))
+		print("[FacilityManager] Prison Log: %s" % prison_check.get("prison_log", "N/A"))
+		print("[FacilityManager] ===== END PRISON CHECK =====\n")
 	
-	# Success! Update local cache
-	facility["last_production_collected_at"] = Time.get_datetime_string_from_system(false, true)
+	print("\n[FacilityManager] ===== COLLECTION REPORT =====")
+	print("[FacilityManager] Shown to player: %d items" % shown_count)
+	print("[FacilityManager] Actually added to inventory: %d items" % added_count)
+	print("[FacilityManager] Number of different item types: %d" % items_generated.size())
+	print("[FacilityManager] Breakdown by item:")
 	
-	# If production duration expired (120s), server reset production_started_at to NULL
-	# Update cache to reflect this
-	var resources_data = calculate_idle_resources(facility)
-	var remaining_sec = resources_data.get("remaining_seconds", 0)
-	if remaining_sec <= 0:
-		# Production expired, reset it
-		facility["production_started_at"] = null
-		print("[FacilityManager] Production expired - reset production_started_at to null")
+	for item in items_generated:
+		var item_name = item.get("item_name", "?")
+		var item_qty = item.get("quantity", 0)
+		print("  → %s: %d" % [item_name, item_qty])
 	
-	# Emit signal
-	collection_triggered.emit(facility_id, result.total_count)
-	
-	# Refresh inventory
-	print("[FacilityManager] Calling Inventory.fetch_inventory()...")
-	if Inventory:
-		print("[FacilityManager] Inventory exists, calling fetch...")
-		await Inventory.fetch_inventory()
-		print("[FacilityManager] Inventory fetch completed")
+	if shown_count == added_count:
+		print("[FacilityManager] ✅ MATCH: Shown == Added")
 	else:
-		print("[FacilityManager] ERROR: Inventory autoload not found!")
+		print("[FacilityManager] ⚠️  MISMATCH: Shown (%d) != Added (%d)" % [shown_count, added_count])
 	
-	print("[FacilityManager] Successfully collected %d resources" % result.total_count)
+	print("[FacilityManager] Seed used: %d" % rpc_result.get("seed_used", seed))
+	print("[FacilityManager] ===== END REPORT =====\n")
+	
+	# ===== CHECK IF PRISON ADMISSION OCCURRED =====
+	var admission_occurred = prison_check.get("admission_occurred", false) if prison_check else false
+	
+	if admission_occurred:
+		print("[FacilityManager] Player admitted to prison! Not adding resources to inventory.")
+		# Don't add items to inventory — player is in prison
+		added_count = 0
+	
+	# Refresh facilities cache (production cleared on server)
+	await fetch_my_facilities(true)
+	
+	# Sync global risk to database after collection
+	# This will update State.player["global_suspicion_level"] 
+	await sync_global_risk_to_database()
+	
+	# Immediately refresh inventory so player sees items right away (if not imprisoned)
+	if not admission_occurred and Inventory:
+		await Inventory.fetch_inventory()
+	
+	# Refresh player data from server (gets latest global_suspicion_level and in_prison status)
+	await State.refresh_data()
+	
+	# If admitted to prison, show prison screen
+	if admission_occurred:
+		print("[FacilityManager] Showing PrisonScreen...")
+		if Scenes:
+			Scenes.change_scene("PrisonScreen")
+	
+	# Emit collection completed signal for other screens
+	collection_triggered.emit(facility_id, added_count)
+	
+	# Return detailed result for UI — use server count as authoritative
 	return {
 		"success": true,
-		"resources": result.resources,
-		"total_count": result.total_count,
-		"items_inserted": rpc_result.get("items_inserted", 0),
-		"items_updated": rpc_result.get("items_updated", 0)
+		"count": added_count,
+		"total_count": added_count if not admission_occurred else 0,
+		"items_generated": items_generated if not admission_occurred else [],
+		"breakdown": items_breakdown if not admission_occurred else {},
+		"shown_count": shown_count if not admission_occurred else 0,
+		"match": (shown_count == added_count) if not admission_occurred else false,
+		"message": "Resources collected: %d items" % added_count if not admission_occurred else "Sent to prison! Resources lost.",
+		"admission_occurred": admission_occurred
 	}
 
 ## Get estimated resources ready for collection (for UI display)
 func get_resources_ready(facility: Dictionary) -> int:
 	var result = calculate_idle_resources(facility)
 	return result.total_count
+
+## TESTING: Reset ALL facility production (clears production for ALL facilities)
+func reset_all_facility_production() -> Dictionary:
+	var response = await Network.http_post("/rest/v1/rpc/reset_all_facility_production", {})
+	
+	if not response.get("success", false):
+		print("[FacilityManager] Reset all failed: %s" % response.get("error", "Unknown error"))
+		return {"success": false, "error": response.get("error")}
+	
+	var result = response.get("data", {})
+	print("[FacilityManager] ✅ All production reset: %s" % result.get("message", "Done"))
+	print("[FacilityManager] Facilities reset: %d" % result.get("facilities_reset", 0))
+	print("[FacilityManager] Queue items deleted: %d" % result.get("queue_items_deleted", 0))
+	
+	# Refresh and sync global risk (should be 0 now)
+	await fetch_my_facilities(true)
+	await sync_global_risk_to_database()
+	
+	return {
+		"success": true,
+		"message": result.get("message", "All production reset"),
+		"facilities_reset": result.get("facilities_reset", 0),
+		"queue_items_deleted": result.get("queue_items_deleted", 0)
+	}
+

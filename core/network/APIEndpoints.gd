@@ -15,7 +15,7 @@ const AUTH_REFRESH = "/auth/v1/token?grant_type=refresh_token"
 const AUTH_RESET_PASSWORD = "/auth/v1/recover"
 
 ## Player
-const PLAYER_PROFILE = API_VERSION + "/player/profile"
+const PLAYER_PROFILE = "/functions/v1/player-profile"
 const PLAYER_UPDATE = API_VERSION + "/player/update"
 const PLAYER_STATS = API_VERSION + "/player/stats"
 const PLAYER_SEARCH = API_VERSION + "/player/search"

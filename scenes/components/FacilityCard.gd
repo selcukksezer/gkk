@@ -3,8 +3,7 @@ extends PanelContainer
 # Signals
 signal detail_pressed
 signal unlock_pressed
-signal production_pressed
-signal bribe_pressed
+# (production_pressed and bribe_pressed not used; removed to avoid warnings)
 
 # UI Elements
 @onready var icon_texture = $Margin/HBox/IconContainer/IconTexture
@@ -138,7 +137,7 @@ func update_from_facility_data(data: Dictionary) -> void:
 	else:
 		is_unlocked = true
 		level = data.get("level", 1)
-		suspicion = data.get("suspicion", 0)
+		suspicion = data.get("suspicion_level", 0)
 	
 	_apply_visuals()
 

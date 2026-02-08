@@ -52,9 +52,15 @@ VALUES
 ('recipe_grow_poison_shroom', 'farm', 'material_poison_shroom', 10, '{}'::jsonb, 150, 3600, 1, 80, 30),
 ('recipe_chop_oak', 'lumber_mill', 'material_oak_log', 20, '{}'::jsonb, 30, 2700, 1, 100, 2);
 
-
--- 5. RPC: Unlock Facility
-CREATE OR REPLACE FUNCTION unlock_facility(p_type TEXT)
+-- DEPRECATED: This file is kept for history but its functions are superseded.
+-- See cleanup_duplicate_rpcs.sql for the unified RPC versions.
+-- 
+-- The following functions have been consolidated:
+-- - unlock_facility: Now handled by 20260208_cleanup_duplicate_rpcs.sql
+-- - start_facility_production: Now handled by add_facility_production_controls.sql
+-- - Other facility functions: Consolidated in specialized migration files
+--
+-- This file should not be deployed; use the newer migration files instead.
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -76,14 +82,14 @@ BEGIN
         ELSE 1000
     END;
     
-    -- CHECK game.users
-    IF (SELECT gold FROM game.users WHERE id = v_user_id) < v_cost THEN
+    -- CHECK public.users
+    IF (SELECT gold FROM public.users WHERE id = v_user_id) < v_cost THEN
         RETURN jsonb_build_object('success', false, 'error', 'Insufficient gold');
     END IF;
     
-    -- UPDATE game.users
-    UPDATE game.users SET gold = gold - v_cost WHERE id = v_user_id;
-    INSERT INTO public.facilities (user_id, type, level, suspicion) VALUES (v_user_id, p_type, 1, 0);
+    -- UPDATE public.users
+    UPDATE public.users SET gold = gold - v_cost WHERE id = v_user_id;
+    INSERT INTO public.facilities (user_id, type, level, suspicion_level) VALUES (v_user_id, p_type, 1, 0);
     
     RETURN jsonb_build_object('success', true);
 END;
@@ -125,8 +131,8 @@ BEGIN
     
     v_total_gold := v_recipe.gold_cost * p_quantity;
     
-    -- CHECK game.users
-    IF (SELECT gold FROM game.users WHERE id = v_user_id) < v_total_gold THEN
+    -- CHECK public.users
+    IF (SELECT gold FROM public.users WHERE id = v_user_id) < v_total_gold THEN
          RETURN jsonb_build_object('success', false, 'error', 'Insufficient gold');
     END IF;
     
@@ -138,8 +144,8 @@ BEGIN
         IF v_user_has < v_mat_total_needed THEN RAISE EXCEPTION 'Insufficient material: %', v_mat_id; END IF;
     END LOOP;
     
-    -- UPDATE game.users
-    UPDATE game.users SET gold = gold - v_total_gold WHERE id = v_user_id;
+    -- UPDATE public.users
+    UPDATE public.users SET gold = gold - v_total_gold WHERE id = v_user_id;
     
     -- Deduct Materials
     FOR v_mat_id, v_mat_req_single IN SELECT * FROM jsonb_each_text(v_recipe.input_materials)
@@ -168,7 +174,7 @@ END;
 $$;
 
 
--- 8. RPC: Bribe (Uses GEMS, game.users)
+-- 8. RPC: Bribe (Uses GEMS, public.users)
 -- Drop first to allow parameter rename
 DROP FUNCTION IF EXISTS bribe_officials(uuid, int);
 
@@ -183,15 +189,15 @@ DECLARE
 BEGIN
     v_user_id := auth.uid();
     
-    -- CHECK game.users for GEMS
-    IF (SELECT gems FROM game.users WHERE id = v_user_id) < p_amount_gems THEN
+    -- CHECK public.users for GEMS
+    IF (SELECT gems FROM public.users WHERE id = v_user_id) < p_amount_gems THEN
         RETURN jsonb_build_object('success', false, 'error', 'Insufficient gems');
     END IF;
     
     v_reduction := p_amount_gems * 10;
     
-    -- UPDATE game.users
-    UPDATE game.users SET gems = gems - p_amount_gems WHERE id = v_user_id;
+    -- UPDATE public.users
+    UPDATE public.users SET gems = gems - p_amount_gems WHERE id = v_user_id;
     UPDATE public.facilities SET suspicion = GREATEST(0, suspicion - v_reduction) WHERE id = p_facility_id;
     
     RETURN jsonb_build_object('success', true, 'new_suspicion', (SELECT suspicion FROM public.facilities WHERE id = p_facility_id));

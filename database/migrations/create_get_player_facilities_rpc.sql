@@ -72,7 +72,7 @@ BEGIN
             'user_id', v_facility.user_id,
             'type', v_facility.type,
             'level', v_facility.level,
-            'suspicion', v_facility.suspicion,
+            'suspicion', v_facility.suspicion_level,
             'is_active', v_facility.is_active,
             'production_started_at', v_facility.production_started_at,
             'created_at', v_facility.created_at,

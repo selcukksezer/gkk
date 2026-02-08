@@ -30,6 +30,9 @@ func _ready() -> void:
 		back_button.pressed.connect(_on_back_button_pressed)
 	if PrisonManager:
 		PrisonManager.prison_released.connect(_on_prison_released)
+	if State:
+		State.player_updated.connect(_on_player_updated)
+		State.state_changed.connect(_on_state_changed)
 	
 	# Initial update
 	_update_ui()
@@ -84,7 +87,7 @@ func _update_ui() -> void:
 	
 	# Update initial_prison_time if not set or if prison time changed
 	if initial_prison_time == 0 or not State.in_prison:
-		initial_prison_time = State.prison_release_time - Time.get_unix_time_from_system()
+		initial_prison_time = int(State.prison_release_time - Time.get_unix_time_from_system())
 	
 	var remaining_sec = State.get_prison_remaining_seconds()
 	var mins = remaining_sec / 60
@@ -147,3 +150,13 @@ func _on_prison_released(success: bool, message: String) -> void:
 			status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 		if bail_button:
 			bail_button.disabled = false
+
+func _on_player_updated() -> void:
+	# Player data updated, refresh UI
+	_update_ui()
+
+func _on_state_changed(key: String, value: Variant) -> void:
+	# React immediately to prison state changes
+	if key == "prison":
+		print("[PrisonScreen] Prison state changed: %s" % value)
+		_update_ui()

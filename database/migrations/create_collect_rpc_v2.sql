@@ -22,7 +22,7 @@ BEGIN
     IF v_facility IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'Facility not found'); END IF;
 
     -- PRISON Logic
-    IF v_facility.suspicion >= 100 THEN
+    IF v_facility.suspicion_level >= 100 THEN
         v_prison_time := NOW() + INTERVAL '15 minutes';
         
         -- Confiscate (Delete) completed products

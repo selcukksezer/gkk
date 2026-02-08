@@ -270,7 +270,10 @@ func _on_cancel_order_requested(order_id: String, is_stackable: bool = false) ->
 		_load_my_orders()
 		# Optionally show a toast/notification
 	else:
-		var error_msg = result.get("error", "Unknown error")
+		var error_msg = str(result.get("error", "Unknown error"))
+		# Handle null error responses from API
+		if error_msg == "<null>" or error_msg.is_empty():
+			error_msg = "Unknown error"
 		printerr("PazarScreen: Failed to cancel order: ", error_msg)
 		
 		if "full" in error_msg.to_lower() or "dolu" in error_msg.to_lower():
@@ -356,7 +359,7 @@ func _on_buy_listing_requested(listing: Dictionary) -> void:
 			_populate_catalog() # Refresh list
 			# Update Header Gold display if it exists (State updates signal it automatically usually)
 		else:
-			var error = result.get("error", "Unknown Error")
+			var error = str(result.get("error", "Unknown Error"))
 			print("PazarScreen: Purchase failed: ", error)
 			
 			if error == "Inventory full":

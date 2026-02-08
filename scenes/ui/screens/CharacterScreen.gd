@@ -46,12 +46,8 @@ func _load_character_data() -> void:
 		push_error("No player ID found")
 		return
 	
-	# Use canonical API endpoint for player profile (server may expose /api/v1/player/profile)
-	var result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
-	# Fallback: try search endpoint if profile endpoint does not return data
-	if not result or not result.get("success", false) or not result.get("data", null):
-		var search_endpoint = APIEndpoints.PLAYER_SEARCH + "?id=eq.%s" % str(player_id)
-		result = await Network.http_get(search_endpoint)
+	# Use StateStore to fetch player profile
+	var result = await State.fetch_player_profile()
 	_on_character_data_loaded(result)
 
 func _on_character_data_loaded(result: Dictionary) -> void:

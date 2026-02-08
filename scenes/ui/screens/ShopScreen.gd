@@ -198,6 +198,7 @@ func _on_package_purchase(package: Dictionary) -> void:
 	if State.gold < price:
 		print("[Shop] Yetersiz altın! Gerekli: %d, Mewcut: %d" % [price, State.gold])
 		# TODO: Show error message
+		_show_error("Yeterli altın yok! Gerekli: %d, Mevcut: %d" % [price, State.gold])
 		return
 
 	# Optimistic update
@@ -227,8 +228,8 @@ func _on_package_purchase(package: Dictionary) -> void:
 		print("[Shop] Purchase synced with server. Gems added: ", total_gems)
 		Telemetry.track_purchase_completed(package_id, price, false)
 		
-		# Update UI globally
-		State.player_updated.emit()
+		# Refresh player data from database
+		await State.refresh_data()
 	else:
 		print("[Shop] Failed to sync purchase! Reverting...")
 		State.gold = old_gold
@@ -291,6 +292,7 @@ func _on_gold_purchase(package: Dictionary) -> void:
 	
 	if State.gems < price_gems:
 		print("[Shop] Yetersiz elmas! Gerekli: %d, Mevcut: %d" % [price_gems, State.gems])
+		_show_error("Yeterli elmas yok! Gerekli: %d, Mevcut: %d" % [price_gems, State.gems])
 		return
 
 	# Optimistic update
@@ -315,14 +317,16 @@ func _on_gold_purchase(package: Dictionary) -> void:
 	
 	if result.success:
 		print("[Shop] Gold purchase synced. Gold added: ", total_gold)
-		State.player_updated.emit()
+		# Refresh player data from database
+		await State.refresh_data()
 	else:
 		print("[Shop] Failed to sync gold purchase! Reverting...")
 		State.gold = old_gold
 		State.gems = old_gems
 		State.player.gold = old_gold
 		State.player.gems = old_gems
-		State.player_updated.emit() # Revert UI
+		# Refresh player data from database to revert
+		await State.refresh_data()
 
 func _on_item_purchase(item_data: ItemData) -> void:
 	print("[ShopScreen] Item selected: ", item_data.name)
@@ -520,6 +524,13 @@ func _process_item_purchase(item_data: ItemData, quantity: int = 1) -> void:
 	
 	print("[ShopScreen] Purchasing item: %s for %d Gold" % [item_data.name, price])
 	
+	# Check if player has enough gold
+	if State.gold < price:
+		_show_error("Yeterli altın yok! Gerekli: %d, Mevcut: %d" % [price, State.gold])
+		purchase_in_progress = false
+		print("[ShopScreen] 🔓 Purchase unlocked (insufficient gold)")
+		return
+	
 	# Optimistic update
 	var old_gold = State.gold
 	State.gold -= price
@@ -534,10 +545,11 @@ func _process_item_purchase(item_data: ItemData, quantity: int = 1) -> void:
 			State.gold = old_gold
 			State.player.gold = old_gold
 			_show_error("Altın güncellemesi başarısız!")
-			purchase_in_progress = false  # Unlock
+			# Refresh player data from database to revert
+			await State.refresh_data()
+			purchase_in_progress = false
 			print("[ShopScreen] 🔓 Purchase unlocked (error)")
 			return
-	
 	# 2. Add item to inventory
 	print("[ShopScreen] Adding item to inventory (Qty: %d)..." % quantity)
 	
@@ -556,13 +568,15 @@ func _process_item_purchase(item_data: ItemData, quantity: int = 1) -> void:
 		print("[ShopScreen] Force fetching inventory from server to sync state...")
 		await inventory_manager.fetch_inventory()
 		
+		# Refresh all player data from database (gold after purchase deducted)
+		await State.refresh_data()
+		
 		# Emit signal to refresh inventory screen
 		if State.has_user_signal("inventory_updated"):
 			State.emit_signal("inventory_updated")
 			
 		Telemetry.track_event("shop", "item_purchased", {"item_id": item_id, "price": price})
-		State.player_updated.emit() # Update UI for Gold change
-		State.player_updated.emit()
+		_show_success("'%s' satın alındı!" % item_data.name)
 	else:
 		# Fallback: try to add locally
 		print("[ShopScreen] Inventory add failed on server: %s" % inventory_result.get("error", "Unknown"))
@@ -594,5 +608,17 @@ func _show_error(message: String) -> void:
 	dialog.confirmed.connect(func(): dialog.queue_free())
 	# Auto-close after 3 seconds
 	await get_tree().create_timer(3.0).timeout
+	if dialog and is_instance_valid(dialog):
+		dialog.queue_free()
+func _show_success(message: String) -> void:
+	var dialog = AcceptDialog.new()
+	dialog.title = "Başarılı"
+	dialog.dialog_text = message
+	dialog.ok_button_text = "Tamam"
+	add_child(dialog)
+	dialog.popup_centered()
+	dialog.confirmed.connect(func(): dialog.queue_free())
+	# Auto-close after 2 seconds
+	await get_tree().create_timer(2.0).timeout
 	if dialog and is_instance_valid(dialog):
 		dialog.queue_free()

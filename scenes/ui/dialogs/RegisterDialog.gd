@@ -21,6 +21,25 @@ func _ready() -> void:
     password_input.secret = true
     confirm_input.secret = true
     status_label.text = ""
+    
+    # Ensure dialog fits on screen
+    _adjust_dialog_size()
+
+func _adjust_dialog_size() -> void:
+    # Get viewport size
+    var viewport_size = get_viewport_rect().size
+    
+    # Set max width to 90% of screen width or 600px, whichever is smaller
+    var max_width = min(viewport_size.x * 0.9, 600.0)
+    
+    # Adjust panel size if needed
+    if panel:
+        var panel_width = panel.size.x
+        if panel_width > max_width:
+            # Recalculate offsets to fit
+            var half_width = max_width / 2.0
+            panel.offset_left = -half_width
+            panel.offset_right = half_width
 
 func _set_loading(loading: bool) -> void:
     is_loading = loading

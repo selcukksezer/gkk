@@ -13,36 +13,39 @@ serve(async (req) => {
   }
 
   try {
-    const { email, username, password } = await req.json()
+    const { email, password, device_id } = await req.json()
+
+    console.log('Login attempt with email:', email)
 
     // Validation
-    if (!password) {
+    if (!email || !password) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: { message: 'Şifre gerekli' }
+        JSON.stringify({
+          success: false,
+          error: 'Email and password are required'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400
         }
       )
     }
 
-    if (!email && !username) {
+    // Validate password length
+    if (password.length < 8) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: { message: 'E-posta veya kullanıcı adı gerekli' }
+        JSON.stringify({
+          success: false,
+          error: 'Password must be at least 8 characters'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
+          status: 401
         }
       )
     }
 
-    // Create Supabase client
+    // Create Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -54,141 +57,103 @@ serve(async (req) => {
       }
     )
 
-    // Determine login method
-    let loginEmail = email
-
-    // If username is provided instead of email, look up the email
-    if (!loginEmail && username) {
-      const { data: user } = await supabaseAdmin
-        .from('users')
-        .select('email')
-        .eq('username', username)
-        .single()
-
-      if (!user) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: { message: 'Kullanıcı bulunamadı' }
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 401
-          }
-        )
-      }
-      loginEmail = user.email
-    }
-
-    // Validate password length
-    if (password.length < 8) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: { message: 'Geçersiz şifre' }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
-        }
-      )
-    }
+    console.log('Attempting to sign in with email:', email)
 
     // Sign in with email and password
     const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.signInWithPassword({
-      email: loginEmail,
+      email: email,
       password
     })
 
     if (sessionError) {
-      console.error('Login error:', sessionError)
+      console.error('Supabase auth error:', sessionError.message)
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: { message: 'E-posta veya şifre hatalı' }
+        JSON.stringify({
+          success: false,
+          error: 'Invalid login credentials'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 401
         }
       )
     }
 
-    if (!sessionData || !sessionData.user) {
+    if (!sessionData?.user || !sessionData?.session) {
+      console.error('No session data returned')
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: { message: 'Giriş başarısız oldu' }
+        JSON.stringify({
+          success: false,
+          error: 'Login failed'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 401
         }
       )
     }
 
-    // Get the full user profile
+    const authId = sessionData.user.id
+
+    // Get user profile from public.users
     const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('users')
+      .from('public.users')
       .select('*')
-      .eq('auth_id', sessionData.user.id)
-      .single()
+      .eq('auth_id', authId)
+      .maybeSingle()
 
-    if (profileError || !userProfile) {
+    if (profileError) {
       console.error('Profile fetch error:', profileError)
-      // Return basic auth user data if profile doesn't exist
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          message: 'Giriş başarılı!',
-          data: {
-            session: sessionData.session,
-            user: {
-              id: sessionData.user.id,
-              email: sessionData.user.email,
-              username: sessionData.user.user_metadata?.username || email?.split('@')[0]
-            }
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      )
     }
 
-    // Update last login timestamp
-    await supabaseAdmin
-      .from('users')
-      .update({ 
-        last_login_at: new Date().toISOString(),
-        is_online: true 
-      })
-      .eq('auth_id', sessionData.user.id)
+    // Try to update last login in public.users
+    if (userProfile?.id) {
+      await supabaseAdmin
+        .from('public.users')
+        .update({
+          last_login_at: new Date().toISOString(),
+          is_online: true
+        })
+        .eq('id', userProfile.id)
+        .catch(err => console.error('Update last_login error:', err))
+    }
+
+    // Return success with user data
+    const responseUser = userProfile || {
+      id: authId,
+      auth_id: authId,
+      email: sessionData.user.email,
+      username: sessionData.user.user_metadata?.username || sessionData.user.email?.split('@')[0],
+      level: 1,
+      gold: 1000,
+      gems: 100,
+      energy: 100,
+      max_energy: 100
+    }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        message: 'Giriş başarılı!',
+        message: 'Login successful',
         data: {
           session: sessionData.session,
-          user: userProfile
+          user: responseUser
         }
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
     )
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: { message: error.message || 'Bir hata oluştu' }
+      JSON.stringify({
+        success: false,
+        error: error.message || 'An error occurred'
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }

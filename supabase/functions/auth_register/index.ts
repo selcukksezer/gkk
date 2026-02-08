@@ -6,15 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+interface RegistrationRequest {
+  email: string
+  username: string
+  password: string
+  referral_code?: string
+}
+
+serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { email, username, password, referral_code } = await req.json()
-
+    const { email, username, password, referral_code } = await req.json() as RegistrationRequest
     // Validation
     if (!email || !username || !password) {
       return new Response(
@@ -73,9 +79,16 @@ serve(async (req) => {
     }
 
     // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables')
+    }
+    
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      supabaseKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -259,11 +272,12 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Bir hata oluştu'
     console.error('Registration error:', error)
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: { message: error.message || 'Bir hata oluştu' }
+        error: { message: errorMessage }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

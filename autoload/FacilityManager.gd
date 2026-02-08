@@ -261,7 +261,7 @@ func fetch_my_facilities(force_refresh: bool = false) -> Dictionary:
 						continue
 						
 					cached_facilities[facility.id] = facility
-					var queue = facility.get("facility_queue", [])
+					var _queue = facility.get("facility_queue", [])
 					
 					# --- DEBUG REMOVED ---
 					# print("[FacilityManager] Facility %s (%s): level=%s, queue_size=%s" % [facility.get("type"), facility.get("id"), facility.get("level"), queue.size()])
@@ -648,7 +648,7 @@ func is_queue_full(facility_id: String) -> bool:
 	return get_production_queue_count(facility_id) >= 10
 
 func get_upgrade_cost(facility_type: String) -> int:
-	var config = FACILITIES_CONFIG.get(facility_type, {})
+	var _config = FACILITIES_CONFIG.get(facility_type, {})
 	var facility = get_facility_by_type(facility_type)
 	if facility.is_empty():
 		return 0
@@ -664,9 +664,8 @@ func get_upgrade_cost(facility_type: String) -> int:
 
 func _ready() -> void:
 	print("[FacilityManager] Initializing...")
-	var result = await fetch_my_facilities(true)
-	print("[FacilityManager] Initial fetch result: %s" % result)
-	
+
+	# Set up refresh timer for periodic cache invalidation
 	var refresh_timer = Timer.new()
 	add_child(refresh_timer)
 	refresh_timer.timeout.connect(func():
@@ -674,6 +673,25 @@ func _ready() -> void:
 			fetch_my_facilities()
 	)
 	refresh_timer.start(30.0)
+
+	# Wait a frame to ensure Session is initialized
+	await get_tree().process_frame
+
+	# Only fetch facilities when user logs in
+	Session.logged_in.connect(func(_player_data):
+		print("[FacilityManager] User logged in, fetching facilities...")
+		var result = await fetch_my_facilities(true)
+		print("[FacilityManager] Initial fetch result: %s" % result)
+	)
+
+	# Check if already authenticated - must have both flag and token
+	if Session.is_authenticated and not Session.access_token.is_empty():
+		print("[FacilityManager] User already authenticated with token, fetching facilities...")
+		var result = await fetch_my_facilities(true)
+		print("[FacilityManager] Initial fetch result: %s" % result)
+	else:
+		print("[FacilityManager] User not authenticated yet, will fetch when logged in")
+
 	print("[FacilityManager] Ready!")
 
 # ==================== DEBUG ====================

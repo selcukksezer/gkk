@@ -1,3 +1,4 @@
+/// <reference lib="deno.window" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -6,15 +7,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+interface LoginRequest {
+  email?: string
+  username?: string
+  password: string
+}
+
+serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { email, username, password } = await req.json()
-
+    const { email, username, password } = await req.json() as LoginRequest
     // Validation
     if (!password) {
       return new Response(
@@ -43,9 +49,16 @@ serve(async (req) => {
     }
 
     // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables')
+    }
+    
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      supabaseKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -60,18 +73,18 @@ serve(async (req) => {
     // If username is provided instead of email, look up the email
     if (!loginEmail && username) {
       const { data: user } = await supabaseAdmin
-        .from('game.users')
+        .from('public.users')
         .select('email')
         .eq('username', username)
         .single()
 
       if (!user) {
         return new Response(
-          JSON.stringify({
-            success: false,
+          JSON.stringify({ 
+            success: false, 
             error: { message: 'Kullanıcı bulunamadı' }
           }),
-          {
+          { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 401
           }
@@ -129,7 +142,7 @@ serve(async (req) => {
 
     // Get the full user profile
     const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('game.users')
+      .from('public.users')
       .select('*')
       .eq('auth_id', sessionData.user.id)
       .single()
@@ -138,7 +151,7 @@ serve(async (req) => {
       console.error('Profile fetch error:', profileError)
       // Return basic auth user data if profile doesn't exist
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
           success: true,
           message: 'Giriş başarılı!',
           data: {
@@ -150,7 +163,7 @@ serve(async (req) => {
             }
           }
         }),
-        {
+        { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200
         }
@@ -159,10 +172,8 @@ serve(async (req) => {
 
     // Update last login timestamp
     await supabaseAdmin
-      .from('game.users')
-      .update({
-        last_login_at: new Date().toISOString(),
-        is_online: true
+      .from('public.users')
+        is_online: true 
       })
       .eq('auth_id', sessionData.user.id)
 
@@ -182,11 +193,12 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Bir hata oluştu'
     console.error('Login error:', error)
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: { message: error.message || 'Bir hata oluştu' }
+        error: { message: errorMessage }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

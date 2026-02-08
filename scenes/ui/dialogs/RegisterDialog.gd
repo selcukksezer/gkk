@@ -10,7 +10,6 @@ extends "res://scenes/ui/dialogs/BaseDialog.gd"
 @onready var status_label: Label = $Panel/MarginContainer/VBoxContainer/StatusLabel
 @onready var register_button: Button = $Panel/MarginContainer/VBoxContainer/Buttons/RegisterButton
 @onready var cancel_button: Button = $Panel/MarginContainer/VBoxContainer/Buttons/CancelButton
-@onready var panel: PanelContainer = $Panel
 
 var is_loading: bool = false
 

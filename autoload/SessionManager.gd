@@ -150,14 +150,15 @@ func register(email: String, username_param: String, password: String, referral_
 	_on_register_response(result)
 
 func _on_register_response(result: Dictionary) -> void:
+	print("[Session] Register full response: %s" % result)
 	if result.success:
 		print("[Session] Registration successful")
 		var data = result.data
-		
+
 		# Handle nested data if present (common in some API responses)
 		if data.has("data") and data.data is Dictionary:
 			data = data.data
-			
+
 		print("[Session] Register response data: ", data)
 		if data.has("session"):
 			set_tokens(data.session.access_token, data.session.refresh_token)
@@ -165,12 +166,12 @@ func _on_register_response(result: Dictionary) -> void:
 			username = data.user.username
 			is_authenticated = true
 			_save_tokens()
-			
+
 			print("[Session] Registration created session - emitting logged_in")
 			logged_in.emit(data.user)
 			# Also notify session status checked
 			session_status_checked.emit(true)
-			
+
 			# Wait one frame then force navigation
 			await get_tree().process_frame
 			print("[Session] Attempting direct navigation to home")
@@ -178,7 +179,7 @@ func _on_register_response(result: Dictionary) -> void:
 			if main_node and main_node.has_method("show_screen"):
 				main_node.call_deferred("show_screen", "home", false)
 				print("[Session] Direct navigation call issued")
-			
+
 			register_completed.emit(true, "Kayıt başarılı!")
 		elif data.has("user") and not data.has("session"):
 			# Some auth flows return user but no session (e.g. email confirmation required)
@@ -197,12 +198,30 @@ func _on_register_response(result: Dictionary) -> void:
 				login(_last_register_credentials.email, _last_register_credentials.password)
 	else:
 		var error_msg = "Kayıt başarısız"
+		print("[Session] Registration failed - checking error structure")
+		print("[Session] result.error type: %s" % typeof(result.error))
+		print("[Session] result.error value: %s" % result.error)
+
+		# Try multiple error extraction paths
 		if result.has("error"):
 			var error_data = result.error
 			if error_data is Dictionary:
 				error_msg = error_data.get("message", error_msg)
+				if error_msg == "Kayıt başarısız" and error_data.has("error"):
+					error_msg = error_data.get("error", error_msg)
 			elif error_data is String:
 				error_msg = error_data
+
+		# Fallback: check data structure for errors
+		if error_msg == "Kayıt başarısız" and result.has("data"):
+			var data_val = result.data
+			if data_val is Dictionary:
+				if data_val.has("error"):
+					error_msg = data_val.get("error", error_msg)
+				elif data_val.has("message"):
+					error_msg = data_val.get("message", error_msg)
+
+		print("[Session] Final error_msg: %s" % error_msg)
 		print("[Session] Registration failed: ", error_msg)
 		register_completed.emit(false, error_msg)
 

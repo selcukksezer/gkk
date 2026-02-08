@@ -16,11 +16,11 @@ serve(async (req) => {
     const { email, username, password, referral_code } = await req.json()
 
     // Validation
-    if (!email || !username || !password) {
+    if (!email || !password) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Email, kullanıcı adı ve şifre gerekli' }
+          error: 'Email and password are required' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -35,7 +35,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Geçersiz e-posta formatı' }
+          error: 'Invalid email format' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -44,12 +44,15 @@ serve(async (req) => {
       )
     }
 
-    // Validate username
-    if (username.length < 3 || username.length > 20) {
+    // Generate username from email if not provided
+    const finalUsername = username || email.split('@')[0]
+
+    // Validate username if provided
+    if (username && (username.length < 3 || username.length > 20)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Kullanıcı adı 3-20 karakter olmalı' }
+          error: 'Username must be 3-20 characters' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -86,16 +89,16 @@ serve(async (req) => {
 
     // Check if username already exists
     const { data: existingUsername } = await supabaseAdmin
-      .from('game.users')
+      .from('public.users')
       .select('id')
-      .eq('username', username)
+      .eq('username', finalUsername)
       .single()
 
     if (existingUsername) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: { message: 'Bu kullanıcı adı zaten kullanılıyor' }
+          error: 'Username already taken' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -128,7 +131,7 @@ serve(async (req) => {
     let referrer_id = null
     if (referral_code && referral_code.trim() !== '') {
       const { data: referrer } = await supabaseAdmin
-        .from('game.users')
+        .from('public.users')
         .select('id')
         .eq('referral_code', referral_code.toUpperCase())
         .single()
@@ -154,8 +157,8 @@ serve(async (req) => {
       password,
       email_confirm: true, // Auto-confirm email for simplicity
       user_metadata: {
-        username,
-        display_name: username
+        username: finalUsername,
+        display_name: finalUsername
       }
     })
 
@@ -175,19 +178,27 @@ serve(async (req) => {
 
     // Ensure profile exists (idempotent) and update referral if provided
     await supabaseAdmin
-      .from('game.users')
+      .from('public.users')
       .upsert([
         {
           auth_id: authData.user.id,
           email: authData.user.email,
-          username: authData.user.user_metadata?.username || username,
-          display_name: authData.user.user_metadata?.display_name || username
+          username: finalUsername,
+          display_name: finalUsername,
+          level: 1,
+          gold: 1000,
+          gems: 100,
+          energy: 100,
+          max_energy: 100,
+          created_at: new Date().toISOString(),
+          last_login_at: new Date().toISOString(),
+          is_online: false
         }
       ], { onConflict: 'auth_id' })
 
     if (referrer_id) {
       await supabaseAdmin
-        .from('game.users')
+        .from('public.users')
         .update({ referred_by: referrer_id })
         .eq('auth_id', authData.user.id)
     }
@@ -224,7 +235,7 @@ serve(async (req) => {
     let retries = 3
     while (retries > 0 && !userProfile) {
       const { data } = await supabaseAdmin
-        .from('game.users')
+        .from('public.users')
         .select('*')
         .eq('auth_id', authData.user.id)
         .single()
@@ -247,10 +258,17 @@ serve(async (req) => {
       userProfile = {
         auth_id: authData.user.id,
         email: authData.user.email,
-        username: authData.user.user_metadata?.username || email.split('@')[0],
-        display_name: authData.user.user_metadata?.display_name || email.split('@')[0],
+        username: finalUsername,
+        display_name: finalUsername,
         id: authData.user.id,
-        created_at: new Date().toISOString()
+        level: 1,
+        gold: 1000,
+        gems: 100,
+        energy: 100,
+        max_energy: 100,
+        created_at: new Date().toISOString(),
+        last_login_at: new Date().toISOString(),
+        is_online: false
       }
     }
 

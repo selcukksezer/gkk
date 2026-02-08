@@ -17,7 +17,7 @@ func pay_bail() -> void:
 	print("[PrisonManager] Requesting Bail Payment...")
 	
 	# RPC: release_from_prison(p_use_bail: bool)
-	var response = await Network.rpc_post("release_from_prison", {
+	var response = await Network.http_post("/rest/v1/rpc/release_from_prison", {
 		"p_use_bail": true
 	})
 	
@@ -38,6 +38,6 @@ func pay_bail() -> void:
 ## Force refresh of player profile
 func run_refresh_profile() -> void:
 	if Network and Session.is_authenticated:
-		var profile_result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
+		var profile_result = await State.fetch_player_profile()
 		if profile_result and profile_result.get("success", false):
 			State.load_player_data(profile_result.get("data", {}))

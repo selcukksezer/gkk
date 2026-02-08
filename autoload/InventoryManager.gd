@@ -477,8 +477,8 @@ func update_item_enhancement(item: ItemData, new_level: int) -> Dictionary:
 	
 	# Use RPC to bypass RLS and ensure safe update
 	var result = await Network.http_post("/rest/v1/rpc/upgrade_item_enhancement", {
-		"p_row_id": item.row_id,
-		"p_new_level": new_level
+		"p_new_level": new_level,
+		"p_row_id": item.row_id
 	})
 	
 	# RPC returns a single object which might be wrapped in "data" or "result" depending on Network helper

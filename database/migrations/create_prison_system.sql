@@ -33,10 +33,10 @@ BEGIN
     v_user_id := auth.uid();
     v_now := NOW();
     
-    -- Use game.users
-    SELECT * INTO v_user FROM game.users WHERE id = v_user_id;
+    -- Use public.users
+    SELECT * INTO v_user FROM public.users WHERE auth_id = v_user_id;
     
-    IF v_user IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'User not found in game.users'); END IF;
+    IF v_user IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'User not found in public.users'); END IF;
 
     IF v_user.prison_until IS NULL OR v_user.prison_until <= v_now THEN
         RETURN jsonb_build_object('success', false, 'error', 'Not in prison');
@@ -50,7 +50,7 @@ BEGIN
             RETURN jsonb_build_object('success', false, 'error', 'Insufficient gems', 'cost', v_bail_gems);
         END IF;
         
-        UPDATE game.users SET gems = gems - v_bail_gems WHERE id = v_user_id;
+        UPDATE public.users SET gems = gems - v_bail_gems WHERE id = v_user_id;
     END IF;
     
     -- Release
@@ -88,7 +88,7 @@ BEGIN
     v_now := EXTRACT(EPOCH FROM NOW())::BIGINT;
     
     -- Check Prison Status on game.users
-    IF EXISTS (SELECT 1 FROM game.users WHERE id = v_user_id AND prison_until > NOW()) THEN
+    IF EXISTS (SELECT 1 FROM public.users WHERE id = v_user_id AND prison_until > NOW()) THEN
         RETURN jsonb_build_object('success', false, 'error', 'You are in prison!');
     END IF;
     
@@ -102,13 +102,13 @@ BEGIN
         
         -- Raid Check
         v_raid_roll := floor(random() * 100);
-        IF v_raid_roll < v_facility.suspicion THEN
+        IF v_raid_roll < v_facility.suspicion_level THEN
             UPDATE public.facility_queue SET status = 'raided', is_raided = TRUE WHERE id = v_queue_item.id;
             v_raid_occurred := TRUE;
             
             -- PRISON LOGIC (50% Chance)
             IF floor(random() * 100) < 50 THEN
-                v_prison_duration := GREATEST(10, v_facility.suspicion * 2); 
+                v_prison_duration := GREATEST(10, v_facility.suspicion_level * 2); 
                 
                 -- Update game.users
                 UPDATE game.users 

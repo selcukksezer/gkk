@@ -35,8 +35,31 @@ func _ready() -> void:
 	FacilityManager.facility_upgraded.connect(_on_facility_upgraded)
 	FacilityManager.sent_to_prison.connect(_on_sent_to_prison)
 	
+	# Connect to State signals
+	State.state_changed.connect(_on_state_changed)
+	
+	# Connect to PrisonManager signals
+	if PrisonManager:
+		PrisonManager.prison_released.connect(_on_prison_released)
+	
+	# Add test reset button
+	_add_reset_button()
+	
 	# Initial load
 	_refresh_facilities()
+
+## Add reset all production button to header
+func _add_reset_button() -> void:
+	var reset_btn = Button.new()
+	reset_btn.text = "🔧 TEST: TÜM ÜRETİMLERİ SIRFIRLA"
+	reset_btn.custom_minimum_size = Vector2(300, 40)
+	reset_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	reset_btn.add_theme_color_override("font_color", Color(1, 0.4, 0.4))  # Red for testing
+	reset_btn.pressed.connect(_on_reset_all_production_pressed)
+	
+	# Insert at top of main_vbox, right after we set it up
+	main_vbox.add_child(reset_btn)
+	main_vbox.move_child(reset_btn, 0)  # Move to top
 
 # ==================== DATA LOADING ====================
 
@@ -93,7 +116,7 @@ func _render_facility_grid() -> void:
 			existing_cards[child.facility_type] = child
 	
 	# Render ALL 15 facilities (unlocked + locked)
-	var card_count = 0
+	var _card_count = 0
 	for facility_type in config.keys():
 		var owned_facility = FacilityManager.get_facility_by_type(facility_type)
 		
@@ -109,7 +132,7 @@ func _render_facility_grid() -> void:
 				card.is_unlocked = not owned_facility.is_empty()
 				if card.is_unlocked:
 					card.level = owned_facility.get("level", 1)
-					card.suspicion = owned_facility.get("suspicion", 0)
+					card.suspicion = owned_facility.get("suspicion_level", 0)
 				card._update_status_display()
 				
 		else:
@@ -118,7 +141,7 @@ func _render_facility_grid() -> void:
 			facility_grid.add_child(card)
 			existing_cards[facility_type] = card # Cache it
 		
-		card_count += 1
+		_card_count += 1
 	
 	_update_global_risk_ui()
 	
@@ -147,11 +170,11 @@ func _create_facility_card(facility_type: String) -> Control:
 	# Facility data (if owned)
 	if card.is_unlocked:
 		card.level = owned_facility.get("level", 1)
-		card.suspicion = owned_facility.get("suspicion", 0)
+		card.suspicion = owned_facility.get("suspicion_level", 0)
 		card.production_queue_count = _get_facility_queue_count(owned_facility.get("id", ""))
 	else:
-		# Cost based on facility type - all 5000 for now
-		card.unlock_cost = 5000
+		# Cost from config
+		card.unlock_cost = config.get("unlock_cost", 5000)
 	
 	# Ensure card is visible
 	card.visible = true
@@ -160,8 +183,6 @@ func _create_facility_card(facility_type: String) -> Control:
 	# Connect card signals
 	card.detail_pressed.connect(_on_facility_card_detail_pressed.bindv([facility_type]))
 	card.unlock_pressed.connect(_on_facility_unlock_pressed.bindv([facility_type]))
-	card.production_pressed.connect(_on_facility_production_pressed.bindv([facility_type]))
-	card.bribe_pressed.connect(_on_facility_bribe_pressed.bindv([facility_type]))
 	
 	# print("[FacilitiesScreen] Created card for %s, unlocked=%s" % [card.facility_name, card.is_unlocked])
 	
@@ -188,6 +209,17 @@ func _get_facility_queue_count(facility_id: String) -> int:
 # ==================== CARD INTERACTIONS ====================
 
 func _on_facility_card_detail_pressed(facility_type: String) -> void:
+	# Debug: log current prison flags
+	print("[FacilitiesScreen] _on_facility_card_detail_pressed - State.in_prison=%s, State.player.in_prison=%s" % [str(State.in_prison), str(State.player.get("in_prison", null))])
+	# Check if player is in prison — allow brief re-check to avoid race with bail
+	if State.in_prison:
+		# small debounce to allow state propagation (e.g., bail completed just now)
+		await get_tree().create_timer(0.1).timeout
+		print("[FacilitiesScreen] Re-check after debounce: State.in_prison=%s" % str(State.in_prison))
+		if State.in_prison:
+			_show_error("Hapse düştünüz! Tesislere erişemezsiniz.")
+			return
+	
 	selected_facility = FacilityManager.get_facility_by_type(facility_type)
 	if selected_facility.is_empty():
 		_show_unlock_dialog(facility_type)
@@ -196,6 +228,11 @@ func _on_facility_card_detail_pressed(facility_type: String) -> void:
 
 func _on_facility_unlock_pressed(facility_type: String) -> void:
 	print("[FacilitiesScreen] _on_facility_unlock_pressed called for: %s" % facility_type)
+	# Check if player is in prison
+	if State.in_prison:
+		_show_error("⚠️ HAPİSTESİNİZ! İşlem yapamazsınız.")
+		return
+	
 	if not FacilityManager.FACILITIES_CONFIG.has(facility_type):
 		_show_error("Unknown facility type: %s" % facility_type)
 		return
@@ -271,6 +308,11 @@ func _show_detail_modal(facility_type: String) -> void:
 		selected_facility
 	)
 	
+	# If imprisoned, disable all action buttons in the modal
+	if State.in_prison:
+		print("[FacilitiesScreen] Player is in prison - disabling modal buttons")
+		detail_modal.disable_all_buttons()
+	
 	detail_modal.show()
 	detail_modal_visible = true
 
@@ -301,7 +343,7 @@ func _unlock_facility(facility_type: String) -> void:
 	else:
 		_show_error("Hata: %s" % result.get("error", "Bilinmeyen hata"))
 
-func _on_facility_unlocked(facility_id: String, facility_name: String) -> void:
+func _on_facility_unlocked(_facility_id: String, facility_name: String) -> void:
 	print("[FacilitiesScreen] Facility unlocked: %s" % facility_name)
 	# Refresh is already done in _unlock_facility, no need to do it again
 
@@ -337,7 +379,7 @@ func _on_production_started(facility_id: String, recipe_name: String, quantity: 
 	await get_tree().create_timer(1.0).timeout
 	_refresh_facilities()
 
-func _on_production_completed(facility_id: String, item_name: String, rarity: String) -> void:
+func _on_production_completed(_facility_id: String, item_name: String, rarity: String) -> void:
 	print("[FacilitiesScreen] Production completed: %s (%s)" % [item_name, rarity])
 	_refresh_facilities()
 
@@ -377,6 +419,8 @@ func _on_facility_bribe_pressed(facility_type: String) -> void:
 		if bribe_result.get("success", false):
 			State.update_gems(bribe_result.get("gems_remaining", State.gems - gems_cost))
 			_show_success("Rüşvet verildi! Yeni şüphe seviyesi: %d" % bribe_result.get("new_suspicion", 0))
+			await get_tree().create_timer(0.5).timeout
+			_refresh_facilities()
 		else:
 			_show_error("Rüşvet başarısız: %s" % bribe_result.get("error", "Bilinmeyen hata"))
 
@@ -392,6 +436,13 @@ func _on_facility_upgraded(facility_id: String, new_level: int) -> void:
 func _on_sent_to_prison(prison_hours: int, suspicion_was: int) -> void:
 	print("[FacilitiesScreen] Sent to prison: hours: %d, previous suspicion: %d" % [prison_hours, suspicion_was])
 	_show_warning("⚠️ HAPİS\n\nSüre: %d saat" % prison_hours)
+
+func _on_state_changed(key: String, value: Variant) -> void:
+	if key == "prison":
+		print("[FacilitiesScreen] Prison state changed: %s" % value)
+		_update_global_risk_ui()  # Refresh risk UI to show/hide prison warning
+		# Also refresh facility grid/cards so buttons reflect new state
+		_render_facility_grid()
 
 # ==================== DIALOG HELPERS ====================
 
@@ -430,22 +481,144 @@ func _show_confirmation_dialog(title: String, message: String, yes_text: String 
 
 func _show_success(message: String) -> void:
 	print("[FacilitiesScreen] SUCCESS: %s" % message)
-	# TODO: Show toast notification
-	pass
+	_show_toast(message, Color.GREEN)
 
 func _show_error(message: String) -> void:
 	print("[FacilitiesScreen] ERROR: %s" % message)
-	# TODO: Show error dialog
-	pass
+	_show_toast(message, Color.RED)
 
 func _show_warning(message: String) -> void:
 	print("[FacilitiesScreen] WARNING: %s" % message)
-	# TODO: Show warning dialog
-	pass
+	_show_toast(message, Color.YELLOW)
+
+func _show_toast(message: String, color: Color = Color.WHITE) -> void:
+	# Create a simple toast notification
+	var toast_container = Control.new()
+	toast_container.name = "Toast"
+	add_child(toast_container)
+	toast_container.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	
+	# Create background panel
+	var panel = PanelContainer.new()
+	toast_container.add_child(panel)
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = color.lerp(Color.BLACK, 0.7)
+	style.border_width_left = 2
+	style.border_width_right = 2
+	style.border_width_top = 2
+	style.border_width_bottom = 2
+	style.border_color = color
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.content_margin_left = 15
+	style.content_margin_right = 15
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	panel.add_theme_stylebox_override("panel", style)
+	
+	# Create text label
+	var label = Label.new()
+	label.text = message
+	label.custom_minimum_size = Vector2(300, 0)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_font_size_override("font_size", 14)
+	panel.add_child(label)
+	
+	# Position at top center
+	toast_container.position = Vector2(get_viewport_rect().size.x / 2 - 150, 20)
+	
+	# Auto-hide after 3 seconds
+	await get_tree().create_timer(3.0).timeout
+	toast_container.queue_free()
 
 func _update_global_risk_ui() -> void:
-	# Calculate global suspicion
-	var suspicion = FacilityManager.get_global_suspicion_risk()
+	# Check if player is in prison first
+	if State.in_prison:
+		# Show prison warning instead of risk UI
+		if global_risk_panel == null:
+			global_risk_panel = PanelContainer.new()
+			var prison_style = StyleBoxFlat.new()
+			prison_style.bg_color = Color(0.2, 0.05, 0.05, 0.9)
+			prison_style.border_width_bottom = 3
+			prison_style.border_color = Color(0.9, 0.1, 0.1, 0.8)
+			prison_style.content_margin_top = 15
+			prison_style.content_margin_bottom = 15
+			prison_style.content_margin_left = 20
+			prison_style.content_margin_right = 20
+			global_risk_panel.add_theme_stylebox_override("panel", prison_style)
+			
+			if main_vbox:
+				main_vbox.add_child(global_risk_panel)
+				main_vbox.move_child(global_risk_panel, 1)
+		
+		# Clear previous content
+		for child in global_risk_panel.get_children():
+			child.queue_free()
+		
+		var vbox = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 10)
+		global_risk_panel.add_child(vbox)
+		
+		# Prison warning title
+		var title_lbl = Label.new()
+		title_lbl.text = "⛓️ HAPİSTESİNİZ!"
+		title_lbl.add_theme_font_size_override("font_size", 20)
+		title_lbl.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
+		title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(title_lbl)
+		
+		# Prison reason
+		var reason_lbl = Label.new()
+		reason_lbl.text = "📄 Gerekçe: " + State.prison_reason
+		reason_lbl.add_theme_font_size_override("font_size", 14)
+		reason_lbl.add_theme_color_override("font_color", Color(1, 0.8, 0.8))
+		reason_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(reason_lbl)
+		
+		# Remaining time and bail cost calculation
+		var remaining_mins = State.get_prison_remaining_minutes()
+		var bail_cost = max(1, remaining_mins)  # 1 gem per minute, minimum 1
+		
+		var time_lbl = Label.new()
+		time_lbl.text = "⏱️ Kalan Süre: %d dakika" % remaining_mins
+		time_lbl.add_theme_font_size_override("font_size", 16)
+		time_lbl.add_theme_color_override("font_color", Color.WHITE)
+		time_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(time_lbl)
+		
+		# Cost display
+		var cost_lbl = Label.new()
+		cost_lbl.text = "💎 Kefalet Maliyeti: %d Gem" % bail_cost
+		cost_lbl.add_theme_font_size_override("font_size", 14)
+		cost_lbl.add_theme_color_override("font_color", Color(1, 0.8, 0.3))
+		cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(cost_lbl)
+		
+		# Bail button
+		var bail_btn = Button.new()
+		bail_btn.add_theme_font_size_override("font_size", 14)
+		bail_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bail_btn.pressed.connect(_on_prison_bail_pressed.bindv([bail_cost]))
+		
+		if State.gems >= bail_cost:
+			bail_btn.text = "💎 Kefalet Öde (%d Gem)" % bail_cost
+		else:
+			bail_btn.disabled = true
+			bail_btn.text = "❌ Yeterli Gem Yok (%d/%d)" % [State.gems, bail_cost]
+		
+		vbox.add_child(bail_btn)
+		
+		return
+	
+	# Get global suspicion from database (State), not from local calculation
+	# This ensures we show the authoritative value from the server
+	var suspicion = State.player.get("global_suspicion_level", 0)
+	if suspicion is float:
+		suspicion = int(suspicion)
 	
 	# Create or reuse panel
 	if global_risk_panel == null:
@@ -544,19 +717,18 @@ func _on_global_bribe_pressed() -> void:
 	var target_facility_type = ""
 	
 	for facility in FacilityManager.cached_facilities.values():
-		var susp = facility.get("suspicion", 0)
+		var susp = facility.get("suspicion_level", 0)
 		if susp > max_suspicion:
 			max_suspicion = susp
 			target_facility_type = facility.get("type", "")
 			
-	if target_facility_type == "" or max_suspicion == 0:
-		_show_error("Düşürülecek şüphe yok!")
+	if target_facility_type == "":
+		_show_error("Tesis bulunamadı!")
 		return
-		
 
 	var confirmed = await _show_confirmation_dialog(
 		"Rüşvet Ver",
-		"En yüksek şüpheye sahip tesis (%s, %%%d) için rüşvet vermek ister misiniz? (5 Gem)" % [FacilityManager.get_facility_name(target_facility_type), max_suspicion],
+		"Global risk seviyesi 0%%'e düşecek. 5 Gem harcamak istiyor musunuz?",
 		"Ver", "İptal"
 	)
 	
@@ -571,5 +743,48 @@ func _on_global_bribe_pressed() -> void:
 		if bribe_result.get("success", false):
 			State.update_gems(bribe_result.get("gems_remaining", State.gems - gems_cost))
 			_show_success("Rüşvet verildi! Şüphe düştü.")
+			await get_tree().create_timer(0.5).timeout
+			_refresh_facilities()
 		else:
 			_show_error("Hata: %s" % bribe_result.get("error", "Bilinmeyen"))
+
+func _on_reset_all_production_pressed() -> void:
+	print("[FacilitiesScreen] Reset ALL production button pressed")
+	_show_toast("🔧 TÜM ÜRETİMLER SIFIRLANIYOR...", Color.YELLOW)
+	
+	var result = await FacilityManager.reset_all_facility_production()
+	if result.success:
+		_show_toast("✅ %d tesis sıfırlandı! (%d queue item silindi)" % [
+			result.get("facilities_reset", 0),
+			result.get("queue_items_deleted", 0)
+		], Color.GREEN)
+		# Refresh UI
+		_refresh_facilities()
+	else:
+		_show_toast("❌ Hata: %s" % result.error, Color.RED)
+
+func _on_prison_bail_pressed(bail_cost: int = 0) -> void:
+	if bail_cost <= 0:
+		bail_cost = max(1, State.get_prison_remaining_minutes())
+	
+	var confirmed = await _show_confirmation_dialog(
+		"Kefalet Öde",
+		"Hapisten çıkmak için %d Gem harcayacak mısınız?" % bail_cost,
+		"Öde", "İptal"
+	)
+	
+	if confirmed:
+		_show_toast("💎 Kefalet ödeniyor...", Color.YELLOW)
+		PrisonManager.pay_bail()
+
+func _on_prison_released(success: bool, message: String) -> void:
+	if success:
+		_show_success("✅ " + message)
+		# Wait a moment for server state to be synced
+		await get_tree().create_timer(0.5).timeout
+		# Manually refresh to ensure UI updates from current state
+		if State.in_prison:
+			print("[FacilitiesScreen] Warning: State.in_prison still true after bail, refreshing...")
+			_refresh_facilities()
+	else:
+		_show_error("❌ Kefalet başarısız: " + message)

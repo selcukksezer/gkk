@@ -52,7 +52,8 @@ func load_player_data(data: Dictionary) -> void:
 		prison_release_time = Time.get_unix_time_from_datetime_dict(prison_time)
 		var current_time = Time.get_unix_time_from_system()
 		in_prison = current_time < prison_release_time
-		prison_reason = data.get("prison_reason", "")
+		var reason = data.get("prison_reason")
+		prison_reason = reason if reason != null else ""
 	else:
 		in_prison = false
 		prison_release_time = 0
@@ -68,9 +69,18 @@ func load_player_data(data: Dictionary) -> void:
 	# Save player data to disk for persistence
 	_save_player_data()
 	
+	# Ensure player dictionary reflects computed prison/hospital flags for compatibility
+	player["in_prison"] = in_prison
+	player["prison_reason"] = prison_reason if in_prison else null
+	player["prison_until"] = data.get("prison_until", null)
+	player["in_hospital"] = in_hospital
+	player["hospital_until"] = data.get("hospital_until", null)
+	
+	# Emit signals to update UI
 	player_updated.emit()
 	energy_updated.emit()
-	print("[StateStore] Player data loaded: Level %d, Gold %d, Energy %d/%d" % [level, gold, current_energy, max_energy])
+	print("[State] Player data loaded and UI signals emitted for: %s" % player.get("username", "Unknown"))
+	
 
 ## XP calculation
 func calculate_next_level_xp(current_level: int) -> int:
@@ -164,7 +174,7 @@ func refresh_data() -> void:
 		return
 		
 	print("[StateStore] Force refreshing player data...")
-	_on_session_status_checked(true)
+	await _on_session_status_checked(true)
 
 ## Player Methods
 func get_player_data() -> Dictionary:
@@ -545,14 +555,7 @@ func _on_session_status_checked(is_authenticated: bool) -> void:
 	# If session validated and authenticated, fetch profile from server
 	if is_authenticated and Network:
 		print("[StateStore] Session validated; fetching player profile from server")
-		# Try canonical profile endpoint first
-		var profile_result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
-		if profile_result and profile_result.get("success", false) and profile_result.get("data", null):
-			load_player_data(profile_result.get("data", {}))
-			print("[StateStore] Player profile loaded from server on session check")
-			return
-		# If profile endpoint missing or returned 404, try fallback via auth user -> users lookup
-		print("[StateStore] Primary profile fetch failed, attempting fallback via auth user. Response:", profile_result)
+		# Fetch profile via auth user -> users lookup
 		var auth_user = await Network.http_get("/auth/v1/user")
 		if auth_user and auth_user.get("success", false) and auth_user.get("data", null):
 			var auth_data = auth_user.get("data", {})
@@ -576,16 +579,38 @@ func _on_session_status_checked(is_authenticated: bool) -> void:
 				print("[StateStore] users_data type: %s, size: %s" % [typeof(users_data), users_size])
 				if users_res and users_res.get("success", false) and users_data and typeof(users_data) == TYPE_ARRAY and users_data.size() > 0:
 					load_player_data(users_data[0])
-					print("[StateStore] Player profile loaded via auth->users fallback")
+					print("[StateStore] Player profile loaded from server on session check")
 					return
 				else:
 					print("[StateStore] No game.users row found for auth_id=%s; emitting profile_missing" % auth_id)
 					state_changed.emit("profile_missing", auth_id)
 					return
 		# If all fails, log and continue without player data
-		print("[StateStore] Failed to load player profile via all methods; response1:", profile_result, "auth_user:", auth_user)
+		print("[StateStore] Failed to load player profile via all methods; response1:", auth_user)
 	else:
 		print("[StateStore] Session not authenticated or Network not available")
+
+## Fetch player profile from server
+func fetch_player_profile() -> Dictionary:
+	if not Network:
+		return {"success": false, "error": "Network not available"}
+	
+	var auth_user = await Network.http_get("/auth/v1/user")
+	if auth_user and auth_user.get("success", false) and auth_user.get("data", null):
+		var auth_data = auth_user.get("data", {})
+		var auth_id = auth_data.get("id", "")
+		if auth_id != "":
+			var users_endpoint = "/rest/v1/users?select=*&auth_id=eq.%s" % auth_id
+			var users_res = await Network.http_get(users_endpoint)
+			if users_res and users_res.get("success", false) and users_res.get("data", null) and typeof(users_res.data) == TYPE_ARRAY and users_res.data.size() > 0:
+				load_player_data(users_res.data[0])
+				return {"success": true, "data": users_res.data[0]}
+			else:
+				return {"success": false, "error": "No user data found"}
+		else:
+			return {"success": false, "error": "No auth id"}
+	else:
+		return {"success": false, "error": "Auth user fetch failed"}
 
 ## Arka planda sync işlemini başlat
 func _sync_to_supabase_background():

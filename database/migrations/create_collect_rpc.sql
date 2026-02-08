@@ -24,7 +24,7 @@ BEGIN
     IF v_facility IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'Facility not found'); END IF;
 
     -- PRISON CHECK: If suspicion is 100 (or more), send to jail!
-    IF v_facility.suspicion >= 100 THEN
+    IF v_facility.suspicion_level >= 100 THEN
         -- Jail for 15 minutes
         v_prison_time := NOW() + INTERVAL '15 minutes';
         UPDATE game.users 

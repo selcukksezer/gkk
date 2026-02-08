@@ -32,14 +32,14 @@ BEGIN
     v_cost := (v_base_cost * power(v_multiplier, v_current_level))::INT;
     
     -- Check user gold
-    SELECT gold INTO v_user_gold FROM game.users WHERE id = v_user_id;
+    SELECT gold INTO v_user_gold FROM public.users WHERE id = v_user_id;
     
     IF v_user_gold < v_cost THEN
         RETURN jsonb_build_object('success', false, 'error', 'Insufficient gold', 'cost', v_cost, 'current_gold', v_user_gold);
     END IF;
     
     -- Deduct gold
-    UPDATE game.users SET gold = gold - v_cost WHERE id = v_user_id;
+    UPDATE public.users SET gold = gold - v_cost WHERE id = v_user_id;
     
     -- Increment level
     UPDATE public.facilities 

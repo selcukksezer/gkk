@@ -39,62 +39,41 @@ func _ready() -> void:
 		print("[Session] Tokens present on disk, attempting to validate session with server.")
 		is_authenticated = true
 		
-		# Attempt to fetch player profile from server to validate tokens
-		var profile_result = await Network.http_get(APIEndpoints.PLAYER_PROFILE)
-		
-		if profile_result and profile_result.get("success", false):
-			# Profile fetch succeeded
-			var data = profile_result.get("data", {})
-			if data and data.has("id"):
-				player_id = data.id
-				username = data.get("username", username)
-				is_authenticated = true
-				State.load_player_data(data)
-				print("[Session] Restored session and loaded player profile from server")
-				logged_in.emit(data)
-				session_status_checked.emit(true)
+		# Attempt to fetch player profile via auth user -> users lookup
+		var auth_user = await Network.http_get("/auth/v1/user")
+		if auth_user and auth_user.get("success", false) and auth_user.get("data", null):
+			var auth_data = auth_user.get("data", {})
+			var auth_id = auth_data.get("id", "")
+			print("[Session] Auth user info retrieved: auth_id=%s" % auth_id)
+			if auth_id != "":
+				# Try to find matching game.users by auth_id
+				var users_res = await Network.http_get("/rest/v1/users?select=*&auth_id=eq.%s" % auth_id)
+				if users_res and users_res.get("success", false) and users_res.get("data", null) and users_res.data.size() > 0:
+					var user = users_res.data[0]
+					player_id = user.get("id", "")
+					username = user.get("username", username)
+					is_authenticated = true
+					State.load_player_data(user)
+					print("[Session] Restored session and loaded player profile from server")
+					logged_in.emit(user)
+					session_status_checked.emit(true)
+				else:
+					# DO NOT force logout if user table missing; keep token and surface the condition for UI to handle
+					print("[Session] No game.users row found for auth_id=%s; keeping session active and emitting profile_missing" % auth_id)
+					profile_missing.emit(auth_id)
+					# Keep is_authenticated as true but defer loading user until resolved by UI/server
+					is_authenticated = true
+					session_status_checked.emit(true)
 			else:
-				print("[Session] PROFILE fetched but missing required fields. Falling back to auth user lookup. profile_result:", profile_result)
-				# fall through to fallback
+				print("[Session] Auth user lookup failed or no id; logging out")
 				is_authenticated = false
 				logout()
 				session_status_checked.emit(false)
 		else:
-			print("[Session] Profile fetch failed or returned error: %s" % profile_result)
-			print("[Session] Attempting fallback: /auth/v1/user to validate token and find user record")
-			# Fallback: try Supabase auth user endpoint to get auth id
-			var auth_user = await Network.http_get("/auth/v1/user")
-			if auth_user and auth_user.get("success", false) and auth_user.get("data", null):
-				var auth_data = auth_user.get("data", {})
-				var auth_id = auth_data.get("id", "")
-				print("[Session] Auth user info retrieved: auth_id=%s" % auth_id)
-				if auth_id != "":
-					# Try to find matching game.users by auth_id
-					var users_res = await Network.http_get("/rest/v1/users?select=*&auth_id=eq.%s" % auth_id)
-					if users_res and users_res.get("success", false) and users_res.get("data", null) and users_res.data.size() > 0:
-						var user = users_res.data[0]
-						player_id = user.get("id", "")
-						username = user.get("username", username)
-						is_authenticated = true
-						State.load_player_data(user)
-						print("[Session] Restored session via userdata lookup for auth_id=%s" % auth_id)
-						logged_in.emit(user)
-						session_status_checked.emit(true)
-					else:
-						# DO NOT force logout if user table missing; keep token and surface the condition for UI to handle
-						print("[Session] No game.users row found for auth_id=%s; keeping session active and emitting profile_missing" % auth_id)
-						profile_missing.emit(auth_id)
-						# Keep is_authenticated as true but defer loading user until resolved by UI/server
-						is_authenticated = true
-						session_status_checked.emit(true)
-				else:
-					print("[Session] Auth user had no id; cannot validate token. auth_user:", auth_user)
-					logout()
-					session_status_checked.emit(false)
-			else:
-				print("[Session] Fallback auth user fetch failed: %s" % auth_user)
-				logout()
-				session_status_checked.emit(false)
+			print("[Session] Auth user lookup failed; logging out")
+			is_authenticated = false
+			logout()
+			session_status_checked.emit(false)
 	else:
 		print("[Session] No valid session found on startup.")
 		is_authenticated = false
@@ -226,29 +205,18 @@ func _on_register_response(result: Dictionary) -> void:
 		register_completed.emit(false, error_msg)
 
 ## Login
-func login(username_param: String, password: String) -> void:
-	# Build login payload. Server may accept email or username; include both when possible.
+func login(email: String, password: String) -> void:
+	# Build login payload with email and password
 	var body = {
+		"email": email,
 		"password": password,
 		"device_id": device_id
 	}
 
-	if username_param.find("@") >= 0:
-		# Input looks like an email
-		body["email"] = username_param
-	else:
-		# Input is username: include username field and try to resolve saved email mapping
-		body["username"] = username_param
-		if _username_email_map.has(username_param):
-			body["email"] = _username_email_map[username_param]
-		else:
-			# Fallback: create a test email from username (some environments expect this)
-			body["email"] = "%s@example.com" % username_param
-	
 	var result = await Network.http_post(APIEndpoints.AUTH_LOGIN, body)
 	_on_login_response(result)
 	print("[Session] Login payload: ", body)
-	print("[Session] Login attempt with input: %s, resolved email: %s" % [username_param, body.get("email", "")])
+	print("[Session] Login attempt with email: %s" % email)
 
 func _on_login_response(result: Dictionary) -> void:
 	if result.success:

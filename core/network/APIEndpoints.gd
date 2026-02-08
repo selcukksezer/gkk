@@ -8,14 +8,14 @@ const BASE_URL = "https://your-project.supabase.co"
 const API_VERSION = "/api/v1"
 
 ## Authentication
-const AUTH_LOGIN = "/functions/v1/auth_login"
-const AUTH_REGISTER = "/functions/v1/auth_register"
+const AUTH_LOGIN = "/functions/v1/auth-login"
+const AUTH_REGISTER = "/functions/v1/auth-register"
 const AUTH_LOGOUT = "/auth/v1/logout"
 const AUTH_REFRESH = "/auth/v1/token?grant_type=refresh_token"
 const AUTH_RESET_PASSWORD = "/auth/v1/recover"
 
 ## Player
-const PLAYER_PROFILE = API_VERSION + "/player/profile"
+const PLAYER_PROFILE = "/functions/v1/player-profile"
 const PLAYER_UPDATE = API_VERSION + "/player/update"
 const PLAYER_STATS = API_VERSION + "/player/stats"
 const PLAYER_SEARCH = API_VERSION + "/player/search"

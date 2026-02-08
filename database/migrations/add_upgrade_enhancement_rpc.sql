@@ -1,7 +1,7 @@
 -- Create upgrade_item_enhancement RPC to safely update item levels bypassing RLS
 -- Run this in your Supabase SQL Editor
 
-CREATE OR REPLACE FUNCTION upgrade_item_enhancement(p_row_id UUID, p_new_level INT)
+CREATE OR REPLACE FUNCTION public.upgrade_item_enhancement(p_new_level INT, p_row_id UUID)
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER

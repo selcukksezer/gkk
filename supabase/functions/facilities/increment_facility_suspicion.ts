@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
         const { data: prisonRecord, error: prisonError } = await supabase
           .from('prison_records')
           .insert({
-            player_id: playerId,
+            user_id: playerId,
             facility_id: p_facility_id,
             reason: 'High suspicion at facility operations',
             sentence_hours: sentenceHours,

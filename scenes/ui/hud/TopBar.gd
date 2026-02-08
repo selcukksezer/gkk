@@ -2,17 +2,23 @@ extends Control
 ## Top Bar HUD
 ## Displays energy, gold, gems, and player info
 
-@onready var energy_bar: ProgressBar = $HBoxContainer/EnergySection/EnergyBar
-@onready var energy_label: Label = $HBoxContainer/EnergySection/EnergyLabel
-@onready var gold_label: Label = $HBoxContainer/ResourceSection/GoldLabel
-@onready var gem_label: Label = $HBoxContainer/ResourceSection/GemLabel
-@onready var level_label: Label = $HBoxContainer/PlayerSection/LevelLabel
-@onready var avatar_texture: TextureRect = $HBoxContainer/PlayerSection/Avatar
+const MathUtils = preload("res://core/utils/MathUtils.gd")
+
+@onready var player_name_label: Label = $MarginContainer/HBox/PlayerInfo/PlayerName
+@onready var level_label: Label = $MarginContainer/HBox/PlayerInfo/LevelLabel
+@onready var gold_label: Label = $MarginContainer/HBox/GoldLabel
+@onready var gem_label: Label = $MarginContainer/HBox/GemsLabel
+@onready var energy_label: Label = $MarginContainer/HBox/EnergyLabel
+@onready var logout_button: Button = $MarginContainer/HBox/LogoutButton
 
 func _ready() -> void:
 	# Connect state signals
 	State.energy_updated.connect(_on_energy_updated)
 	State.player_updated.connect(_on_player_updated)
+	
+	# Connect logout button
+	if logout_button:
+		logout_button.pressed.connect(_on_logout_pressed)
 	
 	# Initial update
 	_update_display()
@@ -23,72 +29,55 @@ func _update_display() -> void:
 	_update_player_info()
 
 func _update_energy() -> void:
-	if energy_bar:
-		energy_bar.max_value = State.max_energy
-		energy_bar.value = State.current_energy
-	
 	if energy_label:
-		energy_label.text = "%d/%d" % [State.current_energy, State.max_energy]
+		energy_label.text = "%d ⚡" % State.current_energy
 		
 		# Color based on energy level
-		var ratio = float(State.current_energy) / float(State.max_energy)
+		var ratio = float(State.current_energy) / float(State.max_energy) if State.max_energy > 0 else 0.0
 		if ratio > 0.5:
-			energy_label.add_theme_color_override("font_color", Color.GREEN)
+			energy_label.add_theme_color_override("font_color", Color(0.3, 0.8, 1))
 		elif ratio > 0.25:
-			energy_label.add_theme_color_override("font_color", Color.YELLOW)
+			energy_label.add_theme_color_override("font_color", Color(1, 0.8, 0.3))
 		else:
-			energy_label.add_theme_color_override("font_color", Color.RED)
+			energy_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 
 func _update_resources() -> void:
 	if gold_label:
-		gold_label.text = MathUtils.format_number(State.gold)
+		gold_label.text = "%s 💰" % MathUtils.format_number(State.gold)
 	
 	if gem_label:
-		gem_label.text = str(State.player.gems)
+		gem_label.text = "%s 💎" % MathUtils.format_number(int(State.gems))
 
 func _update_player_info() -> void:
 	if level_label:
-		level_label.text = "Lv.%d" % State.level
+		level_label.text = "Lv.%d" % int(State.level)
 	
-	# Avatar will be updated when we have avatar system
-	# For now, just show a placeholder
+	if player_name_label:
+		var player_data = State.get_player_data()
+		if player_data.is_empty():
+			player_name_label.text = "Oyuncu"
+		else:
+			player_name_label.text = player_data.get("display_name", player_data.get("username", "Oyuncu"))
 
-## Button handlers
-func _on_energy_pressed() -> void:
-	# Fetch fresh energy data from server
-	_fetch_energy_from_server()
-	
-	# Show energy info dialog
-	var dialog_scene = load("res://scenes/ui/dialogs/EnergyInfoDialog.tscn")
+func _on_logout_pressed() -> void:
+	# Show confirmation dialog via Main
+	var dialog_scene = load("res://scenes/ui/dialogs/ConfirmDialog.tscn")
 	if dialog_scene:
-		get_tree().root.get_node("Main").show_dialog(dialog_scene)
+		var main = get_tree().get_root().get_node_or_null("Main")
+		if main and main.has_method("show_dialog"):
+			main.show_dialog(dialog_scene, {
+				"title": "Çıkış",
+				"message": "Oturumdan çıkmak istiyor musunuz?",
+				"confirm_text": "Çıkış",
+				"on_confirm": Callable(self, "_confirm_logout")
+			})
 
-func _fetch_energy_from_server() -> void:
-	print("[TopBar] Fetching energy from server...")
-	var energy_mgr = EnergyManager.new()
-	var result = await energy_mgr.fetch_energy_status()
-	
-	if result.success:
-		# Update State with fresh data
-		State.update_player_data({
-			"energy": result.current_energy,
-			"max_energy": result.max_energy
-		})
-		print("[TopBar] Energy updated from server: %d/%d" % [result.current_energy, result.max_energy])
+func _confirm_logout() -> void:
+	# Perform logout
+	if Session:
+		Session.logout()
 	else:
-		print("[TopBar] Failed to fetch energy: %s" % result.get("error", "Unknown error"))
-
-func _on_gold_pressed() -> void:
-	# Navigate to shop or show gold info
-	pass
-
-func _on_gem_pressed() -> void:
-	# Navigate to shop
-	pass
-
-func _on_profile_pressed() -> void:
-	# Navigate to profile screen
-	get_tree().root.get_node("Main").show_screen("profile")
+		push_error("[TopBar] Session manager not available for logout")
 
 ## Signal handlers
 func _on_energy_updated() -> void:

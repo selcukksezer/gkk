@@ -1171,7 +1171,7 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.referral_code IS NULL THEN
         NEW.referral_code := generate_referral_code();
-        WHILE EXISTS (SELECT 1 FROM game.users WHERE referral_code = NEW.referral_code) LOOP
+        WHILE EXISTS (SELECT 1 FROM public.users WHERE referral_code = NEW.referral_code) LOOP
             NEW.referral_code := generate_referral_code();
         END LOOP;
     END IF;
@@ -1321,7 +1321,7 @@ BEGIN
         'guild_id', guild_id, 'guild_role', guild_role,
         'tutorial_completed', tutorial_completed, 'referral_code', referral_code,
         'created_at', created_at, 'last_login_at', last_login_at
-    ) INTO v_user FROM game.users WHERE auth_id = v_user_id;
+    ) INTO v_user FROM public.users WHERE auth_id = v_user_id;
     IF v_user IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'User profile not found'); END IF;
     RETURN jsonb_build_object('success', true, 'data', v_user);
 END;
@@ -1334,7 +1334,7 @@ DECLARE v_user_id UUID;
 BEGIN
     v_user_id := auth.uid();
     IF v_user_id IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'Not authenticated'); END IF;
-    UPDATE game.users SET
+    UPDATE public.users SET
         display_name = COALESCE(p_display_name, display_name),
         avatar_url = COALESCE(p_avatar_url, avatar_url),
         updated_at = NOW()
@@ -1350,13 +1350,13 @@ DECLARE v_user_id UUID;
 BEGIN
     v_user_id := auth.uid();
     IF v_user_id IS NULL THEN RETURN jsonb_build_object('success', false, 'error', 'Not authenticated'); END IF;
-    UPDATE game.users SET last_login_at = NOW() WHERE auth_id = v_user_id;
+    UPDATE public.users SET last_login_at = NOW() WHERE auth_id = v_user_id;
     RETURN jsonb_build_object('success', true);
 END;
 $$;
 
 -- upgrade_item_enhancement
-CREATE OR REPLACE FUNCTION public.upgrade_item_enhancement(p_row_id UUID, p_new_level INT)
+CREATE OR REPLACE FUNCTION public.upgrade_item_enhancement(p_new_level INT, p_row_id UUID)
 RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE v_affected_rows INT;
 BEGIN

@@ -4,8 +4,11 @@
 -- This creates the core users table for game data
 -- Integrates with Supabase Auth (auth.users)
 
+-- Create game schema if it doesn't exist
+CREATE SCHEMA IF NOT EXISTS game;
+
 -- Create users table for game data
-CREATE TABLE IF NOT EXISTS public.users (
+CREATE TABLE IF NOT EXISTS game.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     auth_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
     
@@ -19,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     level INT DEFAULT 1,
     experience INT DEFAULT 0,
     gold INT DEFAULT 1000,
+    gems INT DEFAULT 0,
     energy INT DEFAULT 100,
     max_energy INT DEFAULT 100,
     energy_last_updated TIMESTAMPTZ DEFAULT NOW(),
@@ -45,7 +49,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     guild_id UUID,
     guild_role TEXT,
     referral_code TEXT UNIQUE,
-    referred_by UUID REFERENCES public.users(id),
+    referred_by UUID REFERENCES game.users(id),
     
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -54,30 +58,30 @@ CREATE TABLE IF NOT EXISTS public.users (
 );
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_users_auth_id ON public.users(auth_id);
-CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
-CREATE INDEX IF NOT EXISTS idx_users_level ON public.users(level);
-CREATE INDEX IF NOT EXISTS idx_users_guild_id ON public.users(guild_id);
-CREATE INDEX IF NOT EXISTS idx_users_referral_code ON public.users(referral_code);
-CREATE INDEX IF NOT EXISTS idx_users_referred_by ON public.users(referred_by);
+CREATE INDEX IF NOT EXISTS idx_users_auth_id ON game.users(auth_id);
+CREATE INDEX IF NOT EXISTS idx_users_username ON game.users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON game.users(email);
+CREATE INDEX IF NOT EXISTS idx_users_level ON game.users(level);
+CREATE INDEX IF NOT EXISTS idx_users_guild_id ON game.users(guild_id);
+CREATE INDEX IF NOT EXISTS idx_users_referral_code ON game.users(referral_code);
+CREATE INDEX IF NOT EXISTS idx_users_referred_by ON game.users(referred_by);
 
 -- Enable Row Level Security
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game.users ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can read their own data
-CREATE POLICY users_select_own ON public.users
+CREATE POLICY users_select_own ON game.users
     FOR SELECT
     USING (auth.uid() = auth_id);
 
 -- Policy: Users can update their own data (limited fields)
-CREATE POLICY users_update_own ON public.users
+CREATE POLICY users_update_own ON game.users
     FOR UPDATE
     USING (auth.uid() = auth_id)
     WITH CHECK (auth.uid() = auth_id);
 
 -- Policy: Allow reading other users' public data (for leaderboards, PvP, etc.)
-CREATE POLICY users_select_public ON public.users
+CREATE POLICY users_select_public ON game.users
     FOR SELECT
     USING (true);
 
@@ -107,7 +111,7 @@ BEGIN
     IF NEW.referral_code IS NULL THEN
         NEW.referral_code := generate_referral_code();
         -- Ensure uniqueness
-        WHILE EXISTS (SELECT 1 FROM public.users WHERE referral_code = NEW.referral_code) LOOP
+        WHILE EXISTS (SELECT 1 FROM game.users WHERE referral_code = NEW.referral_code) LOOP
             NEW.referral_code := generate_referral_code();
         END LOOP;
     END IF;
@@ -116,7 +120,7 @@ END;
 $$;
 
 CREATE TRIGGER trigger_set_referral_code
-    BEFORE INSERT ON public.users
+    BEFORE INSERT ON game.users
     FOR EACH ROW
     EXECUTE FUNCTION set_referral_code();
 
@@ -132,7 +136,7 @@ END;
 $$;
 
 CREATE TRIGGER trigger_users_updated_at
-    BEFORE UPDATE ON public.users
+    BEFORE UPDATE ON game.users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -141,12 +145,12 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, game
 AS $$
 BEGIN
-    -- Create user profile in public.users
+    -- Create user profile in game.users
     -- Use ON CONFLICT to handle cases where profile might already exist
-    INSERT INTO public.users (auth_id, email, username, display_name)
+    INSERT INTO game.users (auth_id, email, username, display_name)
     VALUES (
         NEW.id,
         NEW.email,
@@ -172,8 +176,9 @@ CREATE TRIGGER on_auth_user_created
     EXECUTE FUNCTION public.handle_new_user();
 
 -- Grant permissions
-GRANT SELECT, INSERT, UPDATE ON public.users TO authenticated;
-GRANT SELECT ON public.users TO anon;
+GRANT USAGE ON SCHEMA game TO authenticated, anon;
+GRANT SELECT, INSERT, UPDATE ON game.users TO authenticated;
+GRANT SELECT ON game.users TO anon;
 
 -- RPC function to get current user profile
 CREATE OR REPLACE FUNCTION public.get_current_user()
@@ -201,6 +206,7 @@ BEGIN
         'level', level,
         'experience', experience,
         'gold', gold,
+        'gems', gems,
         'energy', energy,
         'max_energy', max_energy,
         'attack', attack,
@@ -216,7 +222,7 @@ BEGIN
         'last_login_at', last_login_at
     )
     INTO v_user
-    FROM public.users
+    FROM game.users
     WHERE auth_id = v_user_id;
     
     IF v_user IS NULL THEN
@@ -245,7 +251,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Not authenticated');
     END IF;
     
-    UPDATE public.users
+    UPDATE game.users
     SET
         display_name = COALESCE(p_display_name, display_name),
         avatar_url = COALESCE(p_avatar_url, avatar_url),
@@ -271,7 +277,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Not authenticated');
     END IF;
     
-    UPDATE public.users
+    UPDATE game.users
     SET last_login_at = NOW()
     WHERE auth_id = v_user_id;
     

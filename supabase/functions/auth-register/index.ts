@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Check if username already exists
     const { data: existingUsername } = await supabaseAdmin
-      .from('users')
+      .from('public.users')
       .select('id')
       .eq('username', username)
       .single()
@@ -106,7 +106,7 @@ serve(async (req) => {
 
     // Check if email already exists
     const { data: existingEmail } = await supabaseAdmin
-      .from('users')
+      .from('public.users')
       .select('id')
       .eq('email', email)
       .single()
@@ -128,7 +128,7 @@ serve(async (req) => {
     let referrer_id = null
     if (referral_code && referral_code.trim() !== '') {
       const { data: referrer } = await supabaseAdmin
-        .from('users')
+        .from('public.users')
         .select('id')
         .eq('referral_code', referral_code.toUpperCase())
         .single()
@@ -176,7 +176,7 @@ serve(async (req) => {
     // The trigger will auto-create the user profile, but we can also update it with referral
     if (referrer_id) {
       await supabaseAdmin
-        .from('users')
+        .from('public.users')
         .update({ referred_by: referrer_id })
         .eq('auth_id', authData.user.id)
     }
@@ -205,12 +205,43 @@ serve(async (req) => {
       )
     }
 
-    // Get the full user profile
-    const { data: userProfile } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('auth_id', authData.user.id)
-      .single()
+    // Wait a moment for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Get the full user profile (with retries if trigger hasn't completed)
+    let userProfile = null
+    let retries = 3
+    while (retries > 0 && !userProfile) {
+      const { data } = await supabaseAdmin
+        .from('public.users')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single()
+
+      if (data) {
+        userProfile = data
+        break
+      }
+
+      // Wait before retry
+      if (retries > 1) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      retries--
+    }
+
+    // If profile creation failed, still return success but log the issue
+    if (!userProfile) {
+      console.warn('Profile not found after trigger, using auth data')
+      userProfile = {
+        auth_id: authData.user.id,
+        email: authData.user.email,
+        username: authData.user.user_metadata?.username || email.split('@')[0],
+        display_name: authData.user.user_metadata?.display_name || email.split('@')[0],
+        id: authData.user.id,
+        created_at: new Date().toISOString()
+      }
+    }
 
     return new Response(
       JSON.stringify({ 

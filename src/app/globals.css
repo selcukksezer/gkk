@@ -1,0 +1,288 @@
+@import "tailwindcss";
+
+/* =====================================================
+   Gölge Krallık – Global CSS
+   Ortaçağ karanlık tema
+   ===================================================== */
+
+@theme {
+  /* Renk değişkenleri */
+  --color-gk-dark: #0a0a0f;
+  --color-gk-darker: #050508;
+  --color-gk-surface: #12121a;
+  --color-gk-panel: #1a1a26;
+  --color-gk-border: #2a2a3a;
+  --color-gk-gold: #d4a017;
+  --color-gk-gold-light: #f0c040;
+  --color-gk-silver: #a8a8b8;
+  --color-gk-crimson: #8b1a1a;
+  --color-gk-crimson-light: #cc2222;
+  --color-gk-emerald: #1a6b2e;
+  --color-gk-emerald-light: #2ca84e;
+  --color-gk-sapphire: #1a3a8b;
+  --color-gk-sapphire-light: #2255cc;
+  --color-gk-purple: #5a1a8b;
+  --color-gk-purple-light: #8b2acc;
+  --color-gk-energy: #00aaff;
+  --color-gk-tolerance: #ff6600;
+
+  /* Font families */
+  --font-game: 'Cinzel', 'Georgia', serif;
+  --font-game-body: 'Crimson Text', 'Georgia', serif;
+  --font-game-ui: 'Inter', system-ui, sans-serif;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--gk-dark);
+  color: #e8e0d0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Mobile first – mobil ekran boyutu */
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Kaydırma çubuğu teması */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gk-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gk-border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gk-gold);
+}
+
+/* Buton temel stili */
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input temel stili */
+input, textarea, select {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Link stili */
+a {
+  color: var(--gk-gold);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--gk-gold-light);
+}
+
+/* =====================================================
+   Bileşen sınıfları
+   ===================================================== */
+
+@layer components {
+  /* Oyun paneli */
+  .gk-panel {
+    background-color: var(--color-gk-panel);
+    border: 1px solid var(--color-gk-border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Altın başlık */
+  .gk-title {
+    color: var(--color-gk-gold);
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 20px rgba(212, 160, 23, 0.4);
+  }
+
+  /* İkincil metin */
+  .gk-text-muted {
+    color: var(--color-gk-silver);
+    font-size: 0.875rem;
+  }
+
+  /* Oyun butonu – altın */
+  .gk-btn-gold {
+    background-color: var(--color-gk-gold);
+    color: var(--color-gk-darker);
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+  .gk-btn-gold:hover { background-color: var(--color-gk-gold-light); }
+  .gk-btn-gold:active { transform: scale(0.95); }
+  .gk-btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Oyun butonu – kırmızı/tehlike */
+  .gk-btn-danger {
+    background-color: var(--color-gk-crimson);
+    color: white;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+  .gk-btn-danger:hover { background-color: var(--color-gk-crimson-light); }
+  .gk-btn-danger:active { transform: scale(0.95); }
+  .gk-btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Oyun butonu – gri/ikincil */
+  .gk-btn-secondary {
+    background-color: var(--color-gk-border);
+    color: var(--color-gk-silver);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+  .gk-btn-secondary:hover { background-color: var(--color-gk-panel); }
+  .gk-btn-secondary:active { transform: scale(0.95); }
+  .gk-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Oyun input alanı */
+  .gk-input {
+    background-color: var(--color-gk-surface);
+    border: 1px solid var(--color-gk-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .gk-input::placeholder { color: var(--color-gk-silver); }
+  .gk-input:focus { border-color: var(--color-gk-gold); }
+
+  /* Enerji çubuğu */
+  .gk-progress-energy {
+    height: 0.75rem;
+    border-radius: 9999px;
+    background-color: var(--color-gk-surface);
+    overflow: hidden;
+  }
+
+  .gk-progress-energy-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s;
+    background: linear-gradient(90deg, #0066aa, #00aaff);
+  }
+
+  /* Tolerans/bağımlılık çubuğu */
+  .gk-progress-tolerance {
+    height: 0.75rem;
+    border-radius: 9999px;
+    background-color: var(--color-gk-surface);
+    overflow: hidden;
+  }
+
+  /* Ekran kapsayıcısı */
+  .gk-screen {
+    min-height: 100svh;
+    background-color: var(--color-gk-dark);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 80px);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Kaydırılabilir içerik */
+  .gk-scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px;
+  }
+}
+
+/* =====================================================
+   Animasyonlar
+   ===================================================== */
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(212, 160, 23, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(212, 160, 23, 0.7); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.gk-glow-animate {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.gk-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 160, 23, 0.2) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* =====================================================
+   Capacitor / Mobil uyumluluk
+   ===================================================== */
+
+/* Safe area desteği (notch, home bar) */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+/* Dokunmatik optimizasyon */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Seçim çubuğunu gizle */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Sadece input ve textarea'da seçime izin ver */
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}

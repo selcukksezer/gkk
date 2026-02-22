@@ -1,0 +1,76 @@
+# Godot build artifacts
+.godot/
+.import/
+*.import
+
+# Export artifacts
+*.apk
+*.aab
+*.ipa
+*.zip
+*.dmg
+*.exe
+
+# Logs
+*.log
+logs/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Build folders
+build/
+export/
+dist/
+
+# Secrets (IMPORTANT!)
+.env
+.env.local
+secrets.cfg
+*.key
+*.pem
+
+# Android
+android/
+.gradle/
+local.properties
+
+# iOS
+ios/
+*.xcworkspace
+*.xcodeproj
+
+# Asset source files (optional, sadece export edilmiş versiyonlar gerekli)
+# *.psd
+# *.ai
+# *.blend
+# *.xcf
+
+# =====================================================
+# Next.js / Node.js artifacts
+# =====================================================
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

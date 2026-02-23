@@ -59,8 +59,8 @@ serve(async (req: Request) => {
 
 async function handleStatus(supabaseClient: any, userId: string) {
   const { data, error } = await supabaseClient
-    .from('game.users')
-    .select('hospital_until, hospital_reason')
+    .from('users')
+    .select('in_hospital, hospital_until, hospital_reason')
     .eq('auth_id', userId)
     .single()
 
@@ -71,7 +71,7 @@ async function handleStatus(supabaseClient: any, userId: string) {
     )
   }
 
-  const inHospital = data.hospital_until && new Date(data.hospital_until) > new Date()
+  const inHospital = data.in_hospital && data.hospital_until && new Date(data.hospital_until) > new Date()
   const releaseTime = data.hospital_until ? Math.floor(new Date(data.hospital_until).getTime() / 1000) : 0
 
   return new Response(
@@ -101,8 +101,8 @@ async function handleRelease(supabaseClient: any, userId: string, req: Request) 
 
   // Get current user data
   const { data: userData, error: userError } = await supabaseClient
-    .from('game.users')
-    .select('gems, hospital_until')
+    .from('users')
+    .select('gems, in_hospital, hospital_until')
     .eq('auth_id', userId)
     .single()
 
@@ -114,7 +114,7 @@ async function handleRelease(supabaseClient: any, userId: string, req: Request) 
   }
 
   // Check if in hospital
-  if (!userData.hospital_until || new Date(userData.hospital_until) <= new Date()) {
+  if (!userData.in_hospital || !userData.hospital_until || new Date(userData.hospital_until) <= new Date()) {
     return new Response(
       JSON.stringify({ success: false, error: 'Not in hospital' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -132,12 +132,12 @@ async function handleRelease(supabaseClient: any, userId: string, req: Request) 
 
     // Update gems and clear hospital
     const { error: updateError } = await supabaseClient
-      .from('game.users')
+      .from('users')
       .update({
         gems: userData.gems - cost,
+        in_hospital: false,
         hospital_until: null,
-        hospital_reason: null,
-        updated_at: new Date().toISOString()
+        hospital_reason: null
       })
       .eq('auth_id', userId)
 
@@ -161,11 +161,11 @@ async function handleRelease(supabaseClient: any, userId: string, req: Request) 
 
   // For other methods (guild, quest), just clear hospital
   const { error: updateError } = await supabaseClient
-    .from('game.users')
+    .from('users')
     .update({
+      in_hospital: false,
       hospital_until: null,
-      hospital_reason: null,
-      updated_at: new Date().toISOString()
+      hospital_reason: null
     })
     .eq('auth_id', userId)
 

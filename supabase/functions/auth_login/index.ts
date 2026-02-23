@@ -61,7 +61,7 @@ serve(async (req) => {
     // If username is provided instead of email, look up the email
     if (!loginEmail && username) {
       const { data: user } = await supabaseAdmin
-        .from('public.users')
+        .from('users')
         .select('email')
         .eq('username', username)
         .single()
@@ -130,7 +130,7 @@ serve(async (req) => {
 
     // Get the full user profile
     const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('public.users')
+      .from('users')
       .select('*')
       .eq('auth_id', sessionData.user.id)
       .single()
@@ -160,8 +160,10 @@ serve(async (req) => {
 
     // Update last login timestamp
     await supabaseAdmin
-      .from('public.users')
-        is_online: true 
+      .from('users')
+      .update({
+        last_login_at: new Date().toISOString(),
+        is_online: true
       })
       .eq('auth_id', sessionData.user.id)
 

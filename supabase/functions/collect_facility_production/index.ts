@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       .from('facilities')
       .select('*')
       .eq('id', p_facility_id)
-      .eq('player_id', playerId)
+      .eq('user_id', playerId)
       .single()
 
     if (facilityError || !facility) {
@@ -75,19 +75,20 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get all completed but not collected items from queue
+    // Get all completed but not collected items from queue (BIGINT unix timestamp comparison)
+    const nowUnix = Math.floor(Date.now() / 1000)
     const { data: readyItems, error: queueError } = await supabase
-      .from('facility_production_queue')
+      .from('facility_queue')
       .select(`
         id,
         recipe_id,
         quantity,
         rarity_outcome,
         completed_at,
-        facility_recipes(product_item_id, product_quantity)
+        facility_recipes(output_item_id, output_quantity)
       `)
       .eq('facility_id', p_facility_id)
-      .not('completed_at', 'is', null)
+      .lte('completed_at', nowUnix)
       .eq('collected', false)
       .eq('failed', false)
 
@@ -123,16 +124,16 @@ Deno.serve(async (req) => {
     for (const item of readyItems) {
       const recipe = Array.isArray(item.facility_recipes) ? item.facility_recipes[0] : item.facility_recipes
 
-      if (recipe && recipe.product_item_id) {
-        const productItemId = recipe.product_item_id
-        const quantity = (recipe.product_quantity || 1) * (item.quantity || 1)
+      if (recipe && recipe.output_item_id) {
+        const productItemId = recipe.output_item_id
+        const quantity = (recipe.output_quantity || 1) * (item.quantity || 1)
         const rarity = item.rarity_outcome || 'COMMON'
 
         // Add to inventory
         const { data: existingInventory } = await supabase
           .from('inventory')
           .select('quantity')
-          .eq('player_id', playerId)
+          .eq('user_id', playerId)
           .eq('item_id', productItemId)
           .single()
 
@@ -141,14 +142,14 @@ Deno.serve(async (req) => {
           await supabase
             .from('inventory')
             .update({ quantity: existingInventory.quantity + quantity })
-            .eq('player_id', playerId)
+            .eq('user_id', playerId)
             .eq('item_id', productItemId)
         } else {
           // Insert new item
           await supabase
             .from('inventory')
             .insert({
-              player_id: playerId,
+              user_id: playerId,
               item_id: productItemId,
               quantity: quantity,
               rarity: rarity
@@ -159,7 +160,7 @@ Deno.serve(async (req) => {
         await supabase
           .from('crafted_items_log')
           .insert({
-            player_id: playerId,
+            user_id: playerId,
             item_id: productItemId,
             quantity: quantity,
             rarity: rarity,
@@ -181,10 +182,11 @@ Deno.serve(async (req) => {
     // Mark queue items as collected
     if (queueIds.length > 0) {
       const { error: updateError } = await supabase
-        .from('facility_production_queue')
+        .from('facility_queue')
         .update({ 
           collected: true,
-          collected_at: new Date().toISOString()
+          collected_at: new Date().toISOString(),
+          status: 'collected'
         })
         .in('id', queueIds)
 

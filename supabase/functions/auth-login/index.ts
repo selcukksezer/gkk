@@ -112,8 +112,7 @@ serve(async (req) => {
         .from('users')
         .update({
           last_login_at: new Date().toISOString(),
-          is_online: true,
-          updated_at: new Date().toISOString()
+          is_online: true
         })
         .eq('id', userProfile.id)
         .catch(err => console.error('Update last_login error:', err))

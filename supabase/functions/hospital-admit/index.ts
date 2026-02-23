@@ -62,8 +62,7 @@ serve(async (req: Request) => {
       .update({
         in_hospital: true,
         hospital_until: releaseDate.toISOString(),
-        hospital_reason: reason,
-        updated_at: new Date().toISOString()
+        hospital_reason: reason
       })
       .eq('auth_id', user.id)
 

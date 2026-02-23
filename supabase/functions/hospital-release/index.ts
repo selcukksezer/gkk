@@ -137,8 +137,7 @@ async function handleRelease(supabaseClient: any, userId: string, req: Request) 
         gems: userData.gems - cost,
         in_hospital: false,
         hospital_until: null,
-        hospital_reason: null,
-        updated_at: new Date().toISOString()
+        hospital_reason: null
       })
       .eq('auth_id', userId)
 
@@ -166,8 +165,7 @@ async function handleRelease(supabaseClient: any, userId: string, req: Request) 
     .update({
       in_hospital: false,
       hospital_until: null,
-      hospital_reason: null,
-      updated_at: new Date().toISOString()
+      hospital_reason: null
     })
     .eq('auth_id', userId)
 

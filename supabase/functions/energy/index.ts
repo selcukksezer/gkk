@@ -58,9 +58,9 @@ async function handleStatus(supabaseClient: any, userId: string) {
   try {
     // Get user profile with energy info
     const { data: profile, error } = await supabaseClient
-      .from('profiles')
+      .from('users')
       .select('energy, max_energy')
-      .eq('id', userId)
+      .eq('auth_id', userId)
       .single()
 
     if (error) {

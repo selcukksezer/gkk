@@ -114,20 +114,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Parse ingredients from JSON string
-    const processedRecipes = recipes.map(recipe => ({
-      ...recipe,
-      ingredients: recipe.ingredients ? JSON.parse(recipe.ingredients) : {},
-      outputs: recipe.outputs ? JSON.parse(recipe.outputs) : {}
-    }))
-
-    console.log(`[get_facility_recipes] Found ${processedRecipes.length} recipes for ${buildingType}`)
+    // Return recipes as-is (columns are JSONB in DB, no manual parsing needed)
+    console.log(`[get_facility_recipes] Found ${recipes.length} recipes for ${buildingType}`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        recipes: processedRecipes,
-        count: processedRecipes.length,
+        recipes: recipes,
+        count: recipes.length,
         building_type: buildingType
       }),
       {

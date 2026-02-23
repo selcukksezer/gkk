@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       .from('facilities')
       .select('*')
       .eq('id', p_facility_id)
-      .eq('player_id', playerId)
+      .eq('user_id', playerId)
       .single()
 
     if (facilityError || !facility) {
@@ -111,8 +111,8 @@ Deno.serve(async (req) => {
     const { data: recipe, error: recipeError } = await supabase
       .from('facility_recipes')
       .select('*')
-      .eq('recipe_id', p_recipe_id)
-      .eq('facility_type', facility.facility_type)
+      .eq('id', p_recipe_id)
+      .eq('facility_type', facility.type)
       .single()
 
     if (recipeError || !recipe) {
@@ -134,11 +134,11 @@ Deno.serve(async (req) => {
     }
 
     // Check if player has required materials
-    const requiredMaterials = recipe.required_materials || {}
+    const requiredMaterials = recipe.input_materials || {}
     const { data: inventory } = await supabase
       .from('inventory')
       .select('item_id, quantity')
-      .eq('player_id', playerId)
+      .eq('user_id', playerId)
 
     const inventoryMap = new Map()
     if (inventory) {
@@ -165,11 +165,10 @@ Deno.serve(async (req) => {
 
     // Check queue limit (max 10 items)
     const { data: queueItems, error: queueError } = await supabase
-      .from('facility_production_queue')
+      .from('facility_queue')
       .select('id')
       .eq('facility_id', p_facility_id)
-      .is('completed_at', null)
-      .is('failed', false)
+      .in('status', ['in_progress', 'queued'])
 
     if (queueItems && queueItems.length >= 10) {
       return new Response(
@@ -178,13 +177,18 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Determine rarity outcome
+    // Determine rarity outcome (stored as metadata, not in DB)
     const rarityOutcome = determineRarityOutcome(facility.level, facility.suspicion_level)
 
     // Calculate production duration with facility level bonus
     const speedBonus = facility.level * 0.1 + 1.0  // 1.1x at level 1, 1.5x at level 5, etc
     const baseDuration = recipe.duration_seconds
     const adjustedDuration = Math.floor(baseDuration / speedBonus)
+
+    // Use Unix timestamps (BIGINT) as the schema requires
+    const nowUnix = Math.floor(Date.now() / 1000)
+    const completesAt = nowUnix + adjustedDuration
+    const estimatedCompletionDate = new Date(completesAt * 1000).toISOString()
 
     // Create production queue item for each quantity
     const queueInserts = []
@@ -193,17 +197,19 @@ Deno.serve(async (req) => {
         facility_id: p_facility_id,
         recipe_id: p_recipe_id,
         quantity: 1,
-        started_at: new Date().toISOString(),
+        started_at: nowUnix,
+        completed_at: completesAt,
+        estimated_completion_at: estimatedCompletionDate,
         duration_seconds: adjustedDuration,
         rarity_outcome: rarityOutcome,
-        completed_at: null,
+        status: 'in_progress',
         collected: false,
         failed: false
       })
     }
 
     const { data: queueData, error: insertError } = await supabase
-      .from('facility_production_queue')
+      .from('facility_queue')
       .insert(queueInserts)
       .select()
 
@@ -223,7 +229,7 @@ Deno.serve(async (req) => {
       const { error: updateError } = await supabase
         .from('inventory')
         .update({ quantity: have - totalNeeded })
-        .eq('player_id', playerId)
+        .eq('user_id', playerId)
         .eq('item_id', materialId)
 
       if (updateError) {

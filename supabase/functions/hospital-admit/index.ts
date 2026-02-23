@@ -58,8 +58,9 @@ serve(async (req: Request) => {
 
     // Update user in database
     const { error: updateError } = await supabaseClient
-      .from('game.users')
+      .from('users')
       .update({
+        in_hospital: true,
         hospital_until: releaseDate.toISOString(),
         hospital_reason: reason,
         updated_at: new Date().toISOString()

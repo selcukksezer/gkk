@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       .from('facilities')
       .select('*')
       .eq('id', p_facility_id)
-      .eq('player_id', playerId)
+      .eq('user_id', playerId)
       .single()
 
     if (facilityError || !facility) {
@@ -131,6 +131,16 @@ Deno.serve(async (req) => {
             sentence_hours: sentenceHours,
             release_time: releaseTime.toISOString()
           }
+
+          // Update public.users prison status
+          await supabase
+            .from('users')
+            .update({
+              in_prison: true,
+              prison_until: releaseTime.toISOString(),
+              prison_reason: 'High suspicion at facility operations'
+            })
+            .eq('auth_id', playerId)
 
           // Reset suspicion after admission
           await supabase

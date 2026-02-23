@@ -97,7 +97,7 @@ serve(async (req) => {
 
     // Get user profile from public.users
     const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('public.users')
+      .from('users')
       .select('*')
       .eq('auth_id', authId)
       .maybeSingle()
@@ -106,13 +106,14 @@ serve(async (req) => {
       console.error('Profile fetch error:', profileError)
     }
 
-    // Try to update last login in public.users
+    // Try to update last login in users
     if (userProfile?.id) {
       await supabaseAdmin
-        .from('public.users')
+        .from('users')
         .update({
           last_login_at: new Date().toISOString(),
-          is_online: true
+          is_online: true,
+          updated_at: new Date().toISOString()
         })
         .eq('id', userProfile.id)
         .catch(err => console.error('Update last_login error:', err))

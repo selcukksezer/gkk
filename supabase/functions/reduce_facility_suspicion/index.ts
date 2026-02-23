@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       .from('facilities')
       .select('*')
       .eq('id', p_facility_id)
-      .eq('player_id', playerId)
+      .eq('user_id', playerId)
       .single()
 
     if (facilityError || !facility) {
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
 
     // Calculate suspicion reduction based on level and time passed
     const now = new Date()
-    const lastReducedAt = facility.last_suspicion_reduced_at ? new Date(facility.last_suspicion_reduced_at) : new Date(facility.updated_at)
+    const lastReducedAt = facility.updated_at ? new Date(facility.updated_at) : new Date(facility.created_at)
     const hoursPassed = (now.getTime() - lastReducedAt.getTime()) / (1000 * 60 * 60)
 
     // Reduction formula: facility_level * SUSPICION_REDUCTION_PER_LEVEL_HOUR * hoursPassed
@@ -88,12 +88,11 @@ Deno.serve(async (req) => {
 
     console.log(`[reduce_facility_suspicion] Facility ${p_facility_id}, Level ${facility.level}, Hours ${hoursPassed.toFixed(2)}, Reduction ${reductionAmount.toFixed(2)}`)
 
-    // Update facility
+    // Update facility (use updated_at as last reduction timestamp since there's no separate column)
     const { data: updatedFacility, error: updateError } = await supabase
       .from('facilities')
       .update({
         suspicion_level: newSuspicion,
-        last_suspicion_reduced_at: now.toISOString(),
         updated_at: now.toISOString()
       })
       .eq('id', p_facility_id)

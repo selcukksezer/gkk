@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Check if username already exists
     const { data: existingUsername } = await supabaseAdmin
-      .from('game.users')
+      .from('users')
       .select('id')
       .eq('username', username)
       .single()
@@ -106,7 +106,7 @@ serve(async (req) => {
 
     // Check if email already exists
     const { data: existingEmail } = await supabaseAdmin
-      .from('game.users')
+      .from('users')
       .select('id')
       .eq('email', email)
       .single()
@@ -128,7 +128,7 @@ serve(async (req) => {
     let referrer_id = null
     if (referral_code && referral_code.trim() !== '') {
       const { data: referrer } = await supabaseAdmin
-        .from('game.users')
+        .from('users')
         .select('id')
         .eq('referral_code', referral_code.toUpperCase())
         .single()
@@ -175,7 +175,7 @@ serve(async (req) => {
 
     // Ensure profile exists (idempotent) and update referral if provided
     await supabaseAdmin
-      .from('game.users')
+      .from('users')
       .upsert([
         {
           auth_id: authData.user.id,
@@ -187,7 +187,7 @@ serve(async (req) => {
 
     if (referrer_id) {
       await supabaseAdmin
-        .from('game.users')
+        .from('users')
         .update({ referred_by: referrer_id })
         .eq('auth_id', authData.user.id)
     }
@@ -224,7 +224,7 @@ serve(async (req) => {
     let retries = 3
     while (retries > 0 && !userProfile) {
       const { data } = await supabaseAdmin
-        .from('game.users')
+        .from('users')
         .select('*')
         .eq('auth_id', authData.user.id)
         .single()
